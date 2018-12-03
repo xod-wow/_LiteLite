@@ -14,7 +14,32 @@ do
     ItemTextFrame:SetScale(1.5)
 end
 
-_LiteLite = { }
+_LiteLite = CreateFrame('Frame')
+_LiteLite:SetScript('OnEvent',
+        function (self, e, ...)
+            if self[e] then self[e](self, e, ...) end
+        end)
+_LiteLite:RegisterEvent('PLAYER_LOGIN')
+
+local function DreamweaversEmissaryUp()
+    -- The Dreamweavers = Quest 42170
+    -- Broken Isles = UiMapID 619
+
+    local bountyQuests = GetQuestBountyInfoForMapID(619)
+    for _, q in ipairs(bountyQuests) do
+        if q.questID == 42170 then
+            print(GREEN_FONT_COLOR_CODE .. '-----' .. FONT_COLOR_CODE_CLOSE)
+            print(GREEN_FONT_COLOR_CODE .. 'The Dreamweavers is up' .. FONT_COLOR_CODE_CLOSE)
+            print(GREEN_FONT_COLOR_CODE .. '-----' .. FONT_COLOR_CODE_CLOSE)
+        end
+    end
+end
+
+function _LiteLite:PLAYER_LOGIN()
+    DreamweaversEmissaryUp()
+end
+
+-- Show the old guild UI which is better than the new thing
 
 function _LiteLite.ToggleGuildUI()
     if not IsInGuild() then return end
@@ -30,6 +55,9 @@ function _LiteLite.ToggleGuildUI()
         ShowUIPanel(GuildFrame)
     end
 end
+
+-- So I can toggle between my USB headset and my speakers without
+-- having to drill down so far into the interface.
 
 function _LiteLite.NextGameSoundOutput()
     local cvar = 'Sound_OutputDriverIndex'
