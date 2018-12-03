@@ -1,0 +1,9 @@
+## Interface: 80000
+## Title: _LiteLite
+## Version: v0.0
+## Author: Xodiv-Nagrand
+## Email: mib@post.com
+## SavedVariables: _LiteLiteDB
+
+_LiteLite.xml
+_LiteLite.lua
