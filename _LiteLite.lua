@@ -21,7 +21,7 @@ _LiteLite:SetScript('OnEvent',
         end)
 _LiteLite:RegisterEvent('PLAYER_LOGIN')
 
-local function DreamweaversEmissaryUp()
+function _LiteLite:DreamweaversEmissaryUp()
     -- The Dreamweavers = Quest 42170
     -- Broken Isles = UiMapID 619
 
@@ -35,13 +35,33 @@ local function DreamweaversEmissaryUp()
     end
 end
 
+function _LiteLite:SlashCommand(arg)
+    if arg == 'q' then
+        self:ScanQuestsCompleted()
+    end
+    return true
+end
+
+function _LiteLite:SetupSlashCommand()
+    SlashCmdList["_LiteLite"] = function (...) self:SlashCommand(...) end
+    _G.SLASH__LiteLite1 = "/litelite"
+    _G.SLASH__LiteLite2 = "/ll"
+
+end
+
 function _LiteLite:PLAYER_LOGIN()
-    DreamweaversEmissaryUp()
+    self:DreamweaversEmissaryUp()
+    self:ScanQuestsCompleted()
+    self:SetupSlashCommand()
+end
+
+function _LiteLite:QUEST_TURNED_IN()
+    self:ScanQuestsCompleted()
 end
 
 -- Show the old guild UI which is better than the new thing
 
-function _LiteLite.ToggleGuildUI()
+function _LiteLite:ToggleGuildUI()
     if not IsInGuild() then return end
 
     GuildFrame_LoadUI()
@@ -59,7 +79,7 @@ end
 -- So I can toggle between my USB headset and my speakers without
 -- having to drill down so far into the interface.
 
-function _LiteLite.NextGameSoundOutput()
+function _LiteLite:NextGameSoundOutput()
     local cvar = 'Sound_OutputDriverIndex'
     local i = BlizzardOptionsPanel_GetCVarSafe(cvar) or 0
     local n = Sound_GameSystem_GetNumOutputDrivers() or 1
@@ -74,4 +94,24 @@ function _LiteLite.NextGameSoundOutput()
 
     local deviceName = Sound_GameSystem_GetOutputDriverNameByIndex(i)
     UIErrorsFrame:AddMessage(deviceName, 0.1, 1.0, 0.1)
+end
+
+function _LiteLite:ScanQuestsCompleted()
+    if not self.questsCompleted then
+        self.questsCompleted = {}
+        for i = 1,100000 do
+            if IsQuestFlaggedCompleted(i) then
+                self.questsCompleted[i] = true
+            end
+        end
+    else
+        for i = 1,100000 do
+            if IsQuestFlaggedCompleted(i) and self.questsCompleted[i] ~= true then
+                print("Newly completed: " .. i)
+                if self.questsCompleted[i] == nil then
+                    self.questsCompleted[i] = time()
+                end
+            end
+        end
+    end
 end

@@ -1,11 +1,11 @@
 <Bindings>
 
     <Binding name="LL_TOGGLE_GUILD_UI" header="LITELITE" category="BINDING_HEADER_LITELITE">
-        _LiteLite.ToggleGuildUI()
+        _LiteLite:ToggleGuildUI()
     </Binding>
 
     <Binding name="LL_NEXT_GAME_SOUND_OUTPUT" category="BINDING_HEADER_LITELITE">
-        _LiteLite.NextGameSoundOutput()
+        _LiteLite:NextGameSoundOutput()
     </Binding>
 
 </Bindings> 
