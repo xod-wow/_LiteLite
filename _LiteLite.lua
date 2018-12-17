@@ -38,6 +38,8 @@ end
 function _LiteLite:SlashCommand(arg)
     if arg == 'q' then
         self:ScanQuestsCompleted()
+    elseif arg == 'qr' then
+        self:ScanQuestsCompleted(true)
     end
     return true
 end
@@ -96,7 +98,9 @@ function _LiteLite:NextGameSoundOutput()
     UIErrorsFrame:AddMessage(deviceName, 0.1, 1.0, 0.1)
 end
 
-function _LiteLite:ScanQuestsCompleted()
+function _LiteLite:ScanQuestsCompleted(forceReset)
+    if forceReset then wipe(self.questsCompleted) end
+
     if not self.questsCompleted then
         self.questsCompleted = {}
         for i = 1,100000 do
