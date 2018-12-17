@@ -101,7 +101,7 @@ end
 function _LiteLite:ScanQuestsCompleted(forceReset)
     if forceReset then wipe(self.questsCompleted) end
 
-    if not self.questsCompleted then
+    if not next(self.questsCompleted or {})  then
         self.questsCompleted = {}
         for i = 1,100000 do
             if IsQuestFlaggedCompleted(i) then
