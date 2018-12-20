@@ -23,9 +23,9 @@ _LiteLite:RegisterEvent('PLAYER_LOGIN')
 
 function _LiteLite:DreamweaversEmissaryUp()
     -- The Dreamweavers = Quest 42170
-    -- Broken Isles = UiMapID 619
+    -- Val'sharah = UiMapID 868
 
-    local bountyQuests = GetQuestBountyInfoForMapID(619)
+    local bountyQuests = GetQuestBountyInfoForMapID(868)
     for _, q in ipairs(bountyQuests) do
         if q.questID == 42170 then
             print(GREEN_FONT_COLOR_CODE .. '-----' .. FONT_COLOR_CODE_CLOSE)
@@ -55,10 +55,16 @@ function _LiteLite:PLAYER_LOGIN()
     self:DreamweaversEmissaryUp()
     self:ScanQuestsCompleted()
     self:SetupSlashCommand()
+    self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 end
 
-function _LiteLite:QUEST_TURNED_IN()
-    self:ScanQuestsCompleted()
+function _LiteLite:COMBAT_LOG_EVENT_UNFILTERED()
+    local ts, e, _, _, _, _, _, _, name, flags = CombatLogGetCurrentEventInfo()
+    if e ~= "UNIT_DIED" or bit.bor(flags, 0x40) == 0 then
+        return
+    end
+    self.lastKillName = name
+    self.lastKillTime = ts
 end
 
 -- Show the old guild UI which is better than the new thing
