@@ -36,10 +36,12 @@ function _LiteLite:DreamweaversEmissaryUp()
 end
 
 function _LiteLite:SlashCommand(arg)
-    if arg == 'q' then
-        self:ScanQuestsCompleted()
-    elseif arg == 'qr' then
-        self:ScanQuestsCompleted(true)
+    local now = GetServerTime()
+    if arg == 'qscan' then
+        self:ScanQuestsCompleted(now)
+    elseif arg == 'qreport' then
+        self:ScanQuestsCompleted(now)
+        self:ReportQuestsCompleted()
     end
     return true
 end
@@ -104,24 +106,22 @@ function _LiteLite:NextGameSoundOutput()
     UIErrorsFrame:AddMessage(deviceName, 0.1, 1.0, 0.1)
 end
 
-function _LiteLite:ScanQuestsCompleted(forceReset)
-    if forceReset then wipe(self.questsCompleted) end
+function _LiteLite:ScanQuestsCompleted(scanTime)
+    self.questsCompleted = self.questsCompleted or {}
+    scanTime = scanTime or 0
 
-    if not next(self.questsCompleted or {})  then
-        self.questsCompleted = {}
-        for i = 1,100000 do
-            if IsQuestFlaggedCompleted(i) then
-                self.questsCompleted[i] = true
-            end
+    for i = 1,100000 do
+        if not self.questsCompleted[i] and IsQuestFlaggedCompleted(i) then
+            self.questsCompleted[i] = scanTime
         end
-    else
-        for i = 1,100000 do
-            if IsQuestFlaggedCompleted(i) and self.questsCompleted[i] ~= true then
-                print("Newly completed: " .. i)
-                if self.questsCompleted[i] == nil then
-                    self.questsCompleted[i] = time()
-                end
-            end
+    end
+end
+
+function _LiteLite:ReportQuestsCompleted()
+    print("Completed quests report:")
+    for i = 1,100000 do
+        if self.questsCompleted[i] and self.questsCompleted[i] > 0 then
+            print(format("Newly completed: %d at %d", i, self.questsCompleted[i]))
         end
     end
 end
