@@ -35,14 +35,60 @@ function _LiteLite:DreamweaversEmissaryUp()
     end
 end
 
+function _LiteLite:SetEquipsetIcon(n, arg1)
+    if n == nil then
+        n = PaperDollEquipmentManagerPane.selectedSetID
+    else
+        n = tonumber(n)
+    end
+
+    if n == nil then
+        return
+    end
+
+    local name, icon = C_EquipmentSet.GetEquipmentSetInfo(n)
+
+    arg1 = tonumber(arg1)
+
+    if arg1 then
+        if arg1 > 9 then
+            C_EquipmentSet.ModifyEquipmentSet(n, name, arg1)
+        else
+            icon = select(4, GetSpecializationInfo(arg1))
+            C_EquipmentSet.ModifyEquipmentSet(n, name, icon)
+        end
+    else
+        local _, spellid = GameTooltip:GetSpell()
+        if spellid then
+            icon = select(3, GetSpellInfo(spellid))
+            if icon then
+                C_EquipmentSet.ModifyEquipmentSet(n, name, icon)
+            end
+        end
+    end
+end
+
 function _LiteLite:SlashCommand(arg)
-    local now = GetServerTime()
     if arg == 'qscan' then
+        local now = GetServerTime()
         self:ScanQuestsCompleted(now)
-    elseif arg == 'qreport' then
+        return true
+    end
+
+    if arg == 'qreport' then
+        local now = GetServerTime()
         self:ScanQuestsCompleted(now)
         self:ReportQuestsCompleted()
+        return true
     end
+
+    local arg1, arg2 = string.split(' ', arg, 2)
+
+    if arg1 == 'eq' then
+        self:SetEquipsetIcon(arg2)
+        return true
+    end
+
     return true
 end
 
