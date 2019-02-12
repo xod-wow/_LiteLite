@@ -21,6 +21,25 @@ _LiteLite:SetScript('OnEvent',
         end)
 _LiteLite:RegisterEvent('PLAYER_LOGIN')
 
+local function GetActiveChatFrame()
+    for i = 1,NUM_CHAT_WINDOWS do
+        local f = _G["ChatFrame"..i]
+        if f:IsShown() then
+            return f
+        end
+    end
+    return DEFAULT_CHAT_FRAME
+end
+
+local printTag = YELLOW_FONT_COLOR_CODE
+                     .. "LiteLite: "
+                     .. FONT_COLOR_CODE_CLOSE
+
+local function print(...)
+    local msg = table.concat({...}, ' ')
+    GetActiveChatFrame():AddMessage(printTag .. msg)
+end
+
 function _LiteLite:DreamweaversEmissaryUp()
     -- The Dreamweavers = Quest 42170
     -- Val'sharah = UiMapID 868
@@ -28,9 +47,12 @@ function _LiteLite:DreamweaversEmissaryUp()
     local bountyQuests = GetQuestBountyInfoForMapID(868)
     for _, q in ipairs(bountyQuests) do
         if q.questID == 42170 then
-            print(GREEN_FONT_COLOR_CODE .. '-----' .. FONT_COLOR_CODE_CLOSE)
-            print(GREEN_FONT_COLOR_CODE .. 'The Dreamweavers is up' .. FONT_COLOR_CODE_CLOSE)
-            print(GREEN_FONT_COLOR_CODE .. '-----' .. FONT_COLOR_CODE_CLOSE)
+            msg = GREEN_FONT_COLOR_CODE
+                    .. 'The Dreamweavers'
+                    .. FONT_COLOR_CODE_CLOSE
+                    .. ' is available.'
+            print(msg)
+            UIErrorsFrame:AddMessage(msg)
         end
     end
 end
@@ -89,6 +111,9 @@ function _LiteLite:SlashCommand(arg)
         return true
     end
 
+    print("/ll eq")
+    print("/ll qscan")
+    print("/ll qreport")
     return true
 end
 
