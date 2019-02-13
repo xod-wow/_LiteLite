@@ -45,21 +45,29 @@ function _LiteLite:DreamweaversEmissaryUp()
     -- Faction ID = 1883
     -- Val'sharah = UiMapID 868
 
-    if not C_Reputation.GetFactionParagonInfo(1883) then
-        return
-    end
+    local total = C_Reputation.GetFactionParagonInfo(1883)
+    -- if not total or total == 0 then
+    --     return
+    -- end
 
     local bountyQuests = GetQuestBountyInfoForMapID(868)
     for _, q in ipairs(bountyQuests) do
         if q.questID == 42170 then
-            msg = GREEN_FONT_COLOR_CODE
-                    .. 'The Dreamweavers'
-                    .. FONT_COLOR_CODE_CLOSE
-                    .. ' is available.'
+            msg = "|cff20ff20The Dreamweavers|r is available."
             print(msg)
             RaidNotice_AddMessage(RaidWarningFrame, msg, ChatTypeInfo["SYSTEM"], 18)
         end
     end
+
+    local bountyQuests = GetQuestBountyInfoForMapID(627)
+    for _,q in ipairs(bountyQuests) do
+        if q.questId == 43179 then
+            msg = "|cffff00ffThe Kirin Tor|r is available.|r"
+            print(msg)
+            RaidNotice_AddMessage(RaidWarningFrame, msg, ChatTypeInfo["SYSTEM"], 18)
+        end
+    end
+
 end
 
 function _LiteLite:SetEquipsetIcon(n, arg1)
