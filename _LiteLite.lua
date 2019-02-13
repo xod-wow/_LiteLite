@@ -31,7 +31,7 @@ local function GetActiveChatFrame()
     return DEFAULT_CHAT_FRAME
 end
 
-local printTag = YELLOW_FONT_COLOR_CODE
+local printTag = ORANGE_FONT_COLOR_CODE
                      .. "LiteLite: "
                      .. FONT_COLOR_CODE_CLOSE
 
@@ -42,7 +42,12 @@ end
 
 function _LiteLite:DreamweaversEmissaryUp()
     -- The Dreamweavers = Quest 42170
+    -- Faction ID = 1883
     -- Val'sharah = UiMapID 868
+
+    if not C_Reputation.GetFactionParagonInfo(1883) then
+        return
+    end
 
     local bountyQuests = GetQuestBountyInfoForMapID(868)
     for _, q in ipairs(bountyQuests) do
@@ -52,7 +57,7 @@ function _LiteLite:DreamweaversEmissaryUp()
                     .. FONT_COLOR_CODE_CLOSE
                     .. ' is available.'
             print(msg)
-            UIErrorsFrame:AddMessage(msg)
+            RaidNotice_AddMessage(RaidWarningFrame, msg, ChatTypeInfo["SYSTEM"], 18)
         end
     end
 end
@@ -125,10 +130,11 @@ function _LiteLite:SetupSlashCommand()
 end
 
 function _LiteLite:PLAYER_LOGIN()
-    self:DreamweaversEmissaryUp()
     self:ScanQuestsCompleted()
     self:SetupSlashCommand()
     self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+
+    C_Timer.After(10, function () self:DreamweaversEmissaryUp() end)
 end
 
 function _LiteLite:COMBAT_LOG_EVENT_UNFILTERED()
