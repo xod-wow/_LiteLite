@@ -43,25 +43,20 @@ end
 function _LiteLite:DreamweaversEmissaryUp()
     -- The Dreamweavers = Quest 42170
     -- Faction ID = 1883
-    -- Val'sharah = UiMapID 868
+    -- Dalaran = UiMapID 627
 
     local total = C_Reputation.GetFactionParagonInfo(1883)
-    -- if not total or total == 0 then
-    --     return
-    -- end
+    if not total or total == 0 then
+        return
+    end
 
-    local bountyQuests = GetQuestBountyInfoForMapID(868)
+    local bountyQuests = GetQuestBountyInfoForMapID(627)
     for _, q in ipairs(bountyQuests) do
         if q.questID == 42170 then
             msg = "|cff20ff20The Dreamweavers|r is available."
             print(msg)
             RaidNotice_AddMessage(RaidWarningFrame, msg, ChatTypeInfo["SYSTEM"], 18)
-        end
-    end
-
-    local bountyQuests = GetQuestBountyInfoForMapID(627)
-    for _,q in ipairs(bountyQuests) do
-        if q.questId == 43179 then
+        elseif q.questID == 43179 then
             msg = "|cffff00ffThe Kirin Tor|r is available.|r"
             print(msg)
             RaidNotice_AddMessage(RaidWarningFrame, msg, ChatTypeInfo["SYSTEM"], 18)
