@@ -68,6 +68,15 @@ end
 function _LiteLite:SetEquipsetIcon(n, arg1)
     if n == nil then
         n = PaperDollEquipmentManagerPane.selectedSetID
+    elseif n == 'auto' then
+        for n = 0, C_EquipmentSet.GetNumEquipmentSets() - 1 do
+            local specIndex = C_EquipmentSet.GetEquipmentSetAssignedSpec(n)
+            if specIndex then
+                arg1 = select(4, GetSpecializationInfo(specIndex))
+                self:SetEquipsetIcon(n, arg1)
+            end
+        end
+        return
     else
         n = tonumber(n)
     end
