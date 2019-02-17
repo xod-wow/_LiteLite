@@ -8,12 +8,6 @@ BINDING_HEADER_LITELITE = "_LiteLite"
 BINDING_NAME_LL_TOGGLE_GUILD_UI = "Toggle Guild UI"
 BINDING_NAME_LL_NEXT_GAME_SOUND_OUTPUT = "Next Game Sound Output"
 
-do
-    QuestFrame:SetScale(1.5)
-    GossipFrame:SetScale(1.5)
-    ItemTextFrame:SetScale(1.5)
-end
-
 _LiteLite = CreateFrame('Frame')
 _LiteLite:SetScript('OnEvent',
         function (self, e, ...)
@@ -35,9 +29,15 @@ local printTag = ORANGE_FONT_COLOR_CODE
                      .. "LiteLite: "
                      .. FONT_COLOR_CODE_CLOSE
 
-local function print(...)
-    local msg = table.concat({...}, ' ')
+local function printf(fmt, ...)
+    local msg = string.format(fmt, ...)
     GetActiveChatFrame():AddMessage(printTag .. msg)
+end
+
+function _LiteLite:BiggerFrames()
+    QuestFrame:SetScale(1.5)
+    GossipFrame:SetScale(1.5)
+    ItemTextFrame:SetScale(1.5)
 end
 
 function _LiteLite:DreamweaversEmissaryUp()
@@ -51,15 +51,16 @@ function _LiteLite:DreamweaversEmissaryUp()
     end
 
     local bountyQuests = GetQuestBountyInfoForMapID(627)
+    local info = ChatTypeInfo["SYSTEM"]
     for _, q in ipairs(bountyQuests) do
         if q.questID == 42170 then
-            msg = "|cff20ff20The Dreamweavers|r is available."
-            print(msg)
-            RaidNotice_AddMessage(RaidWarningFrame, msg, ChatTypeInfo["SYSTEM"], 18)
+            local msg = "|cff20ff20The Dreamweavers|r is available."
+            printf(msg)
+            RaidNotice_AddMessage(RaidWarningFrame, msg, info, 18)
         elseif q.questID == 43179 then
-            msg = "|cffff00ffThe Kirin Tor|r is available.|r"
-            print(msg)
-            RaidNotice_AddMessage(RaidWarningFrame, msg, ChatTypeInfo["SYSTEM"], 18)
+            local msg = "|cffff00ffThe Kirin Tor|r is available.|r"
+            printf(msg)
+            RaidNotice_AddMessage(RaidWarningFrame, msg, info, 18)
         end
     end
 
@@ -128,9 +129,9 @@ function _LiteLite:SlashCommand(arg)
         return true
     end
 
-    print("/ll eq")
-    print("/ll qscan")
-    print("/ll qreport")
+    printf("/ll eq")
+    printf("/ll qscan")
+    printf("/ll qreport")
     return true
 end
 
@@ -145,6 +146,8 @@ function _LiteLite:PLAYER_LOGIN()
     self:ScanQuestsCompleted()
     self:SetupSlashCommand()
     self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+
+    self:BiggerFrames()
 
     C_Timer.After(10, function () self:DreamweaversEmissaryUp() end)
 end
@@ -207,10 +210,10 @@ function _LiteLite:ScanQuestsCompleted(scanTime)
 end
 
 function _LiteLite:ReportQuestsCompleted()
-    print("Completed quests report:")
+    printf("Completed quests report:")
     for i = 1,100000 do
         if self.questsCompleted[i] and self.questsCompleted[i] > 0 then
-            print(format("Newly completed: %d at %d", i, self.questsCompleted[i]))
+            printf(format("Newly completed: %d at %d", i, self.questsCompleted[i]))
         end
     end
 end
