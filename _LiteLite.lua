@@ -16,7 +16,7 @@ _LiteLite:SetScript('OnEvent',
 _LiteLite:RegisterEvent('PLAYER_LOGIN')
 
 local function GetActiveChatFrame()
-    for i = 1,NUM_CHAT_WINDOWS do
+    for i = 1, NUM_CHAT_WINDOWS do
         local f = _G["ChatFrame"..i]
         if f:IsShown() then
             return f
@@ -129,7 +129,8 @@ function _LiteLite:SlashCommand(arg)
         return true
     end
 
-    printf("/ll eq")
+    printf("/ll eq n [iconid]")
+    printf("/ll eq auto")
     printf("/ll qscan")
     printf("/ll qreport")
     return true
