@@ -58,12 +58,54 @@ function _LiteLite:DreamweaversEmissaryUp()
             printf(msg)
             RaidNotice_AddMessage(RaidWarningFrame, msg, info, 18)
         elseif q.questID == 43179 then
-            local msg = "|cffff00ffThe Kirin Tor|r is available.|r"
+            local msg = "|cffff00ffThe Kirin Tor|r is available."
             printf(msg)
             RaidNotice_AddMessage(RaidWarningFrame, msg, info, 18)
         end
     end
 
+end
+
+local TanaanRaresQuestIDs = {
+    Deathtalon  = 39287,
+    Terrorfist  = 39288,
+    Doomroller  = 39289,
+    Vengeance   = 39290
+}
+
+function _LiteLite:TanaanRares()
+    local status
+    for rare,questID in pairs(TanaanRaresQuestIDs) do
+        if IsQuestFlaggedCompleted(questID) then
+            status = RED_FONT_COLOR_CODE .. 'Completed' .. FONT_COLOR_CODE_CLOSE
+        else
+            status = GREEN_FONT_COLOR_CODE .. 'Available' .. FONT_COLOR_CODE_CLOSE
+        end
+        print(format('%s: %s', rare, status))
+    end
+end
+
+function _LiteLite:NameplateSettings()
+    SetCVar('nameplateShowFriendlyNPCs', 1)
+    SetCVar('nameplateShowFriends', 1)
+    SetCVar('nameplateShowEnemies', 1)
+    SetCVar('nameplateShowAll', 1)
+    SetCVar('nameplateMaxDistance', 100)
+end
+
+function _LiteLite:ChatFrameSettings()
+    ChatFrame1:SetSize(512,256)
+    ChatFrame1:ClearAllPoints()
+    ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT" ,38, 8)
+    FCF_SavePositionAndDimensions(ChatFrame1)
+
+    for i = 1,NUM_CHAT_WINDOWS+1 do
+        local f = _G["ChatFrame"..i]
+        if f then
+            FCF_SetWindowAlpha(f, 0.66)
+            FCF_SetWindowColor(f, 0, 0, 0)
+        end
+    end
 end
 
 function _LiteLite:SetEquipsetIcon(n, arg1)
@@ -120,6 +162,15 @@ function _LiteLite:SlashCommand(arg)
         self:ScanQuestsCompleted(now)
         self:ReportQuestsCompleted()
         return true
+    elseif arg == 'chat' then
+        self:ChatFrameSettings()
+        return true
+    elseif arg == 'nameplate' then
+        self:NameplateSettings()
+        return true
+    elseif arg == 'tanaan' then
+        self:TanaanRares()
+        return true
     end
 
     local arg1, arg2 = string.split(' ', arg, 2)
@@ -129,10 +180,13 @@ function _LiteLite:SlashCommand(arg)
         return true
     end
 
+    printf("/ll chat")
     printf("/ll eq n [iconid]")
     printf("/ll eq auto")
+    printf("/ll nameplates")
     printf("/ll qscan")
     printf("/ll qreport")
+    printf("/ll tanaan")
     return true
 end
 
