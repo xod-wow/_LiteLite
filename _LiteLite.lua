@@ -108,6 +108,12 @@ function _LiteLite:ChatFrameSettings()
     end
 end
 
+function _LiteLite:CreateTrinketMacro(spell)
+end
+
+function _LiteLite:CreateMouseoverMacro(spell)
+end
+
 function _LiteLite:SetEquipsetIcon(n, arg1)
     if n == nil then
         n = PaperDollEquipmentManagerPane.selectedSetID
