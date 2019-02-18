@@ -109,6 +109,13 @@ function _LiteLite:ChatFrameSettings()
 end
 
 function _LiteLite:CreateTrinketMacro(spell)
+--[[
+#showtooltip Shield Slam
+/run SlashCmdList.UI_ERRORS_OFF()
+/use [harm] 13
+/run SlashCmdList.UI_ERRORS_ON()
+/cast Shield Slam
+]]
 end
 
 function _LiteLite:CreateMouseoverMacro(spell)
