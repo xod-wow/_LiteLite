@@ -66,6 +66,21 @@ function _LiteLite:DreamweaversEmissaryUp()
 
 end
 
+function _LiteLite:DreamweaversMissionUp()
+    local missions = C_Garrison.GetAvailableMissions(4)
+    for _, m in ipairs(missions) do
+        for _, r in ipairs(m.rewards) do
+            if r.itemID and (r.itemID == 141339 or r.itemID == 141988 or r.itemID == 146942 or r.itemID == 150926) then
+                local msg = "|cff20ff20Dreamweavers|r mission available."
+                local info = ChatTypeInfo["SYSTEM"]
+                printf(msg)
+                RaidNotice_AddMessage(RaidWarningFrame, msg, info, 18)
+                return
+            end
+        end
+    end
+end
+
 local TanaanRaresQuestIDs = {
     Deathtalon  = 39287,
     Terrorfist  = 39288,
@@ -266,7 +281,11 @@ function _LiteLite:PLAYER_LOGIN()
 
     self:BiggerFrames()
 
-    C_Timer.After(10, function () self:DreamweaversEmissaryUp() end)
+    C_Timer.After(10,
+             function ()
+                self:DreamweaversEmissaryUp()
+                self:DreamweaversMissionUp()
+             end)
 end
 
 function _LiteLite:COMBAT_LOG_EVENT_UNFILTERED()
