@@ -108,17 +108,61 @@ function _LiteLite:ChatFrameSettings()
     end
 end
 
-function _LiteLite:CreateTrinketMacro(spell)
---[[
-#showtooltip Shield Slam
-/run SlashCmdList.UI_ERRORS_OFF()
-/use [harm] 13
-/run SlashCmdList.UI_ERRORS_ON()
-/cast Shield Slam
-]]
+local function CreateOrUpdateMacro()
+    local index = GetMacroIndexByName(MacroName)
+    if index == 0 then
+        index = CreateMacro(MacroName, "ABILITY_MOUNT_MECHASTRIDER", MacroText)
+    else
+        EditMacro(index, nil, nil, MacroText)
+    end
+    return index
+end
+
+local function strtemplate(str, vars)
+  return string_gsub(
+            str,
+            "({([^}]+)})",
+            function(whole, i) return vars[i] or whole end
+        )
+end
+
+function _LiteLite:CreateTemplateMacro(spell, template)
+    local macroName = '_' + spell
+    local macroText = strtemplate(template, { spellName = spell })
+    local i = GetMacroIndexByName(macroName)
+    if i == 0 then
+        CreateMacro(macroName, nil, macroText)
+    else
+        EditMacro(index, nil, nil, macroText)
+    end
 end
 
 function _LiteLite:CreateMouseoverMacro(spell)
+    if not spell or spell == '' then
+        local _, spellid = GameTooltip:GetSpell()
+        if not spellid then return end
+        spell = GetSpellInfo(spellid)
+    end
+
+    self:CreateTemplateMacro(spell,
+[[#showtooltip {spellName}
+/cast [@mouseover,help][help] {spellName}
+/stopspelltarget]])
+end
+
+function _LiteLite:CreateTrinketMacro(spell)
+    if not spell or spell == '' then
+        local _, spellid = GameTooltip:GetSpell()
+        if not spellid then return end
+        spell = GetSpellInfo(spellid)
+    end
+
+    self:CreateTemplateMacro(spell,
+[[#showtooltip {spellName}
+/run SlashCmdList.UI_ERRORS_OFF()
+/use [harm] 13
+/run SlashCmdList.UI_ERRORS_ON()
+/cast {spellName}]])
 end
 
 function _LiteLite:SetEquipsetIcon(n, arg1)
@@ -191,6 +235,10 @@ function _LiteLite:SlashCommand(arg)
     if arg1 == 'eq' then
         self:SetEquipsetIcon(arg2)
         return true
+    elseif arg1 == 'momacro' then
+        self:CreateMouseoverMacro(arg2)
+    elseif arg1 == 'trmacro' then
+        self:CreateTrinketMacro(arg2)
     end
 
     printf("/ll chat")
