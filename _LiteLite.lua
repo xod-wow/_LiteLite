@@ -119,11 +119,11 @@ local function CreateOrUpdateMacro()
 end
 
 local function strtemplate(str, vars)
-  return string_gsub(
+  return (string_gsub(
             str,
             "({([^}]+)})",
             function(whole, i) return vars[i] or whole end
-        )
+        ))
 end
 
 function _LiteLite:CreateTemplateMacro(spell, template)
