@@ -81,7 +81,7 @@ function _LiteLite:TanaanRares()
         else
             status = GREEN_FONT_COLOR_CODE .. 'Available' .. FONT_COLOR_CODE_CLOSE
         end
-        print(format('%s: %s', rare, status))
+        printf('%s: %s', rare, status)
     end
 end
 
@@ -119,7 +119,7 @@ local function CreateOrUpdateMacro()
 end
 
 local function strtemplate(str, vars)
-  return (string_gsub(
+  return (string.gsub(
             str,
             "({([^}]+)})",
             function(whole, i) return vars[i] or whole end
@@ -127,11 +127,11 @@ local function strtemplate(str, vars)
 end
 
 function _LiteLite:CreateTemplateMacro(spell, template)
-    local macroName = '_' + spell
+    local macroName = '_' .. spell
     local macroText = strtemplate(template, { spellName = spell })
     local i = GetMacroIndexByName(macroName)
     if i == 0 then
-        CreateMacro(macroName, nil, macroText)
+        CreateMacro(macroName, "INV_MISC_QUESTIONMARK", macroText, true)
     else
         EditMacro(index, nil, nil, macroText)
     end
@@ -161,6 +161,7 @@ function _LiteLite:CreateTrinketMacro(spell)
 [[#showtooltip {spellName}
 /run SlashCmdList.UI_ERRORS_OFF()
 /use [harm] 13
+/use [harm] 14
 /run SlashCmdList.UI_ERRORS_ON()
 /cast {spellName}]])
 end
@@ -169,7 +170,8 @@ function _LiteLite:SetEquipsetIcon(n, arg1)
     if n == nil then
         n = PaperDollEquipmentManagerPane.selectedSetID
     elseif n == 'auto' then
-        for n = 0, C_EquipmentSet.GetNumEquipmentSets() - 1 do
+        for _, n in ipairs(C_EquipmentSet.GetEquipmentSetIDs()) do
+            printf(n)
             local specIndex = C_EquipmentSet.GetEquipmentSetAssignedSpec(n)
             if specIndex then
                 arg1 = select(4, GetSpecializationInfo(specIndex))
@@ -185,22 +187,19 @@ function _LiteLite:SetEquipsetIcon(n, arg1)
         return
     end
 
-    local name, icon = C_EquipmentSet.GetEquipmentSetInfo(n)
+    local name = C_EquipmentSet.GetEquipmentSetInfo(n)
 
     arg1 = tonumber(arg1)
 
     if arg1 then
-        if arg1 > 9 then
-            C_EquipmentSet.ModifyEquipmentSet(n, name, arg1)
-        else
-            icon = select(4, GetSpecializationInfo(arg1))
-            C_EquipmentSet.ModifyEquipmentSet(n, name, icon)
-        end
+        printf('Setting eq icon for %s (%d) to %d', name, n, arg1)
+        C_EquipmentSet.ModifyEquipmentSet(n, name, arg1)
     else
         local _, spellid = GameTooltip:GetSpell()
         if spellid then
-            icon = select(3, GetSpellInfo(spellid))
+            local spellName, _, icon = GetSpellInfo(spellid)
             if icon then
+                printf('Setting eq icon for %s (%d) to spell %s', name, n, spellName)
                 C_EquipmentSet.ModifyEquipmentSet(n, name, icon)
             end
         end
@@ -222,7 +221,7 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'chat' then
         self:ChatFrameSettings()
         return true
-    elseif arg == 'nameplate' then
+    elseif arg == 'nameplates' then
         self:NameplateSettings()
         return true
     elseif arg == 'tanaan' then
@@ -237,8 +236,10 @@ function _LiteLite:SlashCommand(arg)
         return true
     elseif arg1 == 'momacro' then
         self:CreateMouseoverMacro(arg2)
+        return true
     elseif arg1 == 'trmacro' then
         self:CreateTrinketMacro(arg2)
+        return true
     end
 
     printf("/ll chat")
