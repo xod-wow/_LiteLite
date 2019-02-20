@@ -141,19 +141,20 @@ end
 
 local function GameTooltipSpellInfo()
     local _, spellid = GameTooltip:GetSpell()
-    if spellid then return GetSpellinfo(spellid) end
+    if spellid then return GetSpellInfo(spellid) end
 end
 
-local function strtemplate(str, vars, ...)
+function strtemplate(str, vars, ...)
     -- Can pass {1} {2} etc. as varargs rather than table
     if type(vars) ~= 'table' then
         vars = { vars, ... }
     end
 
+    -- If your key is '1', god help you
     return (string.gsub(
                 str,
                 "({([^}]+)})",
-                function(whole, i) return vars[i] or whole end
+                function(whole, i) return vars[tonumber(i) or i] or whole end
             ))
 end
 
@@ -169,7 +170,7 @@ function _LiteLite:CreateSpellMacro(template, spell)
     if i == 0 then
         i = CreateMacro(macroName, "INV_MISC_QUESTIONMARK", macroText, true)
     else
-        EditMacro(index, nil, nil, macroText)
+        EditMacro(i, nil, nil, macroText)
     end
     if i then PickupMacro(i) end
 end
