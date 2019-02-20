@@ -8,6 +8,21 @@ BINDING_HEADER_LITELITE = "_LiteLite"
 BINDING_NAME_LL_TOGGLE_GUILD_UI = "Toggle Guild UI"
 BINDING_NAME_LL_NEXT_GAME_SOUND_OUTPUT = "Next Game Sound Output"
 
+local MouseoverMacroTemplate =
+[[#showtooltip {1}
+/cast [@mouseover,help,nodead][help,nodead] {1}
+/stopspelltarget
+]]
+
+local TrinketMacroTemplate =
+[[#showtooltip {1}
+/run SlashCmdList.UI_ERRORS_OFF()
+/use [harm] 13
+/use [harm] 14
+/run SlashCmdList.UI_ERRORS_ON()
+/cast {1}
+]]
+
 _LiteLite = CreateFrame('Frame')
 _LiteLite:SetScript('OnEvent',
         function (self, e, ...)
@@ -66,6 +81,7 @@ function _LiteLite:DreamweaversEmissaryUp()
 
 end
 
+-- 4 == LE_FOLLOWER_TYPE_GARRISON_7_0
 function _LiteLite:DreamweaversMissionUp()
     local missions = C_Garrison.GetAvailableMissions(4)
     for _, m in ipairs(missions) do
@@ -123,80 +139,53 @@ function _LiteLite:ChatFrameSettings()
     end
 end
 
-local function CreateOrUpdateMacro()
-    local index = GetMacroIndexByName(MacroName)
-    if index == 0 then
-        index = CreateMacro(MacroName, "ABILITY_MOUNT_MECHASTRIDER", MacroText)
-    else
-        EditMacro(index, nil, nil, MacroText)
+local function GameTooltipSpellInfo()
+    local _, spellid = GameTooltip:GetSpell()
+    if spellid then return GetSpellinfo(spellid) end
+end
+
+local function strtemplate(str, vars, ...)
+    -- Can pass {1} {2} etc. as varargs rather than table
+    if type(vars) ~= 'table' then
+        vars = { vars, ... }
     end
-    return index
+
+    return (string.gsub(
+                str,
+                "({([^}]+)})",
+                function(whole, i) return vars[i] or whole end
+            ))
 end
 
-local function strtemplate(str, vars)
-  return (string.gsub(
-            str,
-            "({([^}]+)})",
-            function(whole, i) return vars[i] or whole end
-        ))
-end
+function _LiteLite:CreateSpellMacro(template, spell)
+    spell = spell or GameTooltipSpellInfo()
+    if not spell then
+        return
+    end
 
-function _LiteLite:CreateTemplateMacro(spell, template)
     local macroName = '_' .. spell
-    local macroText = strtemplate(template, { spellName = spell })
+    local macroText = strtemplate(template, spell)
     local i = GetMacroIndexByName(macroName)
     if i == 0 then
-        CreateMacro(macroName, "INV_MISC_QUESTIONMARK", macroText, true)
+        i = CreateMacro(macroName, "INV_MISC_QUESTIONMARK", macroText, true)
     else
         EditMacro(index, nil, nil, macroText)
     end
+    if i then PickupMacro(i) end
 end
 
-function _LiteLite:CreateMouseoverMacro(spell)
-    if not spell or spell == '' then
-        local _, spellid = GameTooltip:GetSpell()
-        if not spellid then return end
-        spell = GetSpellInfo(spellid)
+function _LiteLite:AutoEquipsetIcons()
+    for _, n in ipairs(C_EquipmentSet.GetEquipmentSetIDs()) do
+        local specIndex = C_EquipmentSet.GetEquipmentSetAssignedSpec(n)
+        if specIndex then
+            arg1 = select(4, GetSpecializationInfo(specIndex))
+            self:SetEquipsetIcon(n, arg1)
+        end
     end
-
-    self:CreateTemplateMacro(spell,
-[[#showtooltip {spellName}
-/cast [@mouseover,help][help] {spellName}
-/stopspelltarget]])
-end
-
-function _LiteLite:CreateTrinketMacro(spell)
-    if not spell or spell == '' then
-        local _, spellid = GameTooltip:GetSpell()
-        if not spellid then return end
-        spell = GetSpellInfo(spellid)
-    end
-
-    self:CreateTemplateMacro(spell,
-[[#showtooltip {spellName}
-/run SlashCmdList.UI_ERRORS_OFF()
-/use [harm] 13
-/use [harm] 14
-/run SlashCmdList.UI_ERRORS_ON()
-/cast {spellName}]])
 end
 
 function _LiteLite:SetEquipsetIcon(n, arg1)
-    if n == nil then
-        n = PaperDollEquipmentManagerPane.selectedSetID
-    elseif n == 'auto' then
-        for _, n in ipairs(C_EquipmentSet.GetEquipmentSetIDs()) do
-            printf(n)
-            local specIndex = C_EquipmentSet.GetEquipmentSetAssignedSpec(n)
-            if specIndex then
-                arg1 = select(4, GetSpecializationInfo(specIndex))
-                self:SetEquipsetIcon(n, arg1)
-            end
-        end
-        return
-    else
-        n = tonumber(n)
-    end
+    n = tonumber(n or PaperDollEquipmentManagerPane.selectedSetID)
 
     if n == nil then
         return
@@ -204,66 +193,68 @@ function _LiteLite:SetEquipsetIcon(n, arg1)
 
     local name = C_EquipmentSet.GetEquipmentSetInfo(n)
 
-    arg1 = tonumber(arg1)
+    arg1 = tonumber(arg1 or select(3, GameTooltipSpellInfo()))
 
-    if arg1 then
-        printf('Setting eq icon for %s (%d) to %d', name, n, arg1)
-        C_EquipmentSet.ModifyEquipmentSet(n, name, arg1)
-    else
-        local _, spellid = GameTooltip:GetSpell()
-        if spellid then
-            local spellName, _, icon = GetSpellInfo(spellid)
-            if icon then
-                printf('Setting eq icon for %s (%d) to spell %s', name, n, spellName)
-                C_EquipmentSet.ModifyEquipmentSet(n, name, icon)
-            end
-        end
+    if arg1 == nil then
+        return
     end
+
+    printf('Setting equipset icon for %s (%d) to %d', name, n, arg1)
+    C_EquipmentSet.ModifyEquipmentSet(n, name, arg1)
 end
 
 function _LiteLite:SlashCommand(arg)
-    if arg == 'qscan' then
+
+    -- Zero argument options
+    if arg == 'quest-scan' then
         local now = GetServerTime()
         self:ScanQuestsCompleted(now)
         return true
-    end
-
-    if arg == 'qreport' then
+    elseif arg == 'quest-report' then
         local now = GetServerTime()
         self:ScanQuestsCompleted(now)
         self:ReportQuestsCompleted()
         return true
-    elseif arg == 'chat' then
+    elseif arg == 'chatframe-settings' then
         self:ChatFrameSettings()
         return true
-    elseif arg == 'nameplates' then
+    elseif arg == 'nameplate-settings' then
         self:NameplateSettings()
         return true
-    elseif arg == 'tanaan' then
+    elseif arg == 'tanaan-rares' then
         self:TanaanRares()
         return true
     end
 
+    -- One argument options
     local arg1, arg2 = string.split(' ', arg, 2)
-
-    if arg1 == 'eq' then
-        self:SetEquipsetIcon(arg2)
+    if arg1 == 'mouseover-macro' then
+        self:CreateSpellMacro(MouseoverMacroTemplate, arg2)
         return true
-    elseif arg1 == 'momacro' then
-        self:CreateMouseoverMacro(arg2)
-        return true
-    elseif arg1 == 'trmacro' then
-        self:CreateTrinketMacro(arg2)
+    elseif arg1 == 'trinket-macro' then
+        self:CreateSpellMacro(TrinketMacroTemplate, arg2)
         return true
     end
 
-    printf("/ll chat")
-    printf("/ll eq n [iconid]")
-    printf("/ll eq auto")
-    printf("/ll nameplates")
-    printf("/ll qscan")
-    printf("/ll qreport")
-    printf("/ll tanaan")
+    -- Two argument options
+    local arg1, arg2, arg3 = string.split(' ', arg, 3)
+    if arg1 == 'equipset-icon' and arg2 == 'auto' then
+        self:AutoEquipsetIcons()
+        return true
+    elseif arg1 == 'equipset-icon' then
+        self:SetEquipsetIcon(arg2, arg3)
+        return true
+    end
+
+    printf("/ll chatframe-settings")
+    printf("/ll equipset-icon [n [iconid]]")
+    printf("/ll equipset-icon auto")
+    printf("/ll nameplate-settings")
+    printf("/ll quest-scan")
+    printf("/ll quest-report")
+    printf("/ll tanaan-rares")
+    printf("/ll mouseover-macro [spellname]")
+    printf("/ll trinket-macro [spellname]")
     return true
 end
 
