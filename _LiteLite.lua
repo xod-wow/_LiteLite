@@ -55,7 +55,7 @@ function _LiteLite:BiggerFrames()
     ItemTextFrame:SetScale(1.5)
 end
 
-function LiteLite:ShiftEnchantsScroll()
+function _LiteLite:ShiftEnchantsScroll()
     LoadAddOn('Blizzard_TradeSkillUI')
 
     hooksecurefunc(TradeSkillFrame.DetailsFrame, 'Create',
