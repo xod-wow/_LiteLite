@@ -292,7 +292,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 
     self:BiggerFrames()
-    self:ShiftEnchantsScroll
+    self:ShiftEnchantsScroll()
 
     C_Timer.After(15,
              function ()
