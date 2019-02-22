@@ -81,9 +81,8 @@ function _LiteLite:DreamweaversEmissaryUp()
 
 end
 
--- 4 == LE_FOLLOWER_TYPE_GARRISON_7_0
 function _LiteLite:DreamweaversMissionUp()
-    local missions = C_Garrison.GetAvailableMissions(4)
+    local missions = C_Garrison.GetAvailableMissions(LE_FOLLOWER_TYPE_GARRISON_7_0)
     for _, m in ipairs(missions) do
         for _, r in ipairs(m.rewards) do
             if r.itemID and (r.itemID == 141339 or r.itemID == 141988 or r.itemID == 146942 or r.itemID == 150926) then
@@ -267,13 +266,14 @@ function _LiteLite:SetupSlashCommand()
 end
 
 function _LiteLite:PLAYER_LOGIN()
+    printf('Initialized.')
     self:ScanQuestsCompleted()
     self:SetupSlashCommand()
     self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 
     self:BiggerFrames()
 
-    C_Timer.After(10,
+    C_Timer.After(15,
              function ()
                 self:DreamweaversEmissaryUp()
                 self:DreamweaversMissionUp()
