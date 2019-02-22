@@ -55,6 +55,26 @@ function _LiteLite:BiggerFrames()
     ItemTextFrame:SetScale(1.5)
 end
 
+function LiteLite:ShiftEnchantsScroll()
+    LoadAddOn('Blizzard_TradeSkillUI')
+
+    hooksecurefunc(TradeSkillFrame.DetailsFrame, 'Create',
+        function ()
+            if IsShiftKeyDown() == false then
+                return
+            end
+
+            -- Check for Enchanting
+            local prof = select(6, C_TradeSkillUI.GetTradeSkillLine())
+            if prof ~= 333 then
+                return
+            end
+
+            -- Enchanting Vellum
+            UseItemByName(38682)
+        end)
+end
+
 function _LiteLite:DreamweaversEmissaryUp()
     -- The Dreamweavers = Quest 42170
     -- Faction ID = 1883
@@ -272,6 +292,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 
     self:BiggerFrames()
+    self:ShiftEnchantsScroll
 
     C_Timer.After(15,
              function ()
