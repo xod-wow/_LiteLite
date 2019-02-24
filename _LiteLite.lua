@@ -264,6 +264,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'equipset-icon' then
         self:SetEquipsetIcon(arg2, arg3)
         return true
+    elseif arg1 == 'search-globals' then
+        self:SearchGlobals(arg2, arg3)
+        return true
     end
 
     printf("/ll chatframe-settings")
@@ -272,6 +275,7 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll nameplate-settings")
     printf("/ll quest-scan")
     printf("/ll quest-report")
+    printf("/ll search-globals text [doKeySearch]")
     printf("/ll tanaan-rares")
     printf("/ll mouseover-macro [spellname]")
     printf("/ll trinket-macro [spellname]")
@@ -363,6 +367,22 @@ function _LiteLite:ReportQuestsCompleted()
     for i = 1,100000 do
         if self.questsCompleted[i] and self.questsCompleted[i] > 0 then
             printf(format("Newly completed: %d at %d", i, self.questsCompleted[i]))
+        end
+    end
+end
+
+function _LiteLite:SearchGlobals(text, findKey)
+    if not text then return end
+
+    text = text:lower()
+
+    printf("Searching global variables for %s", tostring(text))
+
+    for k, v in pairs(_G) do
+        if type(k) == 'string' and type(v) == 'string' then
+            if findKey and k:lower():match(text) or v:lower():match(text) then
+                printf("%s = %s", k, tostring(v))
+            end
         end
     end
 end
