@@ -102,7 +102,10 @@ function _LiteLite:DreamweaversEmissaryUp()
 end
 
 function _LiteLite:DreamweaversMissionUp()
-    local missions = C_Garrison.GetAvailableMissions(LE_FOLLOWER_TYPE_GARRISON_7_0)
+    LoadAddOn('Blizzard_GarrisonUI')
+
+    local missions = C_Garrison.GetAvailableMissions(LE_FOLLOWER_TYPE_GARRISON_7_0) or {}
+
     for _, m in ipairs(missions) do
         for _, r in ipairs(m.rewards) do
             if r.itemID and (r.itemID == 141339 or r.itemID == 141988 or r.itemID == 146942 or r.itemID == 150926) then
