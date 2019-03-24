@@ -119,6 +119,28 @@ function _LiteLite:DreamweaversMissionUp()
     end
 end
 
+local BfAInvasionMapIDs = {
+    896,    -- Drustvar
+    863,    -- Nazmir
+    942,    -- Stormsong Valley
+    895,    -- Tiragarde Sound
+    864,    -- Vol'dun
+    862,    -- Zuldazar
+}
+
+function _LiteLite:BfAInvasionUp()
+    for _,uiMapID in ipairs(BfAInvasionMapIDs) do
+        if C_InvasionInfo.GetInvasionForUiMapID(uiMapID) then
+            local details = C_Map.GetMapInfo(uiMapID)
+            local msg = "Battle for Azeroth Invasion UP in "..details.name
+            local info = ChatTypeInfo["SYSTEM"]
+            printf(msg)
+            RaidNotice_AddMessage(RaidWarningFrame, msg, info, 18)
+            return
+        end
+    end
+end
+
 local TanaanRaresQuestIDs = {
     Deathtalon  = 39287,
     Terrorfist  = 39288,
@@ -226,6 +248,15 @@ function _LiteLite:SetEquipsetIcon(n, arg1)
     C_EquipmentSet.ModifyEquipmentSet(n, name, arg1)
 end
 
+function _LiteLite:RunTimedChecks()
+
+    _LiteLite.DreamweaversEmissaryUp()
+    _LiteLite.DreamweaversMissionUp()
+    _LiteLite.BfAInvasionUp()
+
+    C_Timer.After(900, _LiteLite.RunTimedChecks)
+end
+
 function _LiteLite:SlashCommand(arg)
 
     -- Zero argument options
@@ -301,11 +332,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
 
-    C_Timer.After(15,
-             function ()
-                self:DreamweaversEmissaryUp()
-                self:DreamweaversMissionUp()
-             end)
+    C_Timer.After(15, _LiteLite.RunTimedChecks)
 end
 
 function _LiteLite:COMBAT_LOG_EVENT_UNFILTERED()
