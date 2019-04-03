@@ -53,6 +53,7 @@ function _LiteLite:BiggerFrames()
     QuestFrame:SetScale(1.5)
     GossipFrame:SetScale(1.5)
     ItemTextFrame:SetScale(1.5)
+    EncounterJournal:SetScale(1.5)
 end
 
 function _LiteLite:ShiftEnchantsScroll()
