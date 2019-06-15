@@ -251,10 +251,6 @@ end
 
 function _LiteLite:RunTimedChecks()
 
-    _LiteLite.DreamweaversEmissaryUp()
-    _LiteLite.DreamweaversMissionUp()
-    _LiteLite.BfAInvasionUp()
-
     C_Timer.After(900, _LiteLite.RunTimedChecks)
 end
 
