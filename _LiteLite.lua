@@ -288,6 +288,12 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'trinket-macro' then
         self:CreateSpellMacro(TrinketMacroTemplate, arg2)
         return true
+    elseif arg1 == 'gkeys' then
+        self:SearchGlobals(arg2, true)
+        return true
+    elseif arg1 == 'gvals' then
+        self:SearchGlobals(arg2, false)
+        return true
     end
 
     -- Two argument options
@@ -298,9 +304,6 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'equipset-icon' then
         self:SetEquipsetIcon(arg2, arg3)
         return true
-    elseif arg1 == 'search-globals' then
-        self:SearchGlobals(arg2, arg3)
-        return true
     end
 
     printf("/ll chatframe-settings")
@@ -309,7 +312,8 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll nameplate-settings")
     printf("/ll quest-scan")
     printf("/ll quest-report")
-    printf("/ll search-globals text [doKeySearch]")
+    printf("/ll gkeys text")
+    printf("/ll gvals text")
     printf("/ll tanaan-rares")
     printf("/ll mouseover-macro [spellname]")
     printf("/ll trinket-macro [spellname]")
