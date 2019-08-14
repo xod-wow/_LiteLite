@@ -59,6 +59,52 @@ function _LiteLite:BiggerFrames()
     )
 end
 
+function _LiteLite:SpellCastAnnounce(spellID, spellName)
+    if spellId == 115310 then
+        -- Revival (Mistweaver Monk)
+        msg = format('%s cast - %s', GetSpellLink(spellName), self.playerName)
+        SendChatMessage(msg, "SAY")
+    end
+end
+
+function _LiteLite:NazChests()
+    if not IsQuestFlaggedCompleted(55959) then SlashCmdList.TOMTOM_WAY("Nazjatar 37.9 6.4 Glowing Arcane Trunk") end
+    if not IsQuestFlaggedCompleted(55963) then SlashCmdList.TOMTOM_WAY("Nazjatar 43.8 16.5 Glowing Arcane Trunk") end
+    if not IsQuestFlaggedCompleted(56912) then SlashCmdList.TOMTOM_WAY("Nazjatar 24.8 35.2 Glowing Arcane Trunk") end
+    if not IsQuestFlaggedCompleted(56912) then SlashCmdList.TOMTOM_WAY("Nazjatar 26.7 33.8 Cave Entrance") end
+    if not IsQuestFlaggedCompleted(55961) then SlashCmdList.TOMTOM_WAY("Nazjatar 55.7 14.5 Glowing Arcane Trunk") end
+    if not IsQuestFlaggedCompleted(55958) then SlashCmdList.TOMTOM_WAY("Nazjatar 61.4 22.9 Glowing Arcane Trunk") end
+    if not IsQuestFlaggedCompleted(55958) then SlashCmdList.TOMTOM_WAY("Nazjatar 61.4 19.9 Cave Entrance") end
+    if not IsQuestFlaggedCompleted(55962) then SlashCmdList.TOMTOM_WAY("Nazjatar 64.1 28.6 Glowing Arcane Trunk") end
+    if not IsQuestFlaggedCompleted(55960) then SlashCmdList.TOMTOM_WAY("Nazjatar 37.2 19.2 Glowing Arcane Trunk") end
+    if not IsQuestFlaggedCompleted(55960) then SlashCmdList.TOMTOM_WAY("Nazjatar 39.7 10 Underwater Cave") end
+    if not IsQuestFlaggedCompleted(56547) then SlashCmdList.TOMTOM_WAY("Nazjatar 80.5 31.9 Glowing Arcane Trunk") end
+    if not IsQuestFlaggedCompleted(56547) then SlashCmdList.TOMTOM_WAY("Nazjatar 83.0 33.8 Pathway up building") end
+    if not IsQuestFlaggedCompleted(55954) then SlashCmdList.TOMTOM_WAY("Nazjatar 34.5 40.4 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55949) then SlashCmdList.TOMTOM_WAY("Nazjatar 49.6 64.5 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55938) then SlashCmdList.TOMTOM_WAY("Nazjatar 85.3 38.6 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55957) then SlashCmdList.TOMTOM_WAY("Nazjatar 37.9 60.5 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55942) then SlashCmdList.TOMTOM_WAY("Nazjatar 79.5 27.2 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55947) then SlashCmdList.TOMTOM_WAY("Nazjatar 44.7 48.9 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55952) then SlashCmdList.TOMTOM_WAY("Nazjatar 37.4 42.8 Cave Entrance") end
+    if not IsQuestFlaggedCompleted(55952) then SlashCmdList.TOMTOM_WAY("Nazjatar 34.6 43.6 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55953) then SlashCmdList.TOMTOM_WAY("Nazjatar 26.0 32.4 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55955) then SlashCmdList.TOMTOM_WAY("Nazjatar 50.6 50.0 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55955) then SlashCmdList.TOMTOM_WAY("Nazjatar 49.7 50.3 Cave Entrance") end
+    if not IsQuestFlaggedCompleted(55943) then SlashCmdList.TOMTOM_WAY("Nazjatar 64.3 33.3 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55945) then SlashCmdList.TOMTOM_WAY("Nazjatar 52.8 49.8 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55951) then SlashCmdList.TOMTOM_WAY("Nazjatar 48.5 87.4 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55948) then SlashCmdList.TOMTOM_WAY("Nazjatar 43.4 58.2 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55941) then SlashCmdList.TOMTOM_WAY("Nazjatar 73.2 35.8 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55939) then SlashCmdList.TOMTOM_WAY("Nazjatar 80.4 29.8 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55946) then SlashCmdList.TOMTOM_WAY("Nazjatar 58.0 35.0 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55946) then SlashCmdList.TOMTOM_WAY("Nazjatar 57.3 39.0 Underwater Cave Entrance") end
+    if not IsQuestFlaggedCompleted(55940) then SlashCmdList.TOMTOM_WAY("Nazjatar 74.8 53.2 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55956) then SlashCmdList.TOMTOM_WAY("Nazjatar 39.8 49.2 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55950) then SlashCmdList.TOMTOM_WAY("Nazjatar 38.7 74.4 Arcane Chest") end
+    if not IsQuestFlaggedCompleted(55944) then SlashCmdList.TOMTOM_WAY("Nazjatar 56.3 33.8 Arcane Chest") end
+end
+
 function _LiteLite:ShiftEnchantsScroll()
     LoadAddOn('Blizzard_TradeSkillUI')
 
@@ -278,6 +324,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'tanaan-rares' then
         self:TanaanRares()
         return true
+    elseif arg == 'naz-chests' then
+        self:NazChests()
+        return true
     end
 
     -- One argument options
@@ -329,6 +378,9 @@ end
 
 function _LiteLite:PLAYER_LOGIN()
     printf('Initialized.')
+
+    self.playerName = format("%s-%s", UnitFullName('player'))
+
     self:ScanQuestsCompleted()
     self:SetupSlashCommand()
     self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
@@ -340,12 +392,17 @@ function _LiteLite:PLAYER_LOGIN()
 end
 
 function _LiteLite:COMBAT_LOG_EVENT_UNFILTERED()
-    local ts, e, _, _, _, _, _, _, name, flags = CombatLogGetCurrentEventInfo()
-    if e ~= "UNIT_DIED" or bit.bor(flags, 0x40) == 0 then
-        return
+    local ts, e, _, srcGUID, srcName, srcFlags, srcRaidFlags, destGUID, destName, destFlags, destRaidFlags, arg1, arg2, arg3 = CombatLogGetCurrentEventInfo()
+    if e == "UNIT_DIED" then
+        if bit.bor(destFlags, 0x40) ~= 0 then
+            self.lastKillName = destName
+            self.lastKillTime = ts
+        end
+    elseif e == "SPELL_CAST_SUCCESS" then
+        if srcGUID == UnitGUID('player') then
+            self:SpellCastAnnounce(arg1, arg2)
+        end
     end
-    self.lastKillName = name
-    self.lastKillTime = ts
 end
 
 -- Show the old guild UI which is better than the new thing
