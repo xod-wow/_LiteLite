@@ -60,7 +60,7 @@ function _LiteLite:BiggerFrames()
 end
 
 function _LiteLite:SpellCastAnnounce(spellID, spellName)
-    if spellId == 115310 then
+    if spellID == 115310 then
         -- Revival (Mistweaver Monk)
         msg = format('%s cast - %s', GetSpellLink(spellName), self.playerName)
         SendChatMessage(msg, "SAY")
