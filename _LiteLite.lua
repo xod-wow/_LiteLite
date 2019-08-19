@@ -32,7 +32,7 @@ _LiteLite:RegisterEvent('PLAYER_LOGIN')
 
 local function GetActiveChatFrame()
     for i = 1, NUM_CHAT_WINDOWS do
-        local f = _G["ChatFrame"..i]
+        local f = _G['ChatFrame'..i]
         if f:IsShown() then
             return f
         end
@@ -63,7 +63,7 @@ function _LiteLite:SpellCastAnnounce(spellID, spellName)
     if spellID == 115310 then
         -- Revival (Mistweaver Monk)
         msg = format('%s cast - %s', GetSpellLink(spellName), self.playerName)
-        SendChatMessage(msg, "SAY")
+        SendChatMessage(msg, 'SAY')
     end
 end
 
@@ -136,7 +136,7 @@ function _LiteLite:DreamweaversEmissaryUp()
     end
 
     local bountyQuests = GetQuestBountyInfoForMapID(627)
-    local info = ChatTypeInfo["SYSTEM"]
+    local info = ChatTypeInfo['SYSTEM']
     for _, q in ipairs(bountyQuests) do
         if q.questID == 42170 then
             local msg = "|cff20ff20The Dreamweavers|r is available."
@@ -160,7 +160,7 @@ function _LiteLite:DreamweaversMissionUp()
         for _, r in ipairs(m.rewards) do
             if r.itemID and (r.itemID == 141339 or r.itemID == 141988 or r.itemID == 146942 or r.itemID == 150926) then
                 local msg = "|cff20ff20Dreamweavers|r mission available."
-                local info = ChatTypeInfo["SYSTEM"]
+                local info = ChatTypeInfo['SYSTEM']
                 printf(msg)
                 RaidNotice_AddMessage(RaidWarningFrame, msg, info, 18)
                 return
@@ -183,7 +183,7 @@ function _LiteLite:BfAInvasionUp()
         if C_InvasionInfo.GetInvasionForUiMapID(uiMapID) then
             local details = C_Map.GetMapInfo(uiMapID)
             local msg = "Battle for Azeroth Invasion UP in "..details.name
-            local info = ChatTypeInfo["SYSTEM"]
+            local info = ChatTypeInfo['SYSTEM']
             printf(msg)
             RaidNotice_AddMessage(RaidWarningFrame, msg, info, 18)
             return
@@ -221,11 +221,11 @@ end
 function _LiteLite:ChatFrameSettings()
     ChatFrame1:SetSize(512,256)
     ChatFrame1:ClearAllPoints()
-    ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT" ,38, 8)
+    ChatFrame1:SetPoint('BOTTOMLEFT', UIParent, 'BOTTOMLEFT' ,38, 8)
     FCF_SavePositionAndDimensions(ChatFrame1)
 
     for i = 1,NUM_CHAT_WINDOWS+1 do
-        local f = _G["ChatFrame"..i]
+        local f = _G['ChatFrame'..i]
         if f then
             FCF_SetWindowAlpha(f, 0.66)
             FCF_SetWindowColor(f, 0, 0, 0)
@@ -262,7 +262,7 @@ function _LiteLite:CreateSpellMacro(template, spell)
     local macroText = strtemplate(template, spell)
     local i = GetMacroIndexByName(macroName)
     if i == 0 then
-        i = CreateMacro(macroName, "INV_MISC_QUESTIONMARK", macroText, true)
+        i = CreateMacro(macroName, 'INV_MISC_QUESTIONMARK', macroText, true)
     else
         EditMacro(i, nil, nil, macroText)
     end
@@ -374,7 +374,7 @@ function _LiteLite:SlashCommand(arg)
 end
 
 function _LiteLite:SetupSlashCommand()
-    SlashCmdList["_LiteLite"] = function (...) self:SlashCommand(...) end
+    SlashCmdList['_LiteLite'] = function (...) self:SlashCommand(...) end
     _G.SLASH__LiteLite1 = "/litelite"
     _G.SLASH__LiteLite2 = "/ll"
 
@@ -387,7 +387,7 @@ function _LiteLite:PLAYER_LOGIN()
 
     self:ScanQuestsCompleted()
     self:SetupSlashCommand()
-    self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
 
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
@@ -397,12 +397,12 @@ end
 
 function _LiteLite:COMBAT_LOG_EVENT_UNFILTERED()
     local ts, e, _, srcGUID, srcName, srcFlags, srcRaidFlags, destGUID, destName, destFlags, destRaidFlags, arg1, arg2, arg3 = CombatLogGetCurrentEventInfo()
-    if e == "UNIT_DIED" then
+    if e == 'UNIT_DIED' then
         if bit.bor(destFlags, 0x40) ~= 0 then
             self.lastKillName = destName
             self.lastKillTime = ts
         end
-    elseif e == "SPELL_CAST_SUCCESS" then
+    elseif e == 'SPELL_CAST_SUCCESS' then
         if srcGUID == UnitGUID('player') then
             self:SpellCastAnnounce(arg1, arg2)
         end
@@ -483,7 +483,7 @@ function _LiteLite:SearchGlobals(text, findKey)
 end
 
 function _LiteLite:HookTooltip()
-    GameTooltip:HookScript("OnTooltipSetItem",
+    GameTooltip:HookScript('OnTooltipSetItem',
         function (ttFrame)
             local _, link = ttFrame:GetItem()
             local id = GetItemInfoFromHyperlink(link)
@@ -492,7 +492,7 @@ function _LiteLite:HookTooltip()
             end
         end)
 
-    GameTooltip:HookScript("OnTooltipSetSpell",
+    GameTooltip:HookScript('OnTooltipSetSpell',
         function (ttFrame)
             local _, id = GameTooltip:GetSpell()
             if id then
