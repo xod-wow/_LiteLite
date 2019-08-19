@@ -327,6 +327,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'naz-chests' then
         self:NazChests()
         return true
+    elseif arg == 'tooltip-ids' then
+        self:HookTooltip()
+        return true
     end
 
     -- One argument options
@@ -364,6 +367,7 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll gkeys text")
     printf("/ll gvals text")
     printf("/ll tanaan-rares")
+    printf("/ll tooltip-ids")
     printf("/ll mouseover-macro [spellname]")
     printf("/ll trinket-macro [spellname]")
     return true
@@ -477,3 +481,23 @@ function _LiteLite:SearchGlobals(text, findKey)
         end
     end
 end
+
+function _LiteLite:HookTooltip()
+    GameTooltip:HookScript("OnTooltipSetItem",
+        function (ttFrame)
+            local _, link = ttFrame:GetItem()
+            local id = GetItemInfoFromHyperlink(link)
+            if id then
+                ttFrame:AddDoubleLine("ItemID", id)
+            end
+        end)
+
+    GameTooltip:HookScript("OnTooltipSetSpell",
+        function (ttFrame)
+            local _, id = GameTooltip:GetSpell()
+            if id then
+                ttFrame:AddDoubleLine("SpellID", id)
+            end
+        end)
+end
+
