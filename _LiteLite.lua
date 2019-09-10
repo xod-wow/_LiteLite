@@ -233,9 +233,15 @@ function _LiteLite:ChatFrameSettings()
     end
 end
 
-local function GameTooltipSpellInfo()
-    local _, spellid = GameTooltip:GetSpell()
-    if spellid then return GetSpellInfo(spellid) end
+local function GameTooltipIcon()
+    local _, id = GameTooltip:GetSpell()
+    if id then
+        return select(3, GetSpellInfo(id))
+    end
+    _,  id = GameTooltip:GetItem()
+    if id then
+        return select(10, GetItemInfo(id))
+    end
 end
 
 function strtemplate(str, vars, ...)
@@ -288,7 +294,7 @@ function _LiteLite:SetEquipsetIcon(n, arg1)
 
     local name = C_EquipmentSet.GetEquipmentSetInfo(n)
 
-    arg1 = tonumber(arg1 or select(3, GameTooltipSpellInfo()))
+    arg1 = tonumber(arg1) or GameTooltipIcon()
 
     if arg1 == nil then
         return
