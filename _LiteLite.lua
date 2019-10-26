@@ -394,11 +394,19 @@ function _LiteLite:PLAYER_LOGIN()
     self:ScanQuestsCompleted()
     self:SetupSlashCommand()
     self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
+    self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
 
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
 
     C_Timer.After(15, _LiteLite.RunTimedChecks)
+end
+
+function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
+    if name == "Gear Checker Cogstar" then
+        PlaySound(11466)
+        UIErrorsFrame:AddMessage(msg, 0.1, 1.0, 0.1)
+    end
 end
 
 function _LiteLite:COMBAT_LOG_EVENT_UNFILTERED()
