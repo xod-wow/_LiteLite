@@ -426,6 +426,8 @@ end
 -- Show the old guild UI which is better than the new thing
 
 function _LiteLite:ToggleGuildUI()
+    if InCombatLockdown() then return end
+
     if not IsInGuild() then return end
 
     GuildFrame_LoadUI()
