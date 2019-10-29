@@ -352,6 +352,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'gvals' then
         self:SearchGlobals(arg2, false)
         return true
+    elseif arg1 == 'find-mob' then
+        self:ScanForMob(arg2)
+        return true
     end
 
     -- Two argument options
@@ -376,6 +379,7 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll tooltip-ids")
     printf("/ll mouseover-macro [spellname]")
     printf("/ll trinket-macro [spellname]")
+    printf("/ll find-mob substring")
     return true
 end
 
@@ -515,4 +519,29 @@ function _LiteLite:HookTooltip()
                 ttFrame:AddDoubleLine("SpellID", id)
             end
         end)
+end
+
+function _LiteLite:ScanForMob(name)
+    if name then
+        self.scanMobNames = self.scanMobNames or {}
+        table.insert(self.scanMobNames, name)
+        self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+    else
+        wipe(self.scanMobNames)
+        self:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
+    end
+end
+
+function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
+    for _, n in ipairs(self.scanMobNames) do
+        local name = UnitName(unit)
+        if name and name:find(n) then
+            local msg = format("Nameplate %s found", name)
+            printf(msg)
+            PlaySound(11466)
+            if not GetRaidTargetIndex(unit) then
+                SetRaidTarget(unit, 6)
+            end
+        end
+    end
 end
