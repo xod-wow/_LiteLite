@@ -26,7 +26,7 @@ local TrinketMacroTemplate =
 _LiteLite = CreateFrame('Frame')
 _LiteLite:SetScript('OnEvent',
         function (self, e, ...)
-            if self[e] then self[e](self, e, ...) end
+            if self[e] then self[e](self, ...) end
         end)
 _LiteLite:RegisterEvent('PLAYER_LOGIN')
 
@@ -393,8 +393,8 @@ function _LiteLite:PLAYER_LOGIN()
 
     self:ScanQuestsCompleted()
     self:SetupSlashCommand()
-    self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
-    self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
+    -- self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
+    -- self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
 
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
