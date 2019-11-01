@@ -524,7 +524,7 @@ end
 function _LiteLite:ScanForMob(name)
     if name then
         self.scanMobNames = self.scanMobNames or {}
-        table.insert(self.scanMobNames, name)
+        table.insert(self.scanMobNames, name:lower())
         self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
     else
         wipe(self.scanMobNames)
@@ -533,8 +533,8 @@ function _LiteLite:ScanForMob(name)
 end
 
 function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
+    local name = UnitName(unit):lower()
     for _, n in ipairs(self.scanMobNames) do
-        local name = UnitName(unit)
         if name and name:find(n) then
             local msg = format("Nameplate %s found", name)
             printf(msg)
