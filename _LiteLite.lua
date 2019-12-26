@@ -494,8 +494,12 @@ end
 
 function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
     local name = UnitName(unit):lower()
+    local guid = UnitGUID(unit)
+    if self.announcedMobGUID[guid] then return end
+
     for _, n in ipairs(self.scanMobNames) do
         if name and name:find(n) then
+            self.announcedMobGUID[guid] = true
             local msg = format("Nameplate %s found", name)
             printf(msg)
             PlaySound(11466)
