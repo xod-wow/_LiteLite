@@ -469,11 +469,21 @@ function _LiteLite:HookTooltip()
                 ttFrame:AddDoubleLine("SpellID", id)
             end
         end)
+
+    GameTooltip:HookScript('OnTooltipSetUnit',
+        function (ttFrame)
+            local _, unit = GameTooltip:GetUnit()
+            local _, _, _, _, _, id = strsplit('-', UnitGUID(unit))
+            if id then
+                ttFrame:AddDoubleLine("UnitID", id)
+            end
+        end)
 end
 
 function _LiteLite:ScanForMob(name)
     if name then
         self.scanMobNames = self.scanMobNames or {}
+        self.announcedMobGUID = {}
         table.insert(self.scanMobNames, name:lower())
         self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
     else
