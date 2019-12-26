@@ -175,6 +175,7 @@ function _LiteLite:ChatFrameSettings()
     ChatFrame1:ClearAllPoints()
     ChatFrame1:SetPoint('BOTTOMLEFT', UIParent, 'BOTTOMLEFT' ,38, 8)
     FCF_SavePositionAndDimensions(ChatFrame1)
+    FCF_RestorePositionAndDimensions(ChatFrame1)
 
     for i = 1,NUM_CHAT_WINDOWS+1 do
         local f = _G['ChatFrame'..i]
