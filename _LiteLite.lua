@@ -36,7 +36,7 @@ local printTag = ORANGE_FONT_COLOR_CODE
 
 local function printf(fmt, ...)
     local msg = string.format(fmt, ...)
-    FCF_GetCurrentChatFrame():AddMessage(printTag .. msg)
+    SELECTED_CHAT_FRAME:AddMessage(printTag .. msg)
 end
 
 function _LiteLite:BiggerFrames()
