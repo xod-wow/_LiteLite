@@ -365,7 +365,7 @@ end
 
 function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
     if name == "Gear Checker Cogstar" or
-       C_Map.GetBestMapForUnit('player') == 535 then
+       C_Map.GetBestMapForUnit('player') == 534 then -- Tanaan Jungle
         PlaySound(11466)
         self:FlashScreen()
         UIErrorsFrame:AddMessage(msg, 0.1, 1.0, 0.1)
