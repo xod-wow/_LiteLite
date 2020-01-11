@@ -53,7 +53,7 @@ function _LiteLite:FlashScreen(seconds)
     local f = _LiteLiteFullScreenFlash
     f:Show()
     f.pulseAnim:Play()
-    C_Timer.After(seconds, function () f.pulseAnim:Stop() f:Hide() end)
+    C_Timer.After(seconds or 5, function () f.pulseAnim:Stop() f:Hide() end)
 end
 
 function _LiteLite:SpellCastAnnounce(spellID, spellName)
@@ -367,7 +367,7 @@ function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
     if name == "Gear Checker Cogstar" or
        C_Map.GetBestMapForUnit('player') == 534 then -- Tanaan Jungle
         PlaySound(11466)
-        self:FlashScreen()
+        self:FlashScreen(10)
         UIErrorsFrame:AddMessage(msg, 0.1, 1.0, 0.1)
     end
 end
