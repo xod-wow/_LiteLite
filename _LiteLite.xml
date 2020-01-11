@@ -1,2 +1,18 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/">
+
+  <Script file="_LiteLite.lua"/>
+
+  <Frame name="_LiteLiteFullScreenFlash" frameStrata="FULLSCREEN_DIALOG" toplevel="true" setAllPoints="true" hidden="true">
+    <Layers>
+      <Layer level="BACKGROUND">
+        <Texture file="Interface\FullScreenTextures\OutOfControl" alphaMode="ADD"/>
+      </Layer>
+    </Layers>
+    <Animations>
+      <AnimationGroup parentKey="pulseAnim" looping="BOUNCE">
+        <Alpha parentKey="AlphaAnim" fromAlpha=".75" toAlpha=".2" duration="0.5236"/>
+      </AnimationGroup>
+    </Animations>
+  </Frame>
+
 </Ui>

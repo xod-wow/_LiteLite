@@ -49,6 +49,13 @@ function _LiteLite:BiggerFrames()
     )
 end
 
+function _LiteLite:FlashScreen(seconds)
+    local f = _LiteLiteFullScreenFlash
+    f:Show()
+    f.pulseAnim:Play()
+    C_Timer.After(seconds, function () f.pulseAnim:Stop() f:Hide() end)
+end
+
 function _LiteLite:SpellCastAnnounce(spellID, spellName)
     if spellID == 115310 then
         -- Revival (Mistweaver Monk)
@@ -347,8 +354,8 @@ function _LiteLite:PLAYER_LOGIN()
 
     self:ScanQuestsCompleted()
     self:SetupSlashCommand()
-    -- self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
-    -- self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
+    self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
+    self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
 
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
@@ -357,8 +364,10 @@ function _LiteLite:PLAYER_LOGIN()
 end
 
 function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
-    if name == "Gear Checker Cogstar" then
+    if name == "Gear Checker Cogstar" or
+       C_Map.GetBestMapForUnit('player') == 535 then
         PlaySound(11466)
+        self:FlashScreen()
         UIErrorsFrame:AddMessage(msg, 0.1, 1.0, 0.1)
     end
 end

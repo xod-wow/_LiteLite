@@ -6,4 +6,3 @@
 ## SavedVariables: _LiteLiteDB
 
 _LiteLite.xml
-_LiteLite.lua
