@@ -278,7 +278,11 @@ function _LiteLite:SlashCommand(arg)
         self:ReportQuestsCompleted()
         return true
     elseif arg == 'quest-baseline' then
-        self:ScanQuestsCompleted(nil)
+        local now = GetServerTime()
+        self:ScanQuestsCompleted()
+        for k in pairs(self.questsCompleted) do
+            self.questsCompleted[k] = 0
+        end
         return true
     elseif arg == 'chatframe-settings' then
         self:ChatFrameSettings()
@@ -351,7 +355,9 @@ function _LiteLite:PLAYER_LOGIN()
 
     self.playerName = format("%s-%s", UnitFullName('player'))
 
+    self.questsCompleted = {}
     self:ScanQuestsCompleted()
+
     self:SetupSlashCommand()
     self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
     self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
@@ -425,7 +431,6 @@ function _LiteLite:NextGameSoundOutput()
 end
 
 function _LiteLite:ScanQuestsCompleted(scanTime)
-    self.questsCompleted = self.questsCompleted or {}
     scanTime = scanTime or 0
 
     for i = 1,100000 do
