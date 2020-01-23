@@ -272,14 +272,13 @@ end
 function _LiteLite:SlashCommand(arg)
 
     -- Zero argument options
-    if arg == 'quest-scan' then
-        local now = GetServerTime()
-        self:ScanQuestsCompleted(now)
-        return true
-    elseif arg == 'quest-report' then
+    if arg == 'quest-report' then
         local now = GetServerTime()
         self:ScanQuestsCompleted(now)
         self:ReportQuestsCompleted()
+        return true
+    elseif arg == 'quest-baseline' then
+        self:ScanQuestsCompleted(nil)
         return true
     elseif arg == 'chatframe-settings' then
         self:ChatFrameSettings()
@@ -328,7 +327,7 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll equipset-icon [n [iconid]]")
     printf("/ll equipset-icon auto")
     printf("/ll nameplate-settings")
-    printf("/ll quest-scan")
+    printf("/ll quest-baseline")
     printf("/ll quest-report")
     printf("/ll gkeys text")
     printf("/ll gvals text")
@@ -440,7 +439,8 @@ function _LiteLite:ReportQuestsCompleted()
     printf("Completed quests report:")
     for i = 1,100000 do
         if self.questsCompleted[i] and self.questsCompleted[i] > 0 then
-            printf(format("Newly completed: %d at %d", i, self.questsCompleted[i]))
+            local title = C_QuestLog.GetQuestInfo(i)
+            printf(format("Newly completed: %d (%s) at %d", i, title or UNKNOWN, self.questsCompleted[i]))
         end
     end
 end
