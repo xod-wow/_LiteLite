@@ -296,6 +296,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'tooltip-ids' then
         self:HookTooltip()
         return true
+    elseif arg == 'wq-items' then
+        self:WorldQuestItems()
+        return true
     end
 
     -- One argument options
@@ -340,6 +343,7 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll mouseover-macro [spellname]")
     printf("/ll trinket-macro [spellname]")
     printf("/ll find-mob substring")
+    printf("/ll wq-items")
     return true
 end
 
@@ -521,5 +525,37 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
                 SetRaidTarget(unit, 6)
             end
         end
+    end
+end
+
+local function PrintEquipmentQuestRewards(mapInfo, questID)
+    local n = GetNumQuestLogRewards(questID)
+    if n == 0 then return end
+    for i = 1, n do
+        local name, texture, quantity, quality, isUsable, itemID, itemLevel = GetQuestLogRewardInfo(i, questID)
+        if itemID then
+            local _, link, _, _, _, _, _, _, equipLoc = GetItemInfo(itemID)
+            if equipLoc ~= "" then
+                printf('%s: %d: %s (%d)', mapInfo.name, questID, link or name, itemLevel)
+            end
+        end
+    end
+end
+
+local function GetMapQuestRewards(mapInfo)
+   local quests = C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)
+   for _, info in ipairs(quests) do
+      if QuestUtils_IsQuestWorldQuest(info.questId) then
+         PrintEquipmentQuestRewards(mapInfo, info.questId)
+      end
+   end
+end
+
+function _LiteLite:WorldQuestItems()
+    for _, parentMapID in ipairs({ 875, 876 }) do
+       local childInfo = C_Map.GetMapChildrenInfo(parentMapID)
+       for _,mapInfo in pairs(childInfo) do
+          GetMapQuestRewards(mapInfo)
+       end
     end
 end
