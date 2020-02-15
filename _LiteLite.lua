@@ -373,8 +373,7 @@ function _LiteLite:PLAYER_LOGIN()
 end
 
 function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
-    if name == "Gear Checker Cogstar" or
-       C_Map.GetBestMapForUnit('player') == 534 then -- Tanaan Jungle
+    if C_Map.GetBestMapForUnit('player') == 534 then -- Tanaan Jungle
         PlaySound(11466)
         self:FlashScreen(10)
         UIErrorsFrame:AddMessage(msg, 0.1, 1.0, 0.1)
@@ -538,24 +537,28 @@ local function PrintEquipmentQuestRewards(mapInfo, questID)
             if equipLoc ~= "" then
                 printf('%s: %d: %s (%d)', mapInfo.name, questID, link or name, itemLevel)
             end
+        else
+            printf("Map %s quest %d rewards not found %d", mapInfo.name, questID, i)
         end
     end
 end
 
 local function GetMapQuestRewards(mapInfo)
-   local quests = C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)
-   for _, info in ipairs(quests) do
-      if QuestUtils_IsQuestWorldQuest(info.questId) then
-         PrintEquipmentQuestRewards(mapInfo, info.questId)
-      end
-   end
+    local quests = C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)
+    for _, info in ipairs(quests) do
+        if QuestUtils_IsQuestWorldQuest(info.questId) then
+            PrintEquipmentQuestRewards(mapInfo, info.questId)
+        end
+    end
 end
 
 function _LiteLite:WorldQuestItems()
     for _, parentMapID in ipairs({ 875, 876 }) do
-       local childInfo = C_Map.GetMapChildrenInfo(parentMapID)
-       for _,mapInfo in pairs(childInfo) do
-          GetMapQuestRewards(mapInfo)
-       end
+        local childInfo = C_Map.GetMapChildrenInfo(parentMapID)
+        for _,mapInfo in pairs(childInfo) do
+            if mapInfo.mapType == Enum.UIMapType.Zone then
+                GetMapQuestRewards(mapInfo)
+            end
+        end
     end
 end
