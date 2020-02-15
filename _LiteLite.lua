@@ -528,26 +528,43 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
 end
 
 local function PrintEquipmentQuestRewards(mapInfo, questID)
+    if not QuestUtils_IsQuestWorldQuest(questID) then
+        return true
+    end
+
+    if not HaveQuestRewardData(questID) then
+        C_TaskQuest.RequestPreloadRewardData(questID)
+        return false
+    end
+
     local n = GetNumQuestLogRewards(questID)
     if n == 0 then return end
     for i = 1, n do
         local name, texture, quantity, quality, isUsable, itemID, itemLevel = GetQuestLogRewardInfo(i, questID)
         if itemID then
-            local _, link, _, _, _, _, _, _, equipLoc = GetItemInfo(itemID)
-            if equipLoc ~= "" then
-                printf('%s: %d: %s (%d)', mapInfo.name, questID, link or name, itemLevel)
-            end
-        else
-            printf("Map %s quest %d rewards not found %d", mapInfo.name, questID, i)
+            local item = Item:CreateFromItemID(itemID)
+            item:ContinueOnItemLoad(
+                function ()
+                    local _, link, _, _, _, _, _, _, equipLoc = GetItemInfo(itemID)
+                    if equipLoc ~= "" then
+                        printf('%s: %d: %s (%d)', mapInfo.name, questID, link or name, itemLevel)
+                    end
+                end)
         end
     end
+
+    return true
 end
 
 local function GetMapQuestRewards(mapInfo)
     local quests = C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)
     for _, info in ipairs(quests) do
-        if QuestUtils_IsQuestWorldQuest(info.questId) then
-            PrintEquipmentQuestRewards(mapInfo, info.questId)
+        local done = PrintEquipmentQuestRewards(mapInfo, info.questId)
+        if not done then
+            C_Timer.After(1,
+                function ()
+                    PrintEquipmentQuestRewards(mapInfo, info.questId)
+                end)
         end
     end
 end
