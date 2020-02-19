@@ -299,6 +299,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'wq-items' then
         self:WorldQuestItems()
         return true
+    elseif arg == 'sendkey' then
+        self:SendAstralKey()
+        return true
     end
 
     -- One argument options
@@ -365,11 +368,13 @@ function _LiteLite:PLAYER_LOGIN()
     self:SetupSlashCommand()
     self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
     self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
+    self:RegisterEvent('GUILD_ROSTER_UPDATE')
 
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
 
     C_Timer.After(15, _LiteLite.RunTimedChecks)
+
 end
 
 function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
@@ -579,3 +584,43 @@ function _LiteLite:WorldQuestItems()
         end
     end
 end
+
+function _LiteLite:SendAstralKey()
+    local mapID = C_MythicPlus.GetOwnedKeystoneChallengeMapID()
+    if not mapId then return end
+
+    local keyLevel =  C_MythicPlus.GetOwnedKeystoneLevel()
+    local weeklyBest = C_MythicPlus.GetWeeklyChestRewardLevel()
+    local playerName = string.join('-', UnitFullName('player'))
+    local playerClass = select(2, UnitClass('player'))
+    local playerFaction
+    if UnitFactionGroup('player') == 'Alliance' then
+        playerFaction = 0
+    else
+        playerFaction = 1
+    end
+
+    -- This is just some AstralKeys specific number
+    local weekNum = math.floor( (GetServerTime() - 1500390000) / 604800 )
+
+    local msg = format('updateV8 %s:%s:%d:%d:%d:%d:%s',
+                    playerName,
+                    playerClass,
+                    mapID,
+                    keyLevel,
+                    weeklyBest,
+                    weekNum,
+                    1
+                )
+
+    C_ChatInfo.SendAddonMessage('AstralKeys', msg, 'GUILD')
+end
+
+local lastUpdate = 0
+function _LiteLite:GUILD_ROSTER_UPDATE()
+    if GetTime() > lastUpdate + 5 then
+        lastUpdate = GetTime()
+        self:SendAstralKey()
+    end
+end
+
