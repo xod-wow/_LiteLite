@@ -321,6 +321,13 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'find-mob' then
         self:ScanForMob(arg2)
         return true
+    elseif arg1 == 'keys' then
+        if arg2 and arg2:sub(1,1):lower() == 'g' then
+            self:PrintAstralKeys(true)
+        else
+            self:PrintAstralKeys()
+        end
+        return true
     end
 
     -- Two argument options
@@ -360,7 +367,14 @@ end
 function _LiteLite:PLAYER_LOGIN()
     printf('Initialized.')
 
+    _LiteLiteDB = _LiteLiteDB or {}
+    self.db = _LiteLiteDB
+
     self.playerName = format("%s-%s", UnitFullName('player'))
+
+    self.db.astralKeys = self.db.astralKeys or {}
+    self:ListenForAstralKeys()
+    self:RegisterEvent('GUILD_ROSTER_UPDATE')
 
     self.questsCompleted = {}
     self:ScanQuestsCompleted()
@@ -368,7 +382,6 @@ function _LiteLite:PLAYER_LOGIN()
     self:SetupSlashCommand()
     self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
     self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
-    self:RegisterEvent('GUILD_ROSTER_UPDATE')
 
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
@@ -587,7 +600,7 @@ end
 
 function _LiteLite:SendAstralKey()
     local mapID = C_MythicPlus.GetOwnedKeystoneChallengeMapID()
-    if not mapId then return end
+    if not mapID then return end
 
     local keyLevel =  C_MythicPlus.GetOwnedKeystoneLevel()
     local weeklyBest = C_MythicPlus.GetWeeklyChestRewardLevel()
@@ -616,10 +629,91 @@ function _LiteLite:SendAstralKey()
     C_ChatInfo.SendAddonMessage('AstralKeys', msg, 'GUILD')
 end
 
-local lastUpdate = 0
+function _LiteLite:ReceiveAstralKey(text)
+    local action, content = text:match('^(%S+)%s+(.-)$')
+    if action == 'updateV8' then
+        local playerName, playerClass, mapID, keyLevel, weeklyBest, weekNum, playerFaction = string.split(':', content)
+        if playerName then
+            self.db.astralKeys[playerName] = {
+                    playerName=playerName,
+                    playerClass=playerClass,
+                    playerFaction=tonumber(playerFaction),
+                    mapID=tonumber(mapID),
+                    keyLevel=tonumber(keyLevel),
+                    weeklyBest=tonumber(weeklyBest),
+                    when=GetServerTime()
+                }
+        end
+        printf('Got key: %s:%d:%d', playerName, mapID, keyLevel)
+    end
+end
+
+function _LiteLite:ListenForAstralKeys()
+    C_ChatInfo.RegisterAddonMessagePrefix('AstralKeys')
+    self:RegisterEvent('CHAT_MSG_ADDON')
+    C_MythicPlus.RequestMapInfo()
+    C_MythicPlus.RequestCurrentAffixes()
+    C_MythicPlus.RequestRewards()
+end
+
+function _LiteLite:PrintAstralKeys(toGuild)
+    if not self.keystoneAffixes then
+        self.keystoneAffixes = {}
+        local affixInfo = C_MythicPlus.GetCurrentAffixes()
+        for _, ai in ipairs(affixInfo) do
+            table.insert(self.keystoneAffixes, ai.id)
+        end
+    end
+
+    local sortedKeys = {}
+    for k in pairs(self.db.astralKeys) do table.insert(sortedKeys, k) end
+    table.sort(sortedKeys)
+
+    for _, k in ipairs(sortedKeys) do
+        local info = self.db.astralKeys[k]
+        local mapName = C_ChallengeMode.GetMapUIInfo(info.mapID)
+        local affixFormat
+        if info.keyLevel > 9 then
+            affixFormat = '%d:%d:%d:%d'
+        elseif info.keyLevel > 6 then
+            affixFormat = '%d:%d:%d:0'
+        elseif info.keyLevel > 3 then
+            affixFormat = '%d:%d:0:0'
+        else
+            affixFormat = '%d:0:0:0'
+        end
+        local afstr = string.format(affixFormat, unpack(self.keystoneAffixes))
+        local link = string.format(
+                '|cffa335ee|Hkeystone:158923:%d:%d:%s|h[Keystone: %s (%d)]|h|r',
+                info.mapID, info.keyLevel, afstr, mapName, info.keyLevel
+            )
+
+        local p = info.playerName:gsub('-'..GetRealmName(), '')
+        if not toGuild then
+            local c = RAID_CLASS_COLORS[info.playerClass]
+            p = c:WrapTextInColorCode(p)
+        end
+
+        local msg = string.format('%s : %s : best %d', p, link, info.weeklyBest)
+
+        if toGuild then
+            SendChatMessage(msg, 'GUILD')
+        else
+            printf(msg)
+        end
+    end
+end
+
+function _LiteLite:CHAT_MSG_ADDON(prefix, text, chatType, sender)
+    if prefix == 'AstralKeys' and chatType == 'GUILD' then
+        self:ReceiveAstralKey(text)
+    end
+end
+
 function _LiteLite:GUILD_ROSTER_UPDATE()
-    if GetTime() > lastUpdate + 5 then
-        lastUpdate = GetTime()
+    local elapsed = GetServerTime() - (self.lastKeyBroadcast or 0)
+    if elapsed > 5 then
+        self.lastKeyBroadcast = GetServerTime()
         self:SendAstralKey()
     end
 end
