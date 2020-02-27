@@ -604,6 +604,10 @@ function _LiteLite:SendAstralKey()
 
     local keyLevel =  C_MythicPlus.GetOwnedKeystoneLevel()
     local weeklyBest = C_MythicPlus.GetWeeklyChestRewardLevel()
+    if C_MythicPlus.IsWeeklyRewardAvailable() then
+        weeklyBest = 0
+    end
+
     local playerName = string.join('-', UnitFullName('player'))
     local playerClass = select(2, UnitClass('player'))
     local playerFaction
