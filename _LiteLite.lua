@@ -633,23 +633,23 @@ function _LiteLite:SendAstralKey()
     C_ChatInfo.SendAddonMessage('AstralKeys', msg, 'GUILD')
 end
 
-function _LiteLite:ReceiveAstralKey(text)
-    local action, content = text:match('^(%S+)%s+(.-)$')
-    if action == 'updateV8' then
-        local playerName, playerClass, mapID, keyLevel, weeklyBest, weekNum, playerFaction = string.split(':', content)
-        if playerName then
-            self.db.astralKeys[playerName] = {
-                    playerName=playerName,
-                    playerClass=playerClass,
-                    playerFaction=tonumber(playerFaction),
-                    mapID=tonumber(mapID),
-                    keyLevel=tonumber(keyLevel),
-                    weeklyBest=tonumber(weeklyBest),
-                    when=GetServerTime()
-                }
-        end
-        printf('Got key: %s:%d:%d', playerName, mapID, keyLevel)
-    end
+function _LiteLite:ReceiveAstralKey(content)
+    local playerName, playerClass, mapID, keyLevel, weeklyBest, weekNum, playerFaction = string.split(':', content)
+
+    if not playerName then return end
+
+    self.db.astralKeys[playerName] = {
+            playerName=playerName,
+            playerClass=playerClass,
+            playerFaction=tonumber(playerFaction),
+            mapID=tonumber(mapID),
+            keyLevel=tonumber(keyLevel),
+            weeklyBest=tonumber(weeklyBest),
+            when=GetServerTime()
+        }
+
+    local mapName = C_ChallengeMode.GetMapUIInfo(mapID)
+    printf('Got key: %s %s (%d)', playerName, mapName, keyLevel)
 end
 
 function _LiteLite:ListenForAstralKeys()
@@ -710,13 +710,21 @@ end
 
 function _LiteLite:CHAT_MSG_ADDON(prefix, text, chatType, sender)
     if prefix == 'AstralKeys' and chatType == 'GUILD' then
-        self:ReceiveAstralKey(text)
+        local action, content = text:match('^(%S+)%s+(.-)$')
+        if action == 'updateV8' then
+            self:ReceiveAstralKey(content)
+        elseif action == 'sync5' then
+            local entries = string.split('_', content)
+            for _, entry in ipairs(entries) do
+                self:ReceiveAstralKey(entry)
+            end
+        end
     end
 end
 
 function _LiteLite:GUILD_ROSTER_UPDATE()
     local elapsed = GetServerTime() - (self.lastKeyBroadcast or 0)
-    if elapsed > 5 then
+    if elapsed > 30 then
         self.lastKeyBroadcast = GetServerTime()
         self:SendAstralKey()
     end
