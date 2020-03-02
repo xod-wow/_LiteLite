@@ -551,7 +551,7 @@ local function PrintEquipmentQuestRewards(mapInfo, questID)
                 function ()
                     local _, link, _, _, _, _, _, _, equipLoc = GetItemInfo(itemID)
                     if equipLoc ~= "" then
-                        printf('%s: %d: %s (%d)', mapInfo.name, questID, link or name, itemLevel)
+                        printf('    %s %d : [%s] %s (%d)', mapInfo.name, questID, _G[equipLoc], link or name, itemLevel)
                     end
                 end)
         end
@@ -574,6 +574,7 @@ local function GetMapQuestRewards(mapInfo)
 end
 
 function _LiteLite:WorldQuestItems()
+    printf('World quest item rewards:')
     for _, parentMapID in ipairs({ 875, 876 }) do
         local childInfo = C_Map.GetMapChildrenInfo(parentMapID)
         for _,mapInfo in pairs(childInfo) do
