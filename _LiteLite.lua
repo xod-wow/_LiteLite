@@ -531,8 +531,9 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
     end
 end
 
-local function PrintEquipmentQuestRewards(mapInfo, questID)
-    if not QuestUtils_IsQuestWorldQuest(questID) then
+local function PrintEquipmentQuestRewards(mapName, questID)
+    if not QuestUtils_IsQuestWorldQuest(questID) and
+       select(2, GetQuestTagInfo(questID) ~= 'Emissary Quest') then
         return true
     end
 
@@ -551,7 +552,7 @@ local function PrintEquipmentQuestRewards(mapInfo, questID)
                 function ()
                     local _, link, _, _, _, _, _, _, equipLoc = GetItemInfo(itemID)
                     if equipLoc ~= "" then
-                        printf('    %s %d : [%s] %s (%d)', mapInfo.name, questID, _G[equipLoc], link or name, itemLevel)
+                        printf('    %s %d : [%s] %s (%d)', mapName, questID, _G[equipLoc], link or name, itemLevel)
                     end
                 end)
         end
@@ -563,17 +564,23 @@ end
 local function GetMapQuestRewards(mapInfo)
     local quests = C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)
     for _, info in ipairs(quests) do
-        local done = PrintEquipmentQuestRewards(mapInfo, info.questId)
+        local done = PrintEquipmentQuestRewards(mapInfo.name, info.questId)
         if not done then
             C_Timer.After(1,
                 function ()
-                    PrintEquipmentQuestRewards(mapInfo, info.questId)
+                    PrintEquipmentQuestRewards(mapInfo.name, info.questId)
                 end)
         end
     end
 end
 
 function _LiteLite:WorldQuestItems()
+    printf('Emissary item rewards:')
+    local bounties = GetQuestBountyInfoForMapID(875)
+    for _, bounty in ipairs(bounties) do
+        PrintEquipmentQuestRewards('Emissary', bounty.questID)
+    end
+
     printf('World quest item rewards:')
     for _, parentMapID in ipairs({ 875, 876 }) do
         local childInfo = C_Map.GetMapChildrenInfo(parentMapID)
