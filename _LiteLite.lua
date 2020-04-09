@@ -564,12 +564,14 @@ end
 local function GetMapQuestRewards(mapInfo)
     local quests = C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)
     for _, info in ipairs(quests) do
-        local done = PrintEquipmentQuestRewards(mapInfo.name, info.questId)
-        if not done then
-            C_Timer.After(1,
-                function ()
-                    PrintEquipmentQuestRewards(mapInfo.name, info.questId)
-                end)
+        if info.mapID == mapInfo.mapID then
+            local done = PrintEquipmentQuestRewards(mapInfo.name, info.questId)
+            if not done then
+                C_Timer.After(2,
+                    function ()
+                        PrintEquipmentQuestRewards(mapInfo.name, info.questId)
+                    end)
+            end
         end
     end
 end
