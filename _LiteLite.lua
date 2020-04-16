@@ -253,6 +253,9 @@ function _LiteLite:SetEquipsetIcon(n, arg1)
     end
 
     local name = C_EquipmentSet.GetEquipmentSetInfo(n)
+    if name == nil then
+        return
+    end
 
     arg1 = tonumber(arg1) or GameTooltipIcon()
 
