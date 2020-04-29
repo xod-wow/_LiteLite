@@ -478,7 +478,8 @@ function _LiteLite:SearchGlobals(text, findKey)
 
     for k, v in pairs(_G) do
         if type(k) == 'string' and type(v) == 'string' then
-            if findKey and k:lower():match(text) or v:lower():match(text) then
+            if ( findKey and k:lower():match(text) ) or
+               ( not findKey and v:lower():match(text) ) then
                 printf("%s = %s", k, tostring(v))
             end
         end
