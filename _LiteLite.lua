@@ -59,6 +59,10 @@ function _LiteLite:FlashScreen(seconds)
 end
 
 function _LiteLite:SpellCastAnnounce(spellID, spellName)
+    if UnitIsPVP('player') then
+        return
+    end
+
     if spellID == 115310 then
         -- Revival (Mistweaver Monk)
         msg = format('%s cast - %s', GetSpellLink(spellName), self.playerName)
