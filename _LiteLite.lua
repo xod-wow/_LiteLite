@@ -590,11 +590,13 @@ local function GetMapQuestRewards(mapInfo)
 end
 
 function _LiteLite:WorldQuestItems()
+    --[[
     printf('Emissary item rewards:')
     local bounties = GetQuestBountyInfoForMapID(875)
     for _, bounty in ipairs(bounties) do
-        PrintEquipmentQuestRewards('Emissary', bounty.questID)
+        -- PrintEquipmentQuestRewards('Emissary', bounty.questID)
     end
+    ]]
 
     printf('World quest item rewards:')
     for _, parentMapID in ipairs({ 875, 876 }) do
