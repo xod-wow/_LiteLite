@@ -43,10 +43,12 @@ function _LiteLite:BiggerFrames()
     QuestFrame:SetScale(1.5)
     GossipFrame:SetScale(1.5)
     ItemTextFrame:SetScale(1.5)
-    hooksecurefunc(
-        'EncounterJournal_LoadUI',
-        function () EncounterJournal:SetScale(1.5) end
-    )
+    hooksecurefunc('Communities_LoadUI',
+            function () CommunitiesFrame:SetScale(1.3) end
+        )
+    hooksecurefunc('ToggleEncounterJournal',
+            function () EncounterJournal:SetScale(1.3) end
+        )
 end
 
 function _LiteLite:FlashScreen(seconds)
