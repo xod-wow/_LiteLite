@@ -59,7 +59,7 @@ function _LiteLite:FlashScreen(seconds)
 end
 
 function _LiteLite:SpellCastAnnounce(spellID, spellName)
-    if UnitIsPVP('player') then
+    if UnitIsPVP('player') or IsActiveBattlefieldArena() then
         return
     end
 
