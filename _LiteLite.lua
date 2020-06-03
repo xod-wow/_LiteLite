@@ -380,6 +380,8 @@ function _LiteLite:PLAYER_LOGIN()
     self:SetupSlashCommand()
     self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
     self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
+    self:RegisterEvent('ENCOUNTER_START')
+    self:RegisterEvent('ENCOUNTER_END')
 
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
@@ -407,6 +409,42 @@ function _LiteLite:COMBAT_LOG_EVENT_UNFILTERED()
         if srcGUID == UnitGUID('player') then
             self:SpellCastAnnounce(arg1, arg2)
         end
+    end
+end
+
+local StartQuotes = {
+    "I have a bad feeling about this.",
+    "Never tell me the odds!",
+    "Let's keep a little optimism here.",
+    "I expect to be well paid. I'm in it for the money.",
+    "What good is a reward if you ain't around to use it?",
+    "I take orders from just one person: me.",
+    "You said you wanted to be around when I made a mistake, well, this could be it, sweetheart.",
+    "Bring em on! I prefer a straight fight to all this sneaking around.",
+}
+
+function _LiteLite:ENCOUNTER_START()
+    if UnitName('player') == "Tansolo" and math.random() <= 0.25 then
+        local n = math.random(#StartQuotes)
+        SendChatMessage(StartQuotes[n], 'SAY')
+    end
+end
+
+local EndQuotes = {
+    "Don't everbody thank me at once.",
+    "You know, sometimes I amaze even myself.",
+    "You like me because I'm a scoundrel. There aren’t enough scoundrels in your life.",
+    "Afraid I was gonna leave without giving you a goodbye kiss?",
+    "Sorry about the mess.",
+    "Come on, admit it. Sometimes you think I’m all right.",
+    "Scoundrel? Scoundrel? I like the sound of that.",
+    "No reward is worth this.",
+}
+
+function _LiteLite:ENCOUNTER_END()
+    if UnitName('player') == "Tansolo" and math.random() <= 0.25 then
+        local n = math.random(#EndQuotes)
+        SendChatMessage(EndQuotes[n], 'SAY')
     end
 end
 
