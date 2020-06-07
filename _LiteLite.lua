@@ -424,7 +424,7 @@ local StartQuotes = {
 }
 
 function _LiteLite:ENCOUNTER_START()
-    if UnitName('player') == "Tansolo" and math.random() <= 0.25 then
+    if UnitName('player') == "Tansolo" and math.random() <= 0.2 then
         local n = math.random(#StartQuotes)
         SendChatMessage(StartQuotes[n], 'SAY')
     end
@@ -442,7 +442,7 @@ local EndQuotes = {
 }
 
 function _LiteLite:ENCOUNTER_END()
-    if UnitName('player') == "Tansolo" and math.random() <= 0.25 then
+    if UnitName('player') == "Tansolo" and math.random() <= 0.2 then
         local n = math.random(#EndQuotes)
         SendChatMessage(EndQuotes[n], 'SAY')
     end
