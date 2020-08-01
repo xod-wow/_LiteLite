@@ -383,7 +383,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
 
-    self:DefaultIslandsQueueHeroic()
+    hooksecurefunc('IslandsQueue_LoadUI', self.DefaultIslandsQueueHeroic)
 
     C_Timer.After(15, _LiteLite.RunTimedChecks)
 
