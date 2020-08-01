@@ -308,9 +308,6 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'wq-items' then
         self:WorldQuestItems()
         return true
-    elseif arg == 'masks' then
-        self:VisionMasks()
-        return true
     end
 
     -- One argument options
@@ -386,6 +383,8 @@ function _LiteLite:PLAYER_LOGIN()
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
 
+    self:DefaultIslandsQueueHeroic()
+
     C_Timer.After(15, _LiteLite.RunTimedChecks)
 
 end
@@ -400,12 +399,7 @@ end
 
 function _LiteLite:COMBAT_LOG_EVENT_UNFILTERED()
     local ts, e, _, srcGUID, srcName, srcFlags, srcRaidFlags, destGUID, destName, destFlags, destRaidFlags, arg1, arg2, arg3 = CombatLogGetCurrentEventInfo()
-    if e == 'UNIT_DIED' then
-        if bit.bor(destFlags, 0x40) ~= 0 then
-            self.lastKillName = destName
-            self.lastKillTime = ts
-        end
-    elseif e == 'SPELL_CAST_SUCCESS' then
+    if e == 'SPELL_CAST_SUCCESS' then
         if srcGUID == UnitGUID('player') then
             self:SpellCastAnnounce(arg1, arg2)
         end
@@ -647,20 +641,15 @@ function _LiteLite:WorldQuestItems()
     end
 end
 
-local visionClearQuests = {
-   [0] = 57842,
-   [1] = 57846,
-   [2] = 57843,
-   [3] = 57847,
-   [4] = 57844,
-   [5] = 57848,
-}
-
-function _LiteLite:VisionMasks()
-    printf('Masks completed:')
-    for i = 0, 5 do
-       if IsQuestFlaggedCompleted(visionClearQuests[i]) then
-          printf('* %d masks', i)
-       end
-    end
+function _LiteLite:DefaultIslandsQueueHeroic()
+    IslandsQueueFrame:HookScript('OnShow',
+        function (self)
+            local dsf =  self.DifficultySelectorFrame
+            for button in dsf.difficultyPool:EnumerateActive() do
+                if button.difficulty == 1736 then
+                    self.DifficultySelectorFrame:SetActiveDifficulty(button)
+                return
+            end
+            end
+        end)
 end
