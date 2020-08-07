@@ -644,9 +644,15 @@ end
 function _LiteLite:DefaultIslandsQueueHeroic()
     IslandsQueueFrame:HookScript('OnShow',
         function (self)
+            local d
+            if GetNumGroupMembers() == 3 then
+                d = 1737
+            else
+                d = 1736
+            end
             local dsf =  self.DifficultySelectorFrame
             for button in dsf.difficultyPool:EnumerateActive() do
-                if button.difficulty == 1736 then
+                if button.difficulty == d then
                     self.DifficultySelectorFrame:SetActiveDifficulty(button)
                 return
             end
