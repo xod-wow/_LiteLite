@@ -319,10 +319,10 @@ function _LiteLite:SlashCommand(arg)
         self:CreateSpellMacro(TrinketMacroTemplate, arg2)
         return true
     elseif arg1 == 'gkeys' then
-        self:SearchGlobals(arg2, true)
+        self:SearchGlobalKeys(arg2)
         return true
     elseif arg1 == 'gvals' then
-        self:SearchGlobals(arg2, false)
+        self:SearchGlobalValues(arg2)
         return true
     elseif arg1 == 'find-mob' then
         self:ScanForMob(arg2)
@@ -501,19 +501,30 @@ function _LiteLite:ReportQuestsCompleted()
     end
 end
 
-function _LiteLite:SearchGlobals(text, findKey)
+function _LiteLite:SearchGlobalKeys(text)
     if not text then return end
 
     text = text:lower()
 
-    printf("Searching global variables for %s", tostring(text))
+    printf("Searching global keys for %s", tostring(text))
 
     for k, v in pairs(_G) do
-        if type(k) == 'string' and type(v) == 'string' then
-            if ( findKey and k:lower():match(text) ) or
-               ( not findKey and v:lower():match(text) ) then
-                printf("%s = %s", k, tostring(v))
-            end
+        if type(k) == 'string' and k:lower():find(text) then
+            printf("%s = %s", k, tostring(v))
+        end
+    end
+end
+
+function _LiteLite:SearchGlobalValues(text)
+    if not text then return end
+
+    text = text:lower()
+
+    printf("Searching global values for %s", tostring(text))
+
+    for k, v in pairs(_G) do
+        if type(k) == 'string' and type(v) == 'string' and v:lower():find(text) then
+            printf("%s = %s", k, tostring(v))
         end
     end
 end
@@ -577,8 +588,7 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
 end
 
 local function PrintEquipmentQuestRewards(mapName, questID)
-    if not QuestUtils_IsQuestWorldQuest(questID) and
-       select(2, GetQuestTagInfo(questID) ~= 'Emissary Quest') then
+    if not QuestUtils_IsQuestWorldQuest(questID) then
         return true
     end
 
@@ -631,7 +641,7 @@ function _LiteLite:WorldQuestItems()
     ]]
 
     printf('World quest item rewards:')
-    for _, parentMapID in ipairs({ 875, 876 }) do
+    for _, parentMapID in ipairs({ 1550 }) do
         local childInfo = C_Map.GetMapChildrenInfo(parentMapID)
         for _,mapInfo in pairs(childInfo) do
             if mapInfo.mapType == Enum.UIMapType.Zone then
