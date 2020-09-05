@@ -16,10 +16,10 @@ local MouseoverMacroTemplate =
 
 local TrinketMacroTemplate =
 [[#showtooltip {1}
-/run SlashCmdList.UI_ERRORS_OFF()
+/run m="UI_ERROR_MESSAGE" f=UIErrorsFrame f:UnregisterEvent(m)
 /use [harm] 13
 /use [harm] 14
-/run SlashCmdList.UI_ERRORS_ON()
+/run f:RegisterEvent(m)
 /cast {1}
 ]]
 
@@ -643,7 +643,7 @@ function _LiteLite:WorldQuestItems()
     printf('World quest item rewards:')
     for _, parentMapID in ipairs({ 1550 }) do
         local childInfo = C_Map.GetMapChildrenInfo(parentMapID)
-        for _,mapInfo in pairs(childInfo) do
+        for _,mapInfo in pairs(childInfo or {}) do
             if mapInfo.mapType == Enum.UIMapType.Zone then
                 GetMapQuestRewards(mapInfo)
             end
