@@ -166,7 +166,7 @@ local TanaanRaresQuestIDs = {
 function _LiteLite:TanaanRares()
     local status
     for rare,questID in pairs(TanaanRaresQuestIDs) do
-        if IsQuestFlaggedCompleted(questID) then
+        if C_QuestLog.IsQuestFlaggedCompleted(questID) then
             status = RED_FONT_COLOR_CODE .. 'Completed' .. FONT_COLOR_CODE_CLOSE
         else
             status = GREEN_FONT_COLOR_CODE .. 'Available' .. FONT_COLOR_CODE_CLOSE
@@ -485,7 +485,7 @@ function _LiteLite:ScanQuestsCompleted(scanTime)
     scanTime = scanTime or 0
 
     for i = 1,100000 do
-        if not self.questsCompleted[i] and IsQuestFlaggedCompleted(i) then
+        if not self.questsCompleted[i] and C_QuestLog.IsQuestFlaggedCompleted(i) then
             self.questsCompleted[i] = scanTime
         end
     end
