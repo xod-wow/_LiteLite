@@ -15,4 +15,28 @@
     </Animations>
   </Frame>
 
+  <ScrollFrame name="_LiteLiteText" parent="UIParent" hidden="true"
+         inherits="InputScrollFrameTemplate"
+         frameStrata="DIALOG" toplevel="true" movable="true">
+      <Scripts>
+        <OnLoad inherit="prepend">
+          table.insert(UISpecialFrames, self:GetName())
+        </OnLoad>
+      </Scripts>
+      <KeyValues>
+          <KeyValue key="hideCharCount" value="true" type="boolean" />
+      </KeyValues>
+      <Size x="768" y="960" />
+      <Anchors>
+          <Anchor point="CENTER" />
+      </Anchors>
+      <Frames>
+          <Button inherits="UIPanelCloseButton">
+              <Anchors>
+                  <Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" x="4" y="-4" />
+              </Anchors>
+          </Button>
+      </Frames>
+  </ScrollFrame>
+
 </Ui>

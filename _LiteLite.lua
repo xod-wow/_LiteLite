@@ -508,11 +508,16 @@ function _LiteLite:SearchGlobalKeys(text)
 
     printf("Searching global keys for %s", tostring(text))
 
+    local lines = {}
     for k, v in pairs(_G) do
         if type(k) == 'string' and k:lower():find(text) then
-            printf("%s = %s", k, tostring(v))
+            table.insert(lines, string.format("%s = %s", k, tostring(v)))
         end
     end
+
+    table.sort(lines)
+    _LiteLiteText.EditBox:SetText(table.concat(lines, "\n"))
+    _LiteLiteText:Show()
 end
 
 function _LiteLite:SearchGlobalValues(text)
@@ -522,11 +527,15 @@ function _LiteLite:SearchGlobalValues(text)
 
     printf("Searching global values for %s", tostring(text))
 
+    local lines = {}
     for k, v in pairs(_G) do
         if type(k) == 'string' and type(v) == 'string' and v:lower():find(text) then
-            printf("%s = %s", k, tostring(v))
+            table.insert(lines, string.format("%s = %s", k, tostring(v)))
         end
     end
+    table.sort(lines)
+    _LiteLiteText.EditBox:SetText(table.concat(lines, "\n"))
+    _LiteLiteText:Show()
 end
 
 function _LiteLite:HookTooltip()
