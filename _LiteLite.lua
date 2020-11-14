@@ -305,8 +305,8 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'tooltip-ids' then
         self:HookTooltip()
         return true
-    elseif arg == 'wq-items' then
-        self:WorldQuestItems()
+    elseif arg == 'ko' or arg == 'kickoff' then
+        self:KickOfflineRaidMembers()
         return true
     end
 
@@ -326,6 +326,9 @@ function _LiteLite:SlashCommand(arg)
         return true
     elseif arg1 == 'find-mob' then
         self:ScanForMob(arg2)
+        return true
+    elseif arg1 == 'wq-items' then
+        self:WorldQuestItems(arg2)
         return true
     end
 
@@ -640,7 +643,16 @@ local function GetMapQuestRewards(mapInfo)
     end
 end
 
-function _LiteLite:WorldQuestItems()
+function _LiteLite:WorldQuestItems(expansion)
+    local maps
+    if not expansion or expansion == 'sl' then
+        maps = { 1550 }
+    elseif expansion == 'bfa' then
+        maps = { 876, 876 }
+    else
+        return
+    end
+
     --[[
     printf('Emissary item rewards:')
     local bounties = GetQuestBountyInfoForMapID(875)
@@ -650,7 +662,7 @@ function _LiteLite:WorldQuestItems()
     ]]
 
     printf('World quest item rewards:')
-    for _, parentMapID in ipairs({ 1550 }) do
+    for _, parentMapID in ipairs(maps) do
         local childInfo = C_Map.GetMapChildrenInfo(parentMapID)
         for _,mapInfo in pairs(childInfo or {}) do
             if mapInfo.mapType == Enum.UIMapType.Zone then
@@ -678,3 +690,17 @@ function _LiteLite:DefaultIslandsQueueHeroic()
             end
         end)
 end
+
+function _LiteLite:KickOfflineRaidMembers()
+    if not UnitIsGroupLeader('player') or not IsInRaid() then   
+        return
+    end
+
+    for i = 40, 1, -1 do
+        local unit = 'raid'..i
+        if UnitExists(unit) and not UnitIsConnected(unit) then
+            UninviteUnit(GetUnitName(unit, true))
+        end
+    end
+end
+
