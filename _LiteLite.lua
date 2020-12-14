@@ -308,6 +308,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'ko' or arg == 'kickoff' then
         self:KickOfflineRaidMembers()
         return true
+    elseif arg == 'gv' or arg == 'great-vault' then
+        self:ShowGreatVault()
+        return true
     end
 
     -- One argument options
@@ -350,6 +353,7 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll quest-report")
     printf("/ll gkeys text")
     printf("/ll gvals text")
+    printf("/ll great-vault | gv")
     printf("/ll tanaan-rares")
     printf("/ll tooltip-ids")
     printf("/ll mouseover-macro [spellname]")
@@ -704,3 +708,7 @@ function _LiteLite:KickOfflineRaidMembers()
     end
 end
 
+function _LiteLite:ShowGreatVault()
+    LoadAddOn('Blizzard_WeeklyRewards')
+    WeeklyRewardsFrame:Show()
+end
