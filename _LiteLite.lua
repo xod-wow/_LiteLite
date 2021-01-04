@@ -595,7 +595,7 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
 
     for _, n in ipairs(self.scanMobNames) do
         if ( name and name:find(n) ) or
-           ( npcID and tonumber(name) == tonumber(npcID) ) then
+           ( npcID and tonumber(n) == tonumber(npcID) ) then
             self.announcedMobGUID[guid] = true
             local msg = format("Nameplate %s found", name)
             printf(msg)
