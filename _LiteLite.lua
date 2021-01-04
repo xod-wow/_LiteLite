@@ -581,6 +581,7 @@ function _LiteLite:ScanForMob(name)
         self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
     else
         wipe(self.scanMobNames)
+        wipe(self.announcedMobGUID)
         self:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
     end
 end
@@ -590,8 +591,11 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
     local guid = UnitGUID(unit)
     if self.announcedMobGUID[guid] then return end
 
+    local npcID = select(6, strsplit('-', UnitGUID(unit)))
+
     for _, n in ipairs(self.scanMobNames) do
-        if name and name:find(n) then
+        if ( name and name:find(n) ) or
+           ( npcID and tonumber(name) == tonumber(npcID) ) then
             self.announcedMobGUID[guid] = true
             local msg = format("Nameplate %s found", name)
             printf(msg)
