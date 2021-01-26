@@ -311,6 +311,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'gv' or arg == 'great-vault' then
         self:ShowGreatVault()
         return true
+    elseif arg == 'mp' or arg == 'mythic-plus-history' then
+        self:MythicPlusHistory()
+        return true
     end
 
     -- One argument options
@@ -348,17 +351,18 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll chatframe-settings")
     printf("/ll equipset-icon [n [iconid]]")
     printf("/ll equipset-icon auto")
+    printf("/ll find-mob substring")
     printf("/ll nameplate-settings")
     printf("/ll quest-baseline")
     printf("/ll quest-report")
     printf("/ll gkeys text")
     printf("/ll gvals text")
     printf("/ll great-vault | gv")
+    printf("/ll mythic-plus-history | mp")
+    printf("/ll mouseover-macro [spellname]")
     printf("/ll tanaan-rares")
     printf("/ll tooltip-ids")
-    printf("/ll mouseover-macro [spellname]")
     printf("/ll trinket-macro [spellname]")
-    printf("/ll find-mob substring")
     printf("/ll wq-items")
     return true
 end
@@ -715,4 +719,15 @@ end
 function _LiteLite:ShowGreatVault()
     LoadAddOn('Blizzard_WeeklyRewards')
     WeeklyRewardsFrame:Show()
+end
+
+function _LiteLite:MythicPlusHistory()
+    local runs = C_MythicPlus.GetRunHistory(false, true)
+    table.sort(runs, function (a, b) return a.level > b.level end)
+    printf('Mythic plus runs this week:')
+    for i, info in ipairs(runs) do
+        local name = C_ChallengeMode.GetMapUIInfo(info.mapChallengeModeID)
+        printf('% 2d:  %d%s %s',
+                i, info.level, info.completed and '+' or '', name)
+    end
 end
