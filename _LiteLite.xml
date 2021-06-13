@@ -21,6 +21,12 @@
       <Scripts>
         <OnLoad inherit="prepend">
           table.insert(UISpecialFrames, self:GetName())
+          for _,r in ipairs({ self:GetRegions() }) do
+            if r.SetColorTexture then
+                r:SetColorTexture(0,0,0,1)
+            end
+          end
+          self.EditBox:SetFontObject("GameFontHighlight")
         </OnLoad>
       </Scripts>
       <KeyValues>
