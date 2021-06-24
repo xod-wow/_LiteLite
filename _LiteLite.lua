@@ -506,7 +506,7 @@ function _LiteLite:ReportQuestsCompleted()
     printf("Completed quests report:")
     for i = 1,100000 do
         if self.questsCompleted[i] and self.questsCompleted[i] > 0 then
-            local title = C_QuestLog.GetQuestInfo(i)
+            local title = C_TaskQuest.GetQuestInfoByQuestID(i)
             printf(format("Newly completed: %d (%s) at %d", i, title or UNKNOWN, self.questsCompleted[i]))
         end
     end
