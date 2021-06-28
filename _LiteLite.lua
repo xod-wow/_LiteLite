@@ -39,15 +39,21 @@ local function printf(fmt, ...)
     SELECTED_CHAT_FRAME:AddMessage(printTag .. msg)
 end
 
+local function Embiggen(f)
+    local ratio = f:GetHeight() / GetScreenHeight()
+    local scale = (2/3) / ratio
+    f:SetScale(scale)
+end
+
 function _LiteLite:BiggerFrames()
-    QuestFrame:SetScale(1.5)
-    GossipFrame:SetScale(1.5)
-    ItemTextFrame:SetScale(1.5)
+    QuestFrame:HookScript('OnShow', Embiggen)
+    GossipFrame:HookScript('OnShow', Embiggen)
+    ItemTextFrame:HookScript('OnShow', Embiggen)
     hooksecurefunc('Communities_LoadUI',
-            function () CommunitiesFrame:SetScale(1.3) end
+            function () CommunitiesFrame:HookScript('OnShow', Embiggen) end
         )
     hooksecurefunc('ToggleEncounterJournal',
-            function () EncounterJournal:SetScale(1.3) end
+            function () EncounterJournal:HookScript('OnShow', Embiggen) end
         )
 end
 
