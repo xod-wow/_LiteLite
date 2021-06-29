@@ -28,6 +28,9 @@
           end
           self.EditBox:SetFontObject("GameFontHighlight")
         </OnLoad>
+        <OnShow inherit="prepend">
+          self:SetHeight(GetScreenHeight() - 40)
+        </OnShow>
       </Scripts>
       <KeyValues>
           <KeyValue key="hideCharCount" value="true" type="boolean" />
