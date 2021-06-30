@@ -342,6 +342,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'wq-items' then
         self:WorldQuestItems(arg2)
         return true
+    elseif arg1 == 'copy-chat' then
+        self:CopyChat()
+        return true
     end
 
     -- Two argument options
@@ -551,6 +554,17 @@ function _LiteLite:SearchGlobalValues(text)
         end
     end
     table.sort(lines)
+    _LiteLiteText.EditBox:SetText(table.concat(lines, "\n"))
+    _LiteLiteText:Show()
+end
+
+function _LiteLite:CopyChat(sourceFrame)
+    sourceFrame = sourceFrame or SELECTED_CHAT_FRAME
+    local lines = {}
+    for i = 1, sourceFrame:GetNumMessages() do
+        local msg = sourceFrame:GetMessageInfo(i)
+        table.insert(lines, msg or "")
+    end
     _LiteLiteText.EditBox:SetText(table.concat(lines, "\n"))
     _LiteLiteText:Show()
 end
