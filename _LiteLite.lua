@@ -405,8 +405,9 @@ function _LiteLite:PLAYER_LOGIN()
 
     hooksecurefunc('IslandsQueue_LoadUI', self.DefaultIslandsQueueHeroic)
 
-    C_Timer.After(15, _LiteLite.RunTimedChecks)
+    MerchantRepairItemButton:SetScript('OnClick', function () self:SellJunk() end)
 
+    C_Timer.After(15, _LiteLite.RunTimedChecks)
 end
 
 function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
@@ -751,3 +752,20 @@ function _LiteLite:MythicPlusHistory()
                 i, info.level, info.completed and '+' or '', name)
     end
 end
+
+function _LiteLite:SellJunk()
+    local numSold = 0
+   for bag = 0, 4, 1 do
+      local n = GetContainerNumSlots(bag)
+      for slot = 1, GetContainerNumSlots(bag) do
+         local _, _, locked, quality, _, _, itemLink, _, noValue = GetContainerItemInfo(bag, slot)
+         local isJunk = quality == Enum.ItemQuality.Poor and not noValue
+         if isJunk then
+            UseContainerItem(bag, slot)
+            numSold = numSold + 1
+            if numSold == 12 then return end
+        end
+      end
+   end
+end
+
