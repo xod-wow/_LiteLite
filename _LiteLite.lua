@@ -753,19 +753,46 @@ function _LiteLite:MythicPlusHistory()
     end
 end
 
+local function IsJunk(bag, slot)
+    local _, _, locked, quality, _, _, _, _, noValue = GetContainerItemInfo(bag, slot)
+    if quality == Enum.ItemQuality.Poor and not noValue and not locked then
+        return true
+    end
+end
+
+local function IsDowngrade(bag, slot)
+    local loc = ItemLocation:CreateFromBagAndSlot(bag, slot)
+    if not loc:IsValid() or not C_Item.IsBound(loc) then
+        return
+    end
+    local quality = C_Item.GetItemQuality(loc)
+    if not quality or quality > Enum.ItemQuality.Rare then
+        return
+    end
+    local equipSlot = C_Item.GetItemInventoryType(loc)
+    if equipSlot < INVSLOT_FIRST_EQUIPPED then return end
+    if equipSlot > INVSLOT_LAST_EQUIPPED then return end
+    local item = Item:CreateFromBagAndSlot(bag, slot)
+    local equipped = Item:CreateFromEquipmentSlot(equipSlot)
+    if not equipped.itemLocation:IsValid() then
+        return
+    end
+    if item:GetCurrentItemLevel() < equipped:GetCurrentItemLevel() then
+        return true
+    end
+end
+
 function _LiteLite:SellJunk()
     local numSold = 0
-   for bag = 0, 4, 1 do
-      local n = GetContainerNumSlots(bag)
-      for slot = 1, GetContainerNumSlots(bag) do
-         local _, _, locked, quality, _, _, itemLink, _, noValue = GetContainerItemInfo(bag, slot)
-         local isJunk = quality == Enum.ItemQuality.Poor and not noValue
-         if isJunk then
-            UseContainerItem(bag, slot)
-            numSold = numSold + 1
-            if numSold == 12 then return end
+    for bag = 0, 4, 1 do
+        local n = GetContainerNumSlots(bag)
+        for slot = 1, GetContainerNumSlots(bag) do
+            if IsJunk(bag, slot) or IsDowngrade(bag, slot) then
+                UseContainerItem(bag, slot)
+                numSold = numSold + 1
+                if numSold == 12 then return end
+            end
         end
-      end
-   end
+    end
 end
 
