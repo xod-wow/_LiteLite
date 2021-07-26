@@ -608,10 +608,14 @@ function _LiteLite:ScanForMob(name)
         self.announcedMobGUID = {}
         table.insert(self.scanMobNames, name:lower())
         self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+        self:RegisterEvent("VIGNETTES_UPDATED")
+        self:RegisterEvent("VIGNETTE_MINIMAP_UPDATED")
     else
         wipe(self.scanMobNames)
         wipe(self.announcedMobGUID)
         self:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
+        self:UnregisterEvent("VIGNETTES_UPDATED")
+        self:UnregisterEvent("VIGNETTE_MINIMAP_UPDATED")
     end
 end
 
@@ -633,6 +637,29 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
                 SetRaidTarget(unit, 6)
             end
         end
+    end
+end
+
+function _LiteLite:VIGNETTE_MINIMAP_UPDATED(id)
+    local info = C_VignetteInfo.GetVignetteInfo(id)
+
+    if not info then return end
+
+    local alert = false
+
+    for _, n in ipairs(self.scanMobNames) do
+        if info.name and info.name:lower():find(n) then
+            local msg = format("Vignette %s found", info.name)
+            self.announcedMobGUID[info.objectGUID] = true
+            printf(msg)
+            PlaySound(11466)
+        end
+    end
+end
+
+function _LiteLite:VIGNETTES_UPDATED()
+    for _, id in ipairs(C_VignetteInfo.GetVignettes()) do
+        self:VIGNETTE_MINIMAP_UPDATED(id)
     end
 end
 
