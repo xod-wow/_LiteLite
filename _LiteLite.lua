@@ -788,7 +788,7 @@ function _LiteLite:SellJunk()
     for bag = 0, 4, 1 do
         local n = GetContainerNumSlots(bag)
         for slot = 1, GetContainerNumSlots(bag) do
-            if IsJunk(bag, slot) or IsDowngrade(bag, slot) then
+            if IsJunk(bag, slot) then
                 UseContainerItem(bag, slot)
                 numSold = numSold + 1
                 if numSold == 12 then return end
