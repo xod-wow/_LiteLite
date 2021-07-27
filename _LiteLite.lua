@@ -399,6 +399,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
     self:RegisterEvent('ENCOUNTER_START')
     self:RegisterEvent('ENCOUNTER_END')
+    self:RegisterEvent('CHAT_MSG_COMBAT_XP_GAIN')
 
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
@@ -796,3 +797,16 @@ function _LiteLite:SellJunk()
     end
 end
 
+function _LiteLite:CHAT_MSG_COMBAT_XP_GAIN()
+    local rest = GetXPExhaustion()
+    if not rest or rest == 0 then return end
+    local r, g, b = GetMessageTypeColor('COMBAT_XP_GAIN')
+    local pct = 100 * rest / UnitXPMax('player')
+    local msg = string.format('Rest remaining: %s (%0.1f%%)', AbbreviateNumbers(rest), pct)
+    for i = 1, NUM_CHAT_WINDOWS do
+        local f = Chat_GetChatFrame(i)
+        if tContains(f.messageTypeList, 'COMBAT_XP_GAIN') then
+            f:AddMessage(msg, r, g, b)
+        end
+    end
+end
