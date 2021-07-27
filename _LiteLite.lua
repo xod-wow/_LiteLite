@@ -320,6 +320,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'mp' or arg == 'mythic-plus-history' then
         self:MythicPlusHistory()
         return true
+    elseif arg == 'xp' then
+        self:CHAT_MSG_COMBAT_XP_GAIN()
+        return true
     end
 
     -- One argument options
