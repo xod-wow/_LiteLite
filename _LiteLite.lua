@@ -323,6 +323,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'xp' then
         self:CHAT_MSG_COMBAT_XP_GAIN()
         return true
+    elseif arg == 'announce-mob' or arg == 'am' then
+        self:ReportTargetLocation()
+        return true
     end
 
     -- One argument options
@@ -360,18 +363,19 @@ function _LiteLite:SlashCommand(arg)
         return true
     end
 
+    printf("/ll announce-mob")
     printf("/ll chatframe-settings")
     printf("/ll equipset-icon [n [iconid]]")
     printf("/ll equipset-icon auto")
     printf("/ll find-mob substring")
+    printf("/ll gkeys text")
+    printf("/ll great-vault | gv")
+    printf("/ll gvals text")
+    printf("/ll mouseover-macro [spellname]")
+    printf("/ll mythic-plus-history | mp")
     printf("/ll nameplate-settings")
     printf("/ll quest-baseline")
     printf("/ll quest-report")
-    printf("/ll gkeys text")
-    printf("/ll gvals text")
-    printf("/ll great-vault | gv")
-    printf("/ll mythic-plus-history | mp")
-    printf("/ll mouseover-macro [spellname]")
     printf("/ll tanaan-rares")
     printf("/ll tooltip-ids")
     printf("/ll trinket-macro [spellname]")
@@ -838,5 +842,17 @@ function _LiteLite:CHAT_MSG_COMBAT_XP_GAIN()
         if tContains(f.messageTypeList, 'COMBAT_XP_GAIN') then
             f:AddMessage(msg, r, g, b)
         end
+    end
+end
+
+local ReportMsgFormat = "%s |cffffff00|Hworldmap:%d:%d:%d|h[|A:Waypoint-MapPin-ChatIcon:13:13:0:0|a Map Pin Location]|h|r"
+
+function _LiteLite:ReportTargetLocation()
+    local n = UnitName('target')
+    local mapID = C_Map.GetBestMapForUnit('player')
+    if n and mapID then
+        local pos = C_Map.GetPlayerMapPosition(m,'player')
+        local msg = string.format(ReportMsgFormat, n, pos.x*10000, pos.y*10000)
+        SendChatMessage(msg, "CHANNEL", nil, 1)
     end
 end
