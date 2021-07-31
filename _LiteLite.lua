@@ -848,7 +848,7 @@ end
 function _LiteLite:ReportTargetLocation()
     local n = UnitName('target')
     local mapID = C_Map.GetBestMapForUnit('player')
-    if not n or not mapID then return
+    if not n or not mapID then return end
     local pos = C_Map.GetPlayerMapPosition(mapID,'player')
     local point = UiMapPoint.CreateFromCoordinates(mapID, pos.x, pos.y)
     C_Map.SetUserWaypoint(point)
