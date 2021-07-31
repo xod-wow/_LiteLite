@@ -845,14 +845,16 @@ function _LiteLite:CHAT_MSG_COMBAT_XP_GAIN()
     end
 end
 
-local ReportMsgFormat = "%s |cffffff00|Hworldmap:%d:%d:%d|h[|A:Waypoint-MapPin-ChatIcon:13:13:0:0|a Map Pin Location]|h|r"
-
 function _LiteLite:ReportTargetLocation()
     local n = UnitName('target')
     local mapID = C_Map.GetBestMapForUnit('player')
-    if n and mapID then
-        local pos = C_Map.GetPlayerMapPosition(m,'player')
-        local msg = string.format(ReportMsgFormat, n, pos.x*10000, pos.y*10000)
-        SendChatMessage(msg, "CHANNEL", nil, 1)
+    if not n or not mapID then return
+    local pos = C_Map.GetPlayerMapPosition(mapID,'player')
+    local point = UiMapPoint.CreateFromCoordinates(mapID, pos.x, pos.y)
+    C_Map.SetUserWaypoint(point)
+    local link = C_Map.GetUserWaypointHyperlink()
+    C_Map.ClearUserWaypoint()
+    if link then
+        SendChatMessage(n.." near "..link, "CHANNEL", nil, 1)
     end
 end
