@@ -410,6 +410,7 @@ function _LiteLite:PLAYER_LOGIN()
 
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
+    self:HideMainMenuBarArt()
 
     hooksecurefunc('IslandsQueue_LoadUI', self.DefaultIslandsQueueHeroic)
 
@@ -857,4 +858,10 @@ function _LiteLite:ReportTargetLocation()
     if link then
         SendChatMessage(n.." near "..link, "CHANNEL", nil, 1)
     end
+end
+
+function _LiteLite:HideMainMenuBarArt()
+    MainMenuBarArtFrame.Background:Hide()
+    MainMenuBarArtFrame.LeftEndCap:Hide()
+    MainMenuBarArtFrame.RightEndCap:Hide()
 end
