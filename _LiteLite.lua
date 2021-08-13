@@ -608,9 +608,9 @@ function _LiteLite:HookTooltip()
 end
 
 function _LiteLite:ScanForMob(name)
+    self.scanMobNames = self.scanMobNames or {}
+    self.announcedMobGUID = self.announcedMobGUID or {}
     if name then
-        self.scanMobNames = self.scanMobNames or {}
-        self.announcedMobGUID = {}
         table.insert(self.scanMobNames, name:lower())
         self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
         self:RegisterEvent("VIGNETTES_UPDATED")
