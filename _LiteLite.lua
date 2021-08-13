@@ -847,7 +847,7 @@ function _LiteLite:CHAT_MSG_COMBAT_XP_GAIN()
 end
 
 function _LiteLite:ReportTargetLocation()
-    local n = UnitName('target')
+    local n = UnitName('target') or UnitName('mouseover')
     local mapID = C_Map.GetBestMapForUnit('player')
     if not n or not mapID then return end
     local pos = C_Map.GetPlayerMapPosition(mapID,'player')
@@ -856,7 +856,7 @@ function _LiteLite:ReportTargetLocation()
     local link = C_Map.GetUserWaypointHyperlink()
     C_Map.ClearUserWaypoint()
     if link then
-        SendChatMessage(n.." near "..link, "CHANNEL", nil, 1)
+        SendChatMessage(n.." "..link, "CHANNEL", nil, 1)
     end
 end
 
