@@ -40,9 +40,12 @@ local function printf(fmt, ...)
 end
 
 local function Embiggen(f)
+    --[[
     local ratio = f:GetHeight() / GetScreenHeight()
     local scale = (2/3) / ratio
     f:SetScale(scale)
+    ]]
+    f:SetScale(1.25)
 end
 
 function _LiteLite:BiggerFrames()
@@ -634,7 +637,7 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
     for _, n in ipairs(self.scanMobNames) do
         if ( name and name:find(n) ) or
            ( npcID and tonumber(n) == tonumber(npcID) ) then
-            self.announcedMobGUID[guid] = true
+            self.announcedMobGUID[guid] = name
             local msg = format("Nameplate %s found", name)
             printf(msg)
             PlaySound(11466)
@@ -847,7 +850,7 @@ function _LiteLite:CHAT_MSG_COMBAT_XP_GAIN()
 end
 
 function _LiteLite:ReportTargetLocation()
-    local n = UnitName('target') or UnitName('mouseover')
+    local n = UnitName('target') or GameTooltip.TextLeft1:GetText()
     local mapID = C_Map.GetBestMapForUnit('player')
     if not n or not mapID then return end
     local pos = C_Map.GetPlayerMapPosition(mapID,'player')
