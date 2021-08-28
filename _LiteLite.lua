@@ -615,7 +615,7 @@ function _LiteLite:HookTooltip()
 end
 
 function _LiteLite:ListScanMobs()
-    for k,v in pairs(self.scanMobNames) do
+    for k,v in pairs(self.scanMobNames or {}) do
         printf(v)
     end
 end
