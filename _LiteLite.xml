@@ -29,7 +29,7 @@
           self.EditBox:SetFontObject("GameFontHighlight")
         </OnLoad>
         <OnShow inherit="prepend">
-          self:SetHeight(GetScreenHeight() - 40)
+          self:SetHeight(GetScreenHeight() - 160)
         </OnShow>
       </Scripts>
       <KeyValues>

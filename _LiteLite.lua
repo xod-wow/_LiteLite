@@ -165,25 +165,6 @@ function _LiteLite:BfAInvasionUp()
     end
 end
 
-local TanaanRaresQuestIDs = {
-    Deathtalon  = 39287,
-    Terrorfist  = 39288,
-    Doomroller  = 39289,
-    Vengeance   = 39290
-}
-
-function _LiteLite:TanaanRares()
-    local status
-    for rare,questID in pairs(TanaanRaresQuestIDs) do
-        if C_QuestLog.IsQuestFlaggedCompleted(questID) then
-            status = RED_FONT_COLOR_CODE .. 'Completed' .. FONT_COLOR_CODE_CLOSE
-        else
-            status = GREEN_FONT_COLOR_CODE .. 'Available' .. FONT_COLOR_CODE_CLOSE
-        end
-        printf('%s: %s', rare, status)
-    end
-end
-
 function _LiteLite:NameplateSettings()
     SetCVar('nameplateShowFriendlyNPCs', 1)
     SetCVar('nameplateShowFriends', 1)
@@ -290,37 +271,34 @@ end
 function _LiteLite:SlashCommand(arg)
 
     -- Zero argument options
-    if arg == 'quest-report' then
+    if arg == 'quest-report' or arg == 'qr' then
         local now = GetServerTime()
         self:ScanQuestsCompleted(now)
         self:ReportQuestsCompleted()
         return true
-    elseif arg == 'quest-baseline' then
+    elseif arg == 'quest-baseline' or arg == 'qb' then
         local now = GetServerTime()
         self:ScanQuestsCompleted()
         for k in pairs(self.questsCompleted) do
             self.questsCompleted[k] = 0
         end
         return true
-    elseif arg == 'chatframe-settings' then
+    elseif arg == 'chatframe-settings' or arg == 'cs' then
         self:ChatFrameSettings()
         return true
-    elseif arg == 'nameplate-settings' then
+    elseif arg == 'nameplate-settings' or arg == 'ns' then
         self:NameplateSettings()
         return true
-    elseif arg == 'tanaan-rares' then
-        self:TanaanRares()
-        return true
-    elseif arg == 'tooltip-ids' then
+    elseif arg == 'tooltip-ids' or arg == 'ti' then
         self:HookTooltip()
         return true
-    elseif arg == 'ko' or arg == 'kickoff' then
+    elseif arg == 'kickoff' or arg == 'ko' then
         self:KickOfflineRaidMembers()
         return true
-    elseif arg == 'gv' or arg == 'great-vault' then
+    elseif arg == 'great-vault' or arg == 'gv' then
         self:ShowGreatVault()
         return true
-    elseif arg == 'mp' or arg == 'mythic-plus-history' then
+    elseif arg == 'mythic-plus-history' or arg == 'mph' then
         self:MythicPlusHistory()
         return true
     elseif arg == 'xp' then
@@ -329,44 +307,55 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'announce-mob' or arg == 'am' then
         self:ReportTargetLocation()
         return true
+    elseif arg == 'paste' then
+        self:CopyPaste()
+        return true
     end
 
     -- One argument options
     local arg1, arg2 = string.split(' ', arg, 2)
-    if arg1 == 'mouseover-macro' then
+    if arg1 == 'mouseover-macro' or arg1 == 'mm' then
         self:CreateSpellMacro(MouseoverMacroTemplate, arg2)
         return true
-    elseif arg1 == 'trinket-macro' then
+    elseif arg1 == 'trinket-macro' or arg1 == 'tm' then
         self:CreateSpellMacro(TrinketMacroTemplate, arg2)
         return true
-    elseif arg1 == 'gkeys' then
+    elseif arg1 == 'gkeys' or arg1 == 'gk' then
         self:SearchGlobalKeys(arg2)
         return true
-    elseif arg1 == 'gvals' then
+    elseif arg1 == 'gvals' or arg1 == 'gv' then
         self:SearchGlobalValues(arg2)
         return true
-    elseif arg1 == 'find-mob' then
-        self:ScanForMob(arg2)
+    elseif arg1 == 'find-mob' or arg1 == 'fm' then
+        if not arg2 then
+            self:ListScanMobs()
+        else
+            self:ScanForMob(arg2)
+        end
         return true
-    elseif arg1 == 'wq-items' then
+    elseif arg1 == 'clear-find-mob' or arg1 == 'cfm' then
+        self:ClearScanMobs()
+        return true
+    elseif arg1 == 'wq-items' or arg1 == 'wqi' then
         self:WorldQuestItems(arg2)
         return true
-    elseif arg1 == 'copy-chat' then
+    elseif arg1 == 'copy-chat' or arg1 == 'cc' then
         self:CopyChat()
         return true
     end
 
     -- Two argument options
     local arg1, arg2, arg3 = string.split(' ', arg, 3)
-    if arg1 == 'equipset-icon' and arg2 == 'auto' then
-        self:AutoEquipsetIcons()
-        return true
-    elseif arg1 == 'equipset-icon' then
-        self:SetEquipsetIcon(arg2, arg3)
+    if arg1 == 'equipset-icon' or arg1 == 'esi' then
+        if arg2 == 'auto' then
+            self:AutoEquipsetIcons()
+        elseif arg2 and arg3 then
+            self:SetEquipsetIcon(arg2, arg3)
+        end
         return true
     end
 
-    printf("/ll announce-mob")
+    printf("/ll announce-mob | am")
     printf("/ll chatframe-settings")
     printf("/ll equipset-icon [n [iconid]]")
     printf("/ll equipset-icon auto")
@@ -379,7 +368,6 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll nameplate-settings")
     printf("/ll quest-baseline")
     printf("/ll quest-report")
-    printf("/ll tanaan-rares")
     printf("/ll tooltip-ids")
     printf("/ll trinket-macro [spellname]")
     printf("/ll wq-items")
@@ -582,6 +570,22 @@ function _LiteLite:CopyChat(sourceFrame)
     _LiteLiteText:Show()
 end
 
+function _LiteLite:CopyPaste()
+    if _LiteLiteText:IsShown() then
+        local text = _LiteLiteText.EditBox:GetText()
+        ChatFrame_OpenChat("")
+        local edit = ChatEdit_GetActiveWindow()
+        for _, line in ipairs({ string.split("\n", text) }) do
+            edit:SetText(line)
+            ChatEdit_SendText(edit, 1)
+            ChatEdit_DeactivateChat(edit)
+        end
+    else
+        _LiteLiteText.EditBox:SetText('')
+        _LiteLiteText:Show()
+    end
+end
+
 function _LiteLite:HookTooltip()
     GameTooltip:HookScript('OnTooltipSetItem',
         function (ttFrame)
@@ -610,37 +614,44 @@ function _LiteLite:HookTooltip()
         end)
 end
 
+function _LiteLite:ListScanMobs()
+    for k,v in pairs(self.scanMobNames) do
+        printf(v)
+    end
+end
+
+function _LiteLite:ClearScanMobs()
+    self.scanMobNames = table.wipe(self.scanMobNames or {})
+    self.announcedMobGUID = table.wipe(self.announcedMobGUID or {})
+    self:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
+    self:UnregisterEvent("VIGNETTES_UPDATED")
+    self:UnregisterEvent("VIGNETTE_MINIMAP_UPDATED")
+end
+
 function _LiteLite:ScanForMob(name)
     self.scanMobNames = self.scanMobNames or {}
     self.announcedMobGUID = self.announcedMobGUID or {}
-    if name then
-        table.insert(self.scanMobNames, name:lower())
-        self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-        self:RegisterEvent("VIGNETTES_UPDATED")
-        self:RegisterEvent("VIGNETTE_MINIMAP_UPDATED")
-    else
-        wipe(self.scanMobNames)
-        wipe(self.announcedMobGUID)
-        self:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
-        self:UnregisterEvent("VIGNETTES_UPDATED")
-        self:UnregisterEvent("VIGNETTE_MINIMAP_UPDATED")
-    end
+    table.insert(self.scanMobNames, name:lower())
+    self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+    self:RegisterEvent("VIGNETTES_UPDATED")
+    self:RegisterEvent("VIGNETTE_MINIMAP_UPDATED")
 end
 
 function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
     local name = UnitName(unit):lower()
     local guid = UnitGUID(unit)
-    if self.announcedMobGUID[guid] then return end
 
     local npcID = select(6, strsplit('-', UnitGUID(unit)))
 
     for _, n in ipairs(self.scanMobNames) do
         if ( name and name:find(n) ) or
            ( npcID and tonumber(n) == tonumber(npcID) ) then
-            self.announcedMobGUID[guid] = name
-            local msg = format("Nameplate %s found", name)
-            printf(msg)
-            PlaySound(11466)
+            if not self.announcedMobGUID[guid] then
+                self.announcedMobGUID[guid] = name
+                local msg = format("Nameplate %s found", name)
+                printf(msg)
+                PlaySound(11466)
+            end
             if not GetRaidTargetIndex(unit) then
                 SetRaidTarget(unit, 6)
             end
@@ -650,15 +661,12 @@ end
 
 function _LiteLite:VIGNETTE_MINIMAP_UPDATED(id)
     local info = C_VignetteInfo.GetVignetteInfo(id)
-
-    if not info then return end
-
-    local alert = false
+    if not info or self.announcedMobGUID[info.objectGUID] then return end
 
     for _, n in ipairs(self.scanMobNames) do
         if info.name and info.name:lower():find(n) then
+            self.announcedMobGUID[info.objectGUID] = info.name
             local msg = format("Vignette %s found", info.name)
-            self.announcedMobGUID[info.objectGUID] = true
             printf(msg)
             PlaySound(11466)
         end
@@ -850,7 +858,10 @@ function _LiteLite:CHAT_MSG_COMBAT_XP_GAIN()
 end
 
 function _LiteLite:ReportTargetLocation()
-    local n = UnitName('target') or GameTooltip.TextLeft1:GetText()
+    local n = UnitName('target')
+    if not n or UnitIsDead('target') then
+        n = GameTooltip.TextLeft1:GetText()
+    end
     local mapID = C_Map.GetBestMapForUnit('player')
     if not n or not mapID then return end
     local pos = C_Map.GetPlayerMapPosition(mapID,'player')
