@@ -1,4 +1,4 @@
-## Interface: 90100
+## Interface: 90105
 ## Title: _LiteLite
 ## Version: v0.0
 ## Author: Xodiv-Nagrand
