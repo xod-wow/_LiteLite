@@ -700,6 +700,8 @@ local function PrintEquipmentQuestRewards(mapName, questID)
                     local _, link, _, _, _, _, _, _, equipLoc = GetItemInfo(itemID)
                     if equipLoc ~= "" then
                         printf('    %s %d : [%s] %s (%d)', mapName, questID, _G[equipLoc], link or name, itemLevel)
+                    elseif C_Soulbinds.IsItemConduitByItemInfo(link) then
+                        printf('    %s %d : [CONDUIT] %s (%d)', mapName, questID, link or name, itemLevel)
                     end
                 end)
         end
