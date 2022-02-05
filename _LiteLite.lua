@@ -570,20 +570,21 @@ function _LiteLite:CopyChat(sourceFrame)
     _LiteLiteText:Show()
 end
 
-function _LiteLite:CopyPaste()
-    if _LiteLiteText:IsShown() then
-        local text = _LiteLiteText.EditBox:GetText()
-        ChatFrame_OpenChat("")
-        local edit = ChatEdit_GetActiveWindow()
-        for _, line in ipairs({ string.split("\n", text) }) do
-            edit:SetText(line)
-            ChatEdit_SendText(edit, 1)
-            ChatEdit_DeactivateChat(edit)
-        end
-    else
-        _LiteLiteText.EditBox:SetText('')
-        _LiteLiteText:Show()
+local function ApplyPaste()
+    local text = _LiteLiteText.EditBox:GetText()
+    ChatFrame_OpenChat("")
+    local edit = ChatEdit_GetActiveWindow()
+    for _, line in ipairs({ string.split("\n", text) }) do
+        edit:SetText(line)
+        ChatEdit_SendText(edit, 1)
+        ChatEdit_DeactivateChat(edit)
     end
+end
+
+function _LiteLite:CopyPaste()
+    _LiteLiteText.ApplyFunc = ApplyPaste
+    _LiteLiteText.EditBox:SetText('')
+    _LiteLiteText:Show()
 end
 
 function _LiteLite:HookTooltip()

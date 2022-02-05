@@ -30,6 +30,7 @@
         </OnLoad>
         <OnShow inherit="prepend">
           self:SetHeight(GetScreenHeight() - 160)
+          self.Apply:SetShown(self.ApplyFunc ~= nil)
         </OnShow>
       </Scripts>
       <KeyValues>
@@ -40,9 +41,22 @@
           <Anchor point="CENTER" />
       </Anchors>
       <Frames>
+          <Button parentKey="Apply" inherits="UIPanelButtonTemplate" text="APPLY">
+            <Size x="72" y="22" />
+            <Anchors>
+                <Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" x="-22" y="6" />
+            </Anchors>
+            <Scripts>
+                <OnClick inherit="prepend">
+                  self:GetParent():ApplyFunc()
+                  self:GetParent().ApplyFunc = nil
+                  self:GetParent():Hide()
+                </OnClick>
+            </Scripts>
+          </Button>
           <Button inherits="UIPanelCloseButton">
               <Anchors>
-                  <Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" x="4" y="-4" />
+                  <Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" x="8" y="0" />
               </Anchors>
           </Button>
       </Frames>
