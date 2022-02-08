@@ -214,6 +214,16 @@ function strtemplate(str, vars, ...)
             ))
 end
 
+local function CreateOrEditMacro(macroName, macroText, isLocal)
+    local i = GetMacroIndexByName(macroName)
+    if i == 0 then
+        i = CreateMacro(macroName, 'INV_MISC_QUESTIONMARK', macroText, isLocal)
+    else
+        EditMacro(i, nil, nil, macroText)
+    end
+    return i
+end
+
 function _LiteLite:CreateSpellMacro(template, spell)
     spell = spell or GameTooltipSpellInfo()
     if not spell then
@@ -222,12 +232,7 @@ function _LiteLite:CreateSpellMacro(template, spell)
 
     local macroName = '_' .. spell
     local macroText = strtemplate(template, spell)
-    local i = GetMacroIndexByName(macroName)
-    if i == 0 then
-        i = CreateMacro(macroName, 'INV_MISC_QUESTIONMARK', macroText, true)
-    else
-        EditMacro(i, nil, nil, macroText)
-    end
+    local i = CreateOrEditMacro(macroName, macroText, true)
     if i then PickupMacro(i) end
 end
 
@@ -398,10 +403,12 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('ENCOUNTER_START')
     self:RegisterEvent('ENCOUNTER_END')
     self:RegisterEvent('CHAT_MSG_COMBAT_XP_GAIN')
+    self:RegisterEvent('COVENANT_CHOSEN')
 
     self:BiggerFrames()
     self:ShiftEnchantsScroll()
     self:HideMainMenuBarArt()
+    self:UpdateCovenantMacros()
 
     hooksecurefunc('IslandsQueue_LoadUI', self.DefaultIslandsQueueHeroic)
 
@@ -881,4 +888,45 @@ function _LiteLite:HideMainMenuBarArt()
     MainMenuBarArtFrame.Background:Hide()
     MainMenuBarArtFrame.LeftEndCap:Hide()
     MainMenuBarArtFrame.RightEndCap:Hide()
+end
+
+
+local CastMacroFormat = '#showtooltip\n/cast %s'
+
+local SignatureAbilities = {
+    [1] = 324739,   -- Kyrian, Summon Steward
+    [2] = 300728,   -- Venthyr, Door of Shadows
+    [3] = 310143,   -- Night Fae, Soulshape
+    [4] = 324631,   -- Necrolord, Fleshcraft
+}
+
+function _LiteLite:UpdateCovenantMacros()
+    local id = C_Covenants.GetActiveCovenantID()
+    if ( id or 0 ) == 0 then return end
+
+    local sig = GetSpellInfo(SignatureAbilities[id])
+    local sigText = string.format(CastMacroFormat, sig)
+    CreateOrEditMacro('Signature', sigText)
+
+    local covenantName = C_Covenants.GetCovenantData(id).name
+
+    -- Scan the spellbook for a spell whose subtext is the covenant name
+    -- and which isn't the signature ability.
+
+    local i = 1
+    while true do
+        local _, id = GetSpellBookItemInfo(i, "spell")
+        if not id then break end
+        if GetSpellSubtext(id) == covenantName and not tContains(SignatureAbilities, id) then
+            local cov = GetSpellInfo(id)
+            local covText = string.format(CastMacroFormat, cov)
+            CreateOrEditMacro('Covenant', covText)
+            break
+        end
+        i = i + 1
+    end
+end
+
+function _LiteLite:COVENANT_CHOSEN()
+    self:UpdateCovenantMacros()
 end
