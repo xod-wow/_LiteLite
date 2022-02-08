@@ -891,7 +891,8 @@ function _LiteLite:HideMainMenuBarArt()
 end
 
 
-local CastMacroFormat = '#showtooltip\n/cast %s'
+local CastFormat = '#showtooltip\n/cast %s'
+local CastAtFormat = '#showtooltip\n/cast [mod:alt][nocombat][@player] %s'
 
 local SignatureAbilities = {
     [1] = 324739,   -- Kyrian, Summon Steward
@@ -900,28 +901,38 @@ local SignatureAbilities = {
     [4] = 324631,   -- Necrolord, Fleshcraft
 }
 
+local CastFormats = {
+    [306830] = CastAtFormat,    -- Elysian Decree (Kyrian Demon Hunter)
+    [307865] = CastAtFormat,    -- Spear of Bastion (Kyrian Warrior)
+    [325216] = CastAtFormat,    -- Bonedust Brew (Necrolord Monk)
+}
+
 function _LiteLite:UpdateCovenantMacros()
     local id = C_Covenants.GetActiveCovenantID()
     if ( id or 0 ) == 0 then return end
 
     local sig = GetSpellInfo(SignatureAbilities[id])
-    local sigText = string.format(CastMacroFormat, sig)
+    local sigText = string.format(CastFormat, sig)
     CreateOrEditMacro('Signature', sigText)
 
     local covenantName = C_Covenants.GetCovenantData(id).name
 
     -- Scan the spellbook for a spell whose subtext is the covenant name
-    -- and which isn't the signature ability.
+    -- and which isn't the signature ability. Subtext is load on demand
+    -- so we have to use the callback. If there's more than one that matches
+    -- I guess they'll just duke it out.
 
     local i = 1
     while true do
-        local _, id = GetSpellBookItemInfo(i, "spell")
-        if not id then break end
-        if GetSpellSubtext(id) == covenantName and not tContains(SignatureAbilities, id) then
-            local cov = GetSpellInfo(id)
-            local covText = string.format(CastMacroFormat, cov)
-            CreateOrEditMacro('Covenant', covText)
-            break
+        local name, _, id = GetSpellBookItemName(i, "spell")
+        if not name then break end
+        if id and not tContains(SignatureAbilities, id) then
+            local spell = Spell:CreateFromSpellID(id)
+            spell:ContinueOnSpellLoad(function()
+                if spell:GetSpellSubtext() ~= covenantName then return end
+                local covText = string.format(CastFormats[id] or CastFormat, name)
+                CreateOrEditMacro('Covenant', covText)
+            end)
         end
         i = i + 1
     end
