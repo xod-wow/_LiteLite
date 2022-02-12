@@ -23,6 +23,9 @@ local TrinketMacroTemplate =
 /cast {1}
 ]]
 
+local ScanTooltip = CreateFrame("GameTooltip", "_LiteLiteScanTooltip")
+ScanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
+
 _LiteLite = CreateFrame('Frame')
 _LiteLite:SetScript('OnEvent',
         function (self, e, ...)
@@ -410,8 +413,6 @@ function _LiteLite:PLAYER_LOGIN()
     self:HideMainMenuBarArt()
     self:UpdateCovenantMacros()
 
-    hooksecurefunc('IslandsQueue_LoadUI', self.DefaultIslandsQueueHeroic)
-
     MerchantRepairItemButton:SetScript('OnClick', function () self:SellJunk() end)
 
     C_Timer.After(15, _LiteLite.RunTimedChecks)
@@ -687,50 +688,24 @@ function _LiteLite:VIGNETTES_UPDATED()
     end
 end
 
-local function PrintEquipmentQuestRewards(mapName, questID)
-    if not QuestUtils_IsQuestWorldQuest(questID) then
-        return true
-    end
+local function PrintEquipmentQuestRewards(info)
+    local i, rewardType = QuestUtils_GetBestQualityItemRewardIndex(info.questId)
+    if not i or i == 0 then return end
+    local itemID, itemLevel = select(6, GetQuestLogRewardInfo(i, info.questId))
+    if not itemID then return end
 
-    if not HaveQuestRewardData(questID) then
-        C_TaskQuest.RequestPreloadRewardData(questID)
-        return false
-    end
-
-    local n = GetNumQuestLogRewards(questID)
-    if n == 0 then return end
-    for i = 1, n do
-        local name, texture, quantity, quality, isUsable, itemID, itemLevel = GetQuestLogRewardInfo(i, questID)
-        if itemID then
-            local item = Item:CreateFromItemID(itemID)
-            item:ContinueOnItemLoad(
-                function ()
-                    local _, link, _, _, _, _, _, _, equipLoc = GetItemInfo(itemID)
-                    if equipLoc ~= "" then
-                        printf('    %s %d : [%s] %s (%d)', mapName, questID, _G[equipLoc], link or name, itemLevel)
-                    elseif C_Soulbinds.IsItemConduitByItemInfo(link) then
-                        printf('    %s %d : [CONDUIT] %s (%d)', mapName, questID, link or name, itemLevel)
-                    end
-                end)
-        end
-    end
-
-    return true
-end
-
-local function GetMapQuestRewards(mapInfo)
-    local quests = C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)
-    for _, info in ipairs(quests) do
-        if info.mapID == mapInfo.mapID then
-            local done = PrintEquipmentQuestRewards(mapInfo.name, info.questId)
-            if not done then
-                C_Timer.After(2,
-                    function ()
-                        PrintEquipmentQuestRewards(mapInfo.name, info.questId)
-                    end)
+    local item = Item:CreateFromItemID(itemID)
+    item:ContinueOnItemLoad(
+        function ()
+            ScanTooltip:SetQuestLogItem(rewardType, i, info.questId, true) 
+            local _, link = ScanTooltip:GetItem()
+            local equipLoc = select(9, GetItemInfo(itemID))
+            if equipLoc ~= "" then
+                printf('  [%s] %s (%d) - %s ', _G[equipLoc], link, itemLevel, info.mapName)
+            elseif C_Soulbinds.IsItemConduitByItemInfo(link) then
+                printf('  [CONDUIT] %s - %s ', link, info.mapName)
             end
-        end
-    end
+        end)
 end
 
 function _LiteLite:WorldQuestItems(expansion)
@@ -743,42 +718,36 @@ function _LiteLite:WorldQuestItems(expansion)
         return
     end
 
-    --[[
-    printf('Emissary item rewards:')
-    local bounties = GetQuestBountyInfoForMapID(875)
-    for _, bounty in ipairs(bounties) do
-        -- PrintEquipmentQuestRewards('Emissary', bounty.questID)
-    end
-    ]]
-
-    printf('World quest item rewards:')
+    local mapQuests = { }
     for _, parentMapID in ipairs(maps) do
         local childInfo = C_Map.GetMapChildrenInfo(parentMapID)
         for _,mapInfo in pairs(childInfo or {}) do
             if mapInfo.mapType == Enum.UIMapType.Zone then
-                GetMapQuestRewards(mapInfo)
+                for _, questInfo in ipairs(C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)) do
+                    if C_QuestLog.IsWorldQuest(questInfo.questId) then
+                        questInfo.mapName = mapInfo.name
+                        table.insert(mapQuests, questInfo)
+                        C_TaskQuest.RequestPreloadRewardData(questInfo.questId)
+                    end
+                end
             end
         end
     end
-end
 
-function _LiteLite:DefaultIslandsQueueHeroic()
-    IslandsQueueFrame:HookScript('OnShow',
+    C_Timer.NewTicker(0.5,
         function (self)
-            local d
-            if GetNumGroupMembers() == 3 then
-                d = 1737
-            else
-                d = 1736
+            local allKnown = true
+            for _, info in ipairs(mapQuests) do
+                if not HaveQuestRewardData(info.questId) then allKnown = false break end
             end
-            local dsf =  self.DifficultySelectorFrame
-            for button in dsf.difficultyPool:EnumerateActive() do
-                if button.difficulty == d then
-                    self.DifficultySelectorFrame:SetActiveDifficulty(button)
-                return
+            if allKnown then
+                printf("World quest item rewards:")
+                for _, info in ipairs(mapQuests) do
+                    PrintEquipmentQuestRewards(info)
+                end
+                self:Cancel()
             end
-            end
-        end)
+        end, 5)
 end
 
 function _LiteLite:KickOfflineRaidMembers()
