@@ -707,7 +707,6 @@ local function PrintEquipmentQuestRewards(info)
         function ()
             ScanTooltip:SetQuestLogItem(rewardType, i, info.questId, true) 
             local name, link = ScanTooltip:GetItem()
-print(itemID, name, tostring(link))
             local equipLoc = select(9, GetItemInfo(itemID))
             if equipLoc ~= "" then
                 printf('  [%s] %s (%d) - %s ', _G[equipLoc], link, itemLevel, info.mapName)
