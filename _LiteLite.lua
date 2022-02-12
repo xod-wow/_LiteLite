@@ -24,7 +24,15 @@ local TrinketMacroTemplate =
 ]]
 
 local ScanTooltip = CreateFrame("GameTooltip", "_LiteLiteScanTooltip")
-ScanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
+do
+    ScanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
+
+    for i = 1, 5 do
+        local left = ScanTooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local right = ScanTooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        ScanTooltip:AddFontStrings(left, right)
+    end
+end
 
 _LiteLite = CreateFrame('Frame')
 _LiteLite:SetScript('OnEvent',
@@ -698,7 +706,8 @@ local function PrintEquipmentQuestRewards(info)
     item:ContinueOnItemLoad(
         function ()
             ScanTooltip:SetQuestLogItem(rewardType, i, info.questId, true) 
-            local _, link = ScanTooltip:GetItem()
+            local name, link = ScanTooltip:GetItem()
+print(itemID, name, tostring(link))
             local equipLoc = select(9, GetItemInfo(itemID))
             if equipLoc ~= "" then
                 printf('  [%s] %s (%d) - %s ', _G[equipLoc], link, itemLevel, info.mapName)
