@@ -755,7 +755,7 @@ function _LiteLite:WorldQuestItems(expansion)
                 end
                 self:Cancel()
             end
-        end, 5)
+        end, 10)
 end
 
 function _LiteLite:KickOfflineRaidMembers()
@@ -915,6 +915,12 @@ function _LiteLite:UpdateCovenantMacros()
     end
 end
 
+-- COVENANT_CHOSEN fires before the spells are updated
 function _LiteLite:COVENANT_CHOSEN()
+    self:RegisterEvent('SOULBIND_ACTIVATED')
+end
+
+function _LiteLite:SOULBIND_ACTIVATED()
+    self:UnregisterEvent('SOULBIND_ACTIVATED')
     self:UpdateCovenantMacros()
 end
