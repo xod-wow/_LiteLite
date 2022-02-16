@@ -27,10 +27,15 @@ local ScanTooltip = CreateFrame("GameTooltip", "_LiteLiteScanTooltip")
 do
     ScanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
 
+    ScanTooltip.left = {}
+    ScanTooltip.right = {}
+
     for i = 1, 5 do
-        local left = ScanTooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        local right = ScanTooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        ScanTooltip:AddFontStrings(left, right)
+        local L = ScanTooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local R = ScanTooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        ScanTooltip.left[i] = L
+        ScanTooltip.right[i] = R
+        ScanTooltip:AddFontStrings(L, R)
     end
 end
 
@@ -325,6 +330,9 @@ function _LiteLite:SlashCommand(arg)
         return true
     elseif arg == 'paste' then
         self:CopyPaste()
+        return true
+    elseif arg == 'skips' then
+        self:PrintSkips()
         return true
     end
 
@@ -923,4 +931,16 @@ end
 function _LiteLite:SOULBIND_ACTIVATED()
     self:UnregisterEvent('SOULBIND_ACTIVATED')
     self:UpdateCovenantMacros()
+end
+
+local function PrintIfCompletedQuest(questID)
+    ScanTooltip:SetHyperlink("quest:"..questID)
+    local name = ScanTooltip.left[1]:GetText()
+    local complete = C_QuestLog.IsQuestFlaggedCompleted(questID)
+    local color = complete and GREEN_FONT_COLOR or RED_FONT_COLOR
+    printf( "%s: %s", name, color:WrapTextInColorCode(tostring(complete)))
+end
+
+function _LiteLite:PrintSkips(what)
+    PrintIfCompletedQuest(45383)        -- Nighthold
 end
