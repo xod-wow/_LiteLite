@@ -216,7 +216,7 @@ local function GameTooltipIcon()
     end
 end
 
-function strtemplate(str, vars, ...)
+local function strtemplate(str, vars, ...)
     -- Can pass {1} {2} etc. as varargs rather than table
     if type(vars) ~= 'table' then
         vars = { vars, ... }
@@ -304,6 +304,9 @@ function _LiteLite:SlashCommand(arg)
             self.questsCompleted[k] = 0
         end
         return true
+    elseif arg == 'cuf-profile' or arg == 'cp' then
+        self:PrimaryRaidProfile()
+        return true
     elseif arg == 'chatframe-settings' or arg == 'cs' then
         self:ChatFrameSettings()
         return true
@@ -381,6 +384,7 @@ function _LiteLite:SlashCommand(arg)
 
     printf("/ll announce-mob | am")
     printf("/ll chatframe-settings")
+    printf("/ll cuf-profile")
     printf("/ll equipset-icon [n [iconid]]")
     printf("/ll equipset-icon auto")
     printf("/ll find-mob substring")
@@ -419,6 +423,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:SetupSlashCommand()
     self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
     self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
+    self:RegisterEvent('CHAT_MSG_MONSTER_EMOTE')
     self:RegisterEvent('ENCOUNTER_START')
     self:RegisterEvent('ENCOUNTER_END')
     self:RegisterEvent('CHAT_MSG_COMBAT_XP_GAIN')
@@ -428,6 +433,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:ShiftEnchantsScroll()
     self:HideMainMenuBarArt()
     self:UpdateCovenantMacros()
+    self:OtherAddonProfiles()
 
     MerchantRepairItemButton:SetScript('OnClick', function () self:SellJunk() end)
 
@@ -439,6 +445,13 @@ function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
         PlaySound(11466)
         self:FlashScreen(10)
         UIErrorsFrame:AddMessage(msg, 0.1, 1.0, 0.1)
+    end
+end
+
+function _LiteLite:CHAT_MSG_MONSTER_EMOTE(msg, name)
+    msg = ORANGE_FONT_COLOR:WrapTextInColorCode(msg)
+    if C_Map.GetBestMapForUnit('player') == 1970 then -- Zereth Mortis
+        UIErrorsFrame:AddMessage(string.format(msg, name))
     end
 end
 
@@ -943,4 +956,77 @@ end
 
 function _LiteLite:PrintSkips(what)
     PrintIfCompletedQuest(45383)        -- Nighthold
+end
+
+
+local function SetAceProfileToDefault(c)
+    local PlayerProfileName = string.format('%s - %s', UnitFullName('player'))
+    local ClassProfileName = UnitClass('player')
+    if c then
+        local p = c.db:GetCurrentProfile()
+        if p == PlayerProfileName or p == ClassProfileName then
+            c.db:SetProfile('Default')
+            if c.db.profiles[PlayerProfileName] then
+                c.db:DeleteProfile(PlayerProfileName)
+            end
+            if c.db.profiles[ClassProfileName] then
+                c.db:DeleteProfile(ClassProfileName)
+            end
+        end
+    end
+end
+
+function _LiteLite:OtherAddonProfiles()
+    SetAceProfileToDefault(HandyNotes)
+    SetAceProfileToDefault(Dominos)
+end
+
+local RaidProfileSettings = {
+    autoActivate10Players = false,
+    autoActivate15Players = false,
+    autoActivate25Players = false,
+    autoActivate2Players = false,
+    autoActivate3Players = false,
+    autoActivate40Players = false,
+    autoActivate5Players = false,
+    autoActivatePvE = false,
+    autoActivatePvP = false,
+    autoActivateSpec1 = false,
+    autoActivateSpec2 = false,
+    autoActivateSpec3 = false,
+    autoActivateSpec4 = false,
+    displayAggroHighlight = true,
+    displayBorder = false,
+    displayHealPrediction = true,
+    displayMainTankAndAssist = false,
+    displayNonBossDebuffs = true,
+    displayOnlyDispellableDebuffs = true,
+    displayPets = false,
+    displayPowerBar = false,
+    frameHeight = 45,
+    frameWidth = 72,
+    healthText = "none",
+    horizontalGroups = false,
+    keepGroupsTogether = true,
+    locked = true,
+    shown = true,
+    sortBy = "role",
+    useClassColors = true,
+}
+
+function _LiteLite:PrimaryRaidProfile()
+    local crfm = CompactRaidFrameManager
+    if crfm and crfm.containerResizeFrame:IsShown() then
+        SetRaidProfileSavedPosition(
+            'Primary',
+            false,
+            "BOTTOM", GetScreenHeight()/2,
+            "BOTTOM", GetScreenHeight()/2 - 5*50,
+            "RIGHT", GetScreenWidth()/3
+        )
+        for k,v in pairs(RaidProfileSettings) do
+            SetRaidProfileOption('Primary', k, v)
+        end
+        CompactRaidFrameManager_ResizeFrame_LoadPosition(crfm)
+    end
 end

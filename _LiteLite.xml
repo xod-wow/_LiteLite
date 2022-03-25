@@ -20,7 +20,7 @@
          frameStrata="DIALOG" toplevel="true" movable="true">
       <Scripts>
         <OnLoad inherit="prepend">
-          table.insert(UISpecialFrames, self:GetName())
+          hooksecurefunc('CloseAllWindows', function () self:Hide() end)
           for _,r in ipairs({ self:GetRegions() }) do
             if r.SetColorTexture then
                 r:SetColorTexture(0,0,0,1)
