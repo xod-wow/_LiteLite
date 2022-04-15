@@ -376,7 +376,7 @@ function _LiteLite:SlashCommand(arg)
     if arg1 == 'equipset-icon' or arg1 == 'esi' then
         if arg2 == 'auto' then
             self:AutoEquipsetIcons()
-        elseif arg2 and arg3 then
+        else
             self:SetEquipsetIcon(arg2, arg3)
         end
         return true
