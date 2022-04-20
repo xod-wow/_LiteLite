@@ -1035,6 +1035,7 @@ function _LiteLite:PrimaryRaidProfile()
 end
 
 function _LiteLite:MotesOfFate()
+    C_ItemInteraction.GetChargeInfo()
     local info = C_CurrencyInfo.GetCurrencyInfo(2000)
     local msg = string.format('%s: %d', info.name, info.quantity)
     printf(msg)
