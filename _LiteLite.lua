@@ -648,9 +648,11 @@ function _LiteLite:HookTooltip()
     GameTooltip:HookScript('OnTooltipSetUnit',
         function (ttFrame)
             local _, unit = GameTooltip:GetUnit()
-            local _, _, _, _, _, id = strsplit('-', UnitGUID(unit))
-            if id then
-                ttFrame:AddDoubleLine("UnitID", id)
+            if unit then
+                local _, _, _, _, _, id = strsplit('-', UnitGUID(unit))
+                if id then
+                    ttFrame:AddDoubleLine("UnitID", id)
+                end
             end
         end)
 end
