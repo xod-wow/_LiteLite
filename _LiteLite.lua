@@ -954,9 +954,11 @@ end
 local function PrintIfCompletedQuest(questID)
     ScanTooltip:SetHyperlink("quest:"..questID)
     local name = ScanTooltip.left[1]:GetText()
-    local complete = C_QuestLog.IsQuestFlaggedCompleted(questID)
-    local color = complete and GREEN_FONT_COLOR or RED_FONT_COLOR
-    printf( "%s: %s", name, color:WrapTextInColorCode(tostring(complete)))
+    if name then
+        local complete = C_QuestLog.IsQuestFlaggedCompleted(questID)
+        local color = complete and GREEN_FONT_COLOR or RED_FONT_COLOR
+        printf( "%s: %s", name, color:WrapTextInColorCode(tostring(complete)))
+    end
 end
 
 function _LiteLite:PrintSkips(what)
@@ -984,6 +986,7 @@ end
 function _LiteLite:OtherAddonProfiles()
     SetAceProfileToDefault(HandyNotes)
     SetAceProfileToDefault(Dominos)
+    SetAceProfileToDefault(TLDRMissions)
 end
 
 local RaidProfileSettings = {
