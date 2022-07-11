@@ -62,4 +62,8 @@
       </Frames>
   </ScrollFrame>
 
+  <Button name="_LiteLiteAdventureUpgradeButton" hidden="true" inherits="UIPanelButtonTemplate SecureActionButtonTemplate">
+    <Size y="26" />
+  </Button>
+
 </Ui>

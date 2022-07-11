@@ -297,6 +297,9 @@ function _LiteLite:SlashCommand(arg)
         self:ScanQuestsCompleted(now)
         self:ReportQuestsCompleted()
         return true
+    elseif arg == 'adventure-upgrade' or arg == 'au' then
+        self:UpgradeAdventureTableFollower()
+        return true
     elseif arg == 'quest-baseline' or arg == 'qb' then
         local now = GetServerTime()
         self:ScanQuestsCompleted()
@@ -385,6 +388,7 @@ function _LiteLite:SlashCommand(arg)
         return true
     end
 
+    printf("/ll adventure-upgrade | au")
     printf("/ll announce-mob | am")
     printf("/ll chatframe-settings")
     printf("/ll cuf-profile")
@@ -437,6 +441,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:HideMainMenuBarArt()
     self:UpdateCovenantMacros()
     self:OtherAddonProfiles()
+    self:SetUpAdventureUpgradeButton()
 
     MerchantRepairItemButton:SetScript('OnClick', function () self:SellJunk() end)
 
@@ -966,13 +971,13 @@ function _LiteLite:PrintSkips(what)
 end
 
 
-local function SetAceProfileToDefault(c)
+function _LiteLite:SetAceProfile(c, profileName)
     local PlayerProfileName = string.format('%s - %s', UnitFullName('player'))
     local ClassProfileName = UnitClass('player')
     if c then
-        local p = c.db:GetCurrentProfile()
-        if p == PlayerProfileName or p == ClassProfileName then
-            c.db:SetProfile('Default')
+        print(profileName)
+        if c.db:GetCurrentProfile() ~= ProfileName then
+            c.db:SetProfile(profileName)
             if c.db.profiles[PlayerProfileName] then
                 c.db:DeleteProfile(PlayerProfileName)
             end
@@ -984,9 +989,10 @@ local function SetAceProfileToDefault(c)
 end
 
 function _LiteLite:OtherAddonProfiles()
-    SetAceProfileToDefault(HandyNotes)
-    SetAceProfileToDefault(Dominos)
-    SetAceProfileToDefault(TLDRMissions)
+    self:SetAceProfile(HandyNotes, 'Default')
+    self:SetAceProfile(Dominos, 'Default')
+
+    -- TLDRMissions moved into AdventureTable button
 end
 
 local RaidProfileSettings = {
@@ -1046,3 +1052,113 @@ function _LiteLite:MotesOfFate()
     printf(msg)
 end
 
+local followerTypeID = Enum.GarrisonFollowerType.FollowerType_9_0
+
+local function GetAdventureUpgradeFollower()
+
+    local function LevelSort(a, b)
+        if a.level ~= b.level then
+            return a.level > b.level
+        elseif a.xp ~= b.xp then
+            return a.xp > b.xp
+        else
+            return a.name > b.name
+        end
+    end
+
+    local followers = C_Garrison.GetFollowers(followerTypeID)
+    local troops = C_Garrison.GetAutoTroops(followerTypeID)
+
+    if not troops[1] or troops[1].level == 60 then
+        return
+    end
+
+    table.sort(followers, LevelSort)
+
+    for _,f in ipairs(followers) do
+        if f.level <= troops[1].level then
+            return f, troops[1].level
+        end
+    end
+end
+
+function _LiteLite:UpgradeAdventureTableFollower()
+    local f = GetAdventureUpgradeFollower()
+    if f and SpellCanTargetGarrisonFollower(f.followerID) then
+        if f.status == GARRISON_FOLLOWER_ON_MISSION then
+            printf('Follower %s is on a mission.', f.name)
+        else
+            printf('Upgrading follower %s.', f.name)
+            C_Garrison.CastSpellOnFollower(f.followerID)
+        end
+    end
+end
+
+function _LiteLite:SetUpAdventureUpgradeButton()
+    local b = _LiteLiteAdventureUpgradeButton
+    b:SetAttribute("type", "macro")
+    b:SetAttribute("macrotext", "/use Mind-Expanding Prism\n/use Grimoire of Knowledge\n/use Fractal Thoughtbinder\n/use Crystalline Memory Repository\n/ll au\n/stopspelltarget")
+    b:RegisterEvent("ADVENTURE_MAP_OPEN")
+
+    b:SetScript("OnShow",
+        function (self)
+            self:RegisterEvent("GARRISON_MISSION_LIST_UPDATE")
+            self:RegisterEvent("GARRISON_MISSION_FINISHED")
+            self:RegisterEvent("GARRISON_FOLLOWER_LIST_UPDATE")
+            self:RegisterEvent("GARRISON_FOLLOWER_UPGRADED")
+            self:RegisterEvent("GARRISON_FOLLOWER_XP_CHANGED")
+            self:RegisterEvent("BAG_UPDATE_DELAYED")
+            self:Update()
+        end)
+
+    b:SetScript("OnHide",
+        function (self)
+            self:UnregisterAllEvents()
+        end)
+
+    b:SetScript("OnEvent",
+        function (self, event, ...)
+            if event == "ADVENTURE_MAP_OPEN" then
+                local followerTypeID = ...
+                if followerTypeID == Enum.GarrisonFollowerType.FollowerType_9_0 then
+                    self:SetParent(CovenantMissionFrame)
+                    self:ClearAllPoints()
+                    self:SetPoint("BOTTOM", CovenantMissionFrame, "TOP", 0, 8)
+                    self:Show()
+                    local troops = C_Garrison.GetAutoTroops(followerTypeID)
+                    if troops[1] and troops[1].level < 55 then
+                        _LiteLite:SetAceProfile(TLDRMissions, 'LevelTroops')
+                    else
+                        _LiteLite:SetAceProfile(TLDRMissions, 'Default')
+                    end
+                end
+            end
+            C_Timer.After(0, function () self:Update() end)
+        end)
+
+    b.Update =
+        function (self)
+            local f, troopLevel = GetAdventureUpgradeFollower()
+            if not f then
+                self:SetText('No followers to upgrade')
+                self:Disable()
+            elseif troopLevel >= 55 then
+                self:SetText('Troop level: ' .. troopLevel)
+                self:Disable()
+            elseif GetItemCount('Mind-Expanding Prism')
+                    + GetItemCount('Grimoire of Knowledge')
+                    + GetItemCount('Fractal Thoughtbinder')
+                    + GetItemCount('Crystalline Memory Repository') == 0 then
+                self:SetText(f.name .. ' (No items)')
+                self:Disable()
+            elseif f.status == GARRISON_FOLLOWER_ON_MISSION then
+                local timeLeft = C_Garrison.GetFollowerMissionTimeLeft(f.followerID)
+                self:SetText(string.format("%s (%s)", f.name, timeLeft or ''))
+                self:Disable()
+            else
+                self:SetText(f.name)
+                self:Enable()
+            end
+            self:SetWidth(self.Text:GetWidth() + 32)
+        end
+end
