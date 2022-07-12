@@ -1068,8 +1068,10 @@ local function GetAdventureUpgradeFollower()
     local followers = C_Garrison.GetFollowers(followerTypeID)
     local troops = C_Garrison.GetAutoTroops(followerTypeID)
 
-    if not troops[1] or troops[1].level == 60 then
-        return
+    if not troops[1] then
+        return nil, 0
+    elseif troops[1].level == 60 then
+        return nil, troops[1].level
     end
 
     table.sort(followers, LevelSort)
@@ -1093,10 +1095,20 @@ function _LiteLite:UpgradeAdventureTableFollower()
     end
 end
 
+local UseXPItemMacro = [[
+/use Wisps of Memory
+/use Mind-Expanding Prism
+/use Grimoire of Knowledge
+/use Fractal Thoughtbinder
+/use Crystalline Memory Repository
+/ll au
+/stopspelltarget
+]]
+
 function _LiteLite:SetUpAdventureUpgradeButton()
     local b = _LiteLiteAdventureUpgradeButton
     b:SetAttribute("type", "macro")
-    b:SetAttribute("macrotext", "/use Mind-Expanding Prism\n/use Grimoire of Knowledge\n/use Fractal Thoughtbinder\n/use Crystalline Memory Repository\n/ll au\n/stopspelltarget")
+    b:SetAttribute("macrotext", UseXPItemMacro)
     b:RegisterEvent("ADVENTURE_MAP_OPEN")
 
     b:SetScript("OnShow",
@@ -1141,10 +1153,11 @@ function _LiteLite:SetUpAdventureUpgradeButton()
             if not f then
                 self:SetText('No followers to upgrade, troops: ' .. troopLevel)
                 self:Disable()
-            elseif troopLevel >= 55 then
+            elseif troopLevel >= 55 and GetItemCount('Wisps of Memory') == 0 then
                 self:SetText('Troops: ' .. troopLevel)
                 self:Disable()
-            elseif GetItemCount('Mind-Expanding Prism')
+            elseif GetItemCount('Wisps of Memory')
+                    + GetItemCount('Mind-Expanding Prism')
                     + GetItemCount('Grimoire of Knowledge')
                     + GetItemCount('Fractal Thoughtbinder')
                     + GetItemCount('Crystalline Memory Repository') == 0 then
