@@ -975,7 +975,6 @@ function _LiteLite:SetAceProfile(c, profileName)
     local PlayerProfileName = string.format('%s - %s', UnitFullName('player'))
     local ClassProfileName = UnitClass('player')
     if c then
-        print(profileName)
         if c.db:GetCurrentProfile() ~= ProfileName then
             c.db:SetProfile(profileName)
             if c.db.profiles[PlayerProfileName] then
@@ -1140,23 +1139,23 @@ function _LiteLite:SetUpAdventureUpgradeButton()
         function (self)
             local f, troopLevel = GetAdventureUpgradeFollower()
             if not f then
-                self:SetText('No followers to upgrade')
+                self:SetText('No followers to upgrade, troops: ' .. troopLevel)
                 self:Disable()
             elseif troopLevel >= 55 then
-                self:SetText('Troop level: ' .. troopLevel)
+                self:SetText('Troops: ' .. troopLevel)
                 self:Disable()
             elseif GetItemCount('Mind-Expanding Prism')
                     + GetItemCount('Grimoire of Knowledge')
                     + GetItemCount('Fractal Thoughtbinder')
                     + GetItemCount('Crystalline Memory Repository') == 0 then
-                self:SetText(f.name .. ' (No items)')
+                self:SetText(f.name .. ' (No items, troops: ' .. troopLevel .. ')')
                 self:Disable()
             elseif f.status == GARRISON_FOLLOWER_ON_MISSION then
                 local timeLeft = C_Garrison.GetFollowerMissionTimeLeft(f.followerID)
-                self:SetText(string.format("%s (%s)", f.name, timeLeft or ''))
+                self:SetText(string.format("%s (%s, troops: %d)", f.name, timeLeft or '', troopLevel))
                 self:Disable()
             else
-                self:SetText(f.name)
+                self:SetText(f.name .. ', troops: ' .. troopLevel)
                 self:Enable()
             end
             self:SetWidth(self.Text:GetWidth() + 32)
