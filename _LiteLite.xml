@@ -35,6 +35,7 @@
       </Scripts>
       <KeyValues>
           <KeyValue key="hideCharCount" value="true" type="boolean" />
+          <KeyValue key="maxLetters" value="0" type="number" />
       </KeyValues>
       <Size x="768" y="960" />
       <Anchors>

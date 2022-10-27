@@ -98,6 +98,8 @@ end
 function _LiteLite:ShiftEnchantsScroll()
     LoadAddOn('Blizzard_TradeSkillUI')
 
+    if not TradeSkillFrame then return end
+
     hooksecurefunc(TradeSkillFrame.DetailsFrame, 'Create',
         function ()
             if IsShiftKeyDown() == false then
@@ -893,9 +895,14 @@ function _LiteLite:ReportTargetLocation()
 end
 
 function _LiteLite:HideMainMenuBarArt()
-    MainMenuBarArtFrame.Background:Hide()
-    MainMenuBarArtFrame.LeftEndCap:Hide()
-    MainMenuBarArtFrame.RightEndCap:Hide()
+    if MainMenuBarArtFrame then
+        MainMenuBarArtFrame.Background:Hide()
+        MainMenuBarArtFrame.LeftEndCap:Hide()
+        MainMenuBarArtFrame.RightEndCap:Hide()
+    else
+        MainMenuBar.BorderArt:Hide()
+        MainMenuBar.EndCaps:Hide()
+    end
 end
 
 
@@ -990,6 +997,8 @@ end
 function _LiteLite:OtherAddonProfiles()
     self:SetAceProfile(HandyNotes, 'Default')
     self:SetAceProfile(Dominos, 'Default')
+    self:SetAceProfile(Raven, 'Default')
+    self:SetAceProfile(Accountant, 'Default')
 
     -- TLDRMissions moved into AdventureTable button
 end
@@ -1081,6 +1090,7 @@ local function GetAdventureUpgradeFollower()
             return f, troops[1].level
         end
     end
+    return nil, 0
 end
 
 function _LiteLite:UpgradeAdventureTableFollower()
@@ -1098,8 +1108,8 @@ end
 local UseXPItemMacro = [[
 /use Wisps of Memory
 /use Mind-Expanding Prism
-/use Grimoire of Knowledge
 /use Fractal Thoughtbinder
+/use Grimoire of Knowledge
 /use Crystalline Memory Repository
 /ll au
 /stopspelltarget
@@ -1153,13 +1163,13 @@ function _LiteLite:SetUpAdventureUpgradeButton()
             if not f then
                 self:SetText('No followers to upgrade, troops: ' .. troopLevel)
                 self:Disable()
-            elseif troopLevel >= 55 and GetItemCount('Wisps of Memory') == 0 then
+            elseif troopLevel >= 60 and GetItemCount('Wisps of Memory') == 0 then
                 self:SetText('Troops: ' .. troopLevel)
                 self:Disable()
             elseif GetItemCount('Wisps of Memory')
                     + GetItemCount('Mind-Expanding Prism')
-                    + GetItemCount('Grimoire of Knowledge')
                     + GetItemCount('Fractal Thoughtbinder')
+                    + GetItemCount('Grimoire of Knowledge')
                     + GetItemCount('Crystalline Memory Repository') == 0 then
                 self:SetText(f.name .. ' (No items, troops: ' .. troopLevel .. ')')
                 self:Disable()
