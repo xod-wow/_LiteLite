@@ -4,9 +4,9 @@
 --
 ----------------------------------------------------------------------------]]--
 
-BINDING_HEADER_LITELITE = "_LiteLite"
-BINDING_NAME_LL_TOGGLE_GUILD_UI = "Toggle Guild UI"
-BINDING_NAME_LL_NEXT_GAME_SOUND_OUTPUT = "Next Game Sound Output"
+-- BINDING_HEADER_LITELITE = "_LiteLite"
+-- BINDING_NAME_LL_TOGGLE_GUILD_UI = "Toggle Guild UI"
+-- BINDING_NAME_LL_NEXT_GAME_SOUND_OUTPUT = "Next Game Sound Output"
 
 local MouseoverMacroTemplate =
 [[#showtooltip {1}
@@ -821,8 +821,8 @@ function _LiteLite:MythicPlusHistory()
 end
 
 local function IsJunk(bag, slot)
-    local _, _, locked, quality, _, _, _, _, noValue = GetContainerItemInfo(bag, slot)
-    if quality == Enum.ItemQuality.Poor and not noValue and not locked then
+    local info = C_Container.GetContainerItemInfo(bag, slot)
+    if info and info.quality == Enum.ItemQuality.Poor and not info.hasNoValue and not info.isLocked then
         return true
     end
 end
@@ -852,10 +852,9 @@ end
 function _LiteLite:SellJunk()
     local numSold = 0
     for bag = 0, 4, 1 do
-        local n = GetContainerNumSlots(bag)
-        for slot = 1, GetContainerNumSlots(bag) do
+        for slot = 1, C_Container.GetContainerNumSlots(bag) do
             if IsJunk(bag, slot) then
-                UseContainerItem(bag, slot)
+                C_Container.UseContainerItem(bag, slot)
                 numSold = numSold + 1
                 if numSold == 12 then return end
             end
