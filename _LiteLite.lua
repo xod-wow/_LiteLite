@@ -23,7 +23,7 @@ local TrinketMacroTemplate =
 /cast {1}
 ]]
 
-local ScanTooltip = CreateFrame("GameTooltip", "_LiteLiteScanTooltip")
+local ScanTooltip = CreateFrame("GameTooltip", "_LiteLiteScanTooltip", nil, "GameTooltipTemplate")
 do
     ScanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
 
@@ -751,10 +751,12 @@ end
 
 function _LiteLite:WorldQuestItems(expansion)
     local maps
-    if not expansion or expansion == 'sl' then
+    if not expansion or expansion == 'df' then
+        maps = { 1978 }
+    elseif expansion == 'sl' then
         maps = { 1550 }
     elseif expansion == 'bfa' then
-        maps = { 876, 876 }
+        maps = { 875, 876 }
     else
         return
     end
