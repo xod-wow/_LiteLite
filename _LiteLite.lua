@@ -324,9 +324,6 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'kickoff' or arg == 'ko' then
         self:KickOfflineRaidMembers()
         return true
-    elseif arg == 'motes-of-fate' or arg == 'mof' then
-        self:MotesOfFate()
-        return true
     elseif arg == 'great-vault' or arg == 'gv' then
         self:ShowGreatVault()
         return true
@@ -1052,13 +1049,6 @@ function _LiteLite:PrimaryRaidProfile()
         end
         CompactRaidFrameManager_ResizeFrame_LoadPosition(crfm)
     end
-end
-
-function _LiteLite:MotesOfFate()
-    C_ItemInteraction.GetChargeInfo()
-    local info = C_CurrencyInfo.GetCurrencyInfo(2000)
-    local msg = string.format('%s: %d', info.name, info.quantity)
-    printf(msg)
 end
 
 local followerTypeID = Enum.GarrisonFollowerType.FollowerType_9_0
