@@ -299,9 +299,6 @@ function _LiteLite:SlashCommand(arg)
         self:ScanQuestsCompleted(now)
         self:ReportQuestsCompleted()
         return true
-    elseif arg == 'adventure-upgrade' or arg == 'au' then
-        self:UpgradeAdventureTableFollower()
-        return true
     elseif arg == 'quest-baseline' or arg == 'qb' then
         local now = GetServerTime()
         self:ScanQuestsCompleted()
@@ -440,7 +437,6 @@ function _LiteLite:PLAYER_LOGIN()
     self:HideMainMenuBarArt()
     self:UpdateCovenantMacros()
     self:OtherAddonProfiles()
-    self:SetUpAdventureUpgradeButton()
 
     MerchantRepairItemButton:SetScript('OnClick', function () self:SellJunk() end)
 
@@ -997,8 +993,6 @@ function _LiteLite:OtherAddonProfiles()
     self:SetAceProfile(Dominos, 'Default')
     self:SetAceProfile(Raven, 'Default')
     self:SetAceProfile(Accountant, 'Default')
-
-    -- TLDRMissions moved into AdventureTable button
 end
 
 local RaidProfileSettings = {
@@ -1049,129 +1043,4 @@ function _LiteLite:PrimaryRaidProfile()
         end
         CompactRaidFrameManager_ResizeFrame_LoadPosition(crfm)
     end
-end
-
-local followerTypeID = Enum.GarrisonFollowerType.FollowerType_9_0
-
-local function GetAdventureUpgradeFollower()
-
-    local function LevelSort(a, b)
-        if a.level ~= b.level then
-            return a.level > b.level
-        elseif a.xp ~= b.xp then
-            return a.xp > b.xp
-        else
-            return a.name > b.name
-        end
-    end
-
-    local followers = C_Garrison.GetFollowers(followerTypeID)
-    local troops = C_Garrison.GetAutoTroops(followerTypeID)
-
-    if not troops[1] then
-        return nil, 0
-    elseif troops[1].level == 60 then
-        return nil, troops[1].level
-    end
-
-    table.sort(followers, LevelSort)
-
-    for _,f in ipairs(followers) do
-        if f.level <= troops[1].level then
-            return f, troops[1].level
-        end
-    end
-    return nil, 0
-end
-
-function _LiteLite:UpgradeAdventureTableFollower()
-    local f = GetAdventureUpgradeFollower()
-    if f and SpellCanTargetGarrisonFollower(f.followerID) then
-        if f.status == GARRISON_FOLLOWER_ON_MISSION then
-            printf('Follower %s is on a mission.', f.name)
-        else
-            printf('Upgrading follower %s.', f.name)
-            C_Garrison.CastSpellOnFollower(f.followerID)
-        end
-    end
-end
-
-local UseXPItemMacro = [[
-/use Wisps of Memory
-/use Mind-Expanding Prism
-/use Fractal Thoughtbinder
-/use Grimoire of Knowledge
-/use Crystalline Memory Repository
-/ll au
-/stopspelltarget
-]]
-
-function _LiteLite:SetUpAdventureUpgradeButton()
-    local b = _LiteLiteAdventureUpgradeButton
-    b:SetAttribute("type", "macro")
-    b:SetAttribute("macrotext", UseXPItemMacro)
-    b:RegisterEvent("ADVENTURE_MAP_OPEN")
-
-    b:SetScript("OnShow",
-        function (self)
-            self:RegisterEvent("GARRISON_MISSION_LIST_UPDATE")
-            self:RegisterEvent("GARRISON_MISSION_FINISHED")
-            self:RegisterEvent("GARRISON_FOLLOWER_LIST_UPDATE")
-            self:RegisterEvent("GARRISON_FOLLOWER_UPGRADED")
-            self:RegisterEvent("GARRISON_FOLLOWER_XP_CHANGED")
-            self:RegisterEvent("BAG_UPDATE_DELAYED")
-            self:Update()
-        end)
-
-    b:SetScript("OnHide",
-        function (self)
-            self:UnregisterAllEvents()
-        end)
-
-    b:SetScript("OnEvent",
-        function (self, event, ...)
-            if event == "ADVENTURE_MAP_OPEN" then
-                local followerTypeID = ...
-                if followerTypeID == Enum.GarrisonFollowerType.FollowerType_9_0 then
-                    self:SetParent(CovenantMissionFrame)
-                    self:ClearAllPoints()
-                    self:SetPoint("BOTTOM", CovenantMissionFrame, "TOP", 0, 8)
-                    self:Show()
-                    local troops = C_Garrison.GetAutoTroops(followerTypeID)
-                    if troops[1] and troops[1].level < 55 then
-                        _LiteLite:SetAceProfile(TLDRMissions, 'LevelTroops')
-                    else
-                        _LiteLite:SetAceProfile(TLDRMissions, 'Default')
-                    end
-                end
-            end
-            C_Timer.After(0, function () self:Update() end)
-        end)
-
-    b.Update =
-        function (self)
-            local f, troopLevel = GetAdventureUpgradeFollower()
-            if not f then
-                self:SetText('No followers to upgrade, troops: ' .. troopLevel)
-                self:Disable()
-            elseif troopLevel >= 60 and GetItemCount('Wisps of Memory') == 0 then
-                self:SetText('Troops: ' .. troopLevel)
-                self:Disable()
-            elseif GetItemCount('Wisps of Memory')
-                    + GetItemCount('Mind-Expanding Prism')
-                    + GetItemCount('Fractal Thoughtbinder')
-                    + GetItemCount('Grimoire of Knowledge')
-                    + GetItemCount('Crystalline Memory Repository') == 0 then
-                self:SetText(f.name .. ' (No items, troops: ' .. troopLevel .. ')')
-                self:Disable()
-            elseif f.status == GARRISON_FOLLOWER_ON_MISSION then
-                local timeLeft = C_Garrison.GetFollowerMissionTimeLeft(f.followerID)
-                self:SetText(string.format("%s (%s, troops: %d)", f.name, timeLeft or '', troopLevel))
-                self:Disable()
-            else
-                self:SetText(f.name .. ', troops: ' .. troopLevel)
-                self:Enable()
-            end
-            self:SetWidth(self.Text:GetWidth() + 32)
-        end
 end
