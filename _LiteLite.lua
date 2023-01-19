@@ -63,10 +63,7 @@ function _LiteLite:BiggerFrames()
         function ()
             EncounterJournal:HookScript('OnShow', Embiggen)
         end)
-    hooksecurefunc('ChallengeMode_LoadUI',
-        function ()
-            self:MoveKeystoneFrame
-        end)
+    hooksecurefunc('ChallengeMode_LoadUI', self.MoveKeystoneFrame)
 end
 
 function _LiteLite:FlashScreen(seconds)
@@ -319,7 +316,6 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('COVENANT_CHOSEN')
 
     self:BiggerFrames()
-    self:UpdateCovenantMacros()
     self:OtherAddonProfiles()
     self:MuteDragonridingMounts()
 
@@ -955,7 +951,7 @@ end
 
 -- Damn thing is underneath the action bars
 
-function _LiteLite:MoveKeystoneFrame()
+function _LiteLite.MoveKeystoneFrame()
     if ChallengesKeystoneFrame then
         ChallengesKeystoneFrame:ClearAllPoints()
         ChallengesKeystoneFrame:SetPoint("TOP", UIParent, "TOP", 0, -60)
