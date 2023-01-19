@@ -4,10 +4,6 @@
 --
 ----------------------------------------------------------------------------]]--
 
--- BINDING_HEADER_LITELITE = "_LiteLite"
--- BINDING_NAME_LL_TOGGLE_GUILD_UI = "Toggle Guild UI"
--- BINDING_NAME_LL_NEXT_GAME_SOUND_OUTPUT = "Next Game Sound Output"
-
 local MouseoverMacroTemplate =
 [[#showtooltip {1}
 /cast [@mouseover,help,nodead][help,nodead] {1}
@@ -16,10 +12,8 @@ local MouseoverMacroTemplate =
 
 local TrinketMacroTemplate =
 [[#showtooltip {1}
-/run m="UI_ERROR_MESSAGE" f=UIErrorsFrame f:UnregisterEvent(m)
 /use [harm] 13
 /use [harm] 14
-/run f:RegisterEvent(m)
 /cast {1}
 ]]
 
@@ -46,9 +40,7 @@ _LiteLite:SetScript('OnEvent',
         end)
 _LiteLite:RegisterEvent('PLAYER_LOGIN')
 
-local printTag = ORANGE_FONT_COLOR_CODE
-                     .. "LiteLite: "
-                     .. FONT_COLOR_CODE_CLOSE
+local printTag = ORANGE_FONT_COLOR:WrapTextInColorCode("LiteLite: ")
 
 local function printf(fmt, ...)
     local msg = string.format(fmt, ...)
@@ -56,11 +48,6 @@ local function printf(fmt, ...)
 end
 
 local function Embiggen(f)
-    --[[
-    local ratio = f:GetHeight() / GetScreenHeight()
-    local scale = (2/3) / ratio
-    f:SetScale(scale)
-    ]]
     f:SetScale(1.25)
 end
 
@@ -69,11 +56,17 @@ function _LiteLite:BiggerFrames()
     GossipFrame:HookScript('OnShow', Embiggen)
     ItemTextFrame:HookScript('OnShow', Embiggen)
     hooksecurefunc('Communities_LoadUI',
-            function () CommunitiesFrame:HookScript('OnShow', Embiggen) end
-        )
-    hooksecurefunc('ToggleEncounterJournal',
-            function () EncounterJournal:HookScript('OnShow', Embiggen) end
-        )
+        function ()
+            CommunitiesFrame:HookScript('OnShow', Embiggen)
+        end)
+    hooksecurefunc('EncounterJournal_LoadUI',
+        function ()
+            EncounterJournal:HookScript('OnShow', Embiggen)
+        end)
+    hooksecurefunc('ChallengeMode_LoadUI',
+        function ()
+            self:MoveKeystoneFrame
+        end)
 end
 
 function _LiteLite:FlashScreen(seconds)
@@ -88,99 +81,13 @@ function _LiteLite:SpellCastAnnounce(spellID, spellName)
         return
     end
 
+--[[
     if spellID == 115310 then
         -- Revival (Mistweaver Monk)
         msg = format('%s cast - %s', GetSpellLink(spellName), self.playerName)
         SendChatMessage(msg, 'SAY')
     end
-end
-
-function _LiteLite:ShiftEnchantsScroll()
-    LoadAddOn('Blizzard_TradeSkillUI')
-
-    if not TradeSkillFrame then return end
-
-    hooksecurefunc(TradeSkillFrame.DetailsFrame, 'Create',
-        function ()
-            if IsShiftKeyDown() == false then
-                return
-            end
-
-            -- Check for Enchanting
-            local prof = select(6, C_TradeSkillUI.GetTradeSkillLine())
-            if prof ~= 333 then
-                return
-            end
-
-            -- Enchanting Vellum
-            UseItemByName(38682)
-        end)
-end
-
-function _LiteLite:DreamweaversEmissaryUp()
-    -- The Dreamweavers = Quest 42170
-    -- Faction ID = 1883
-    -- Dalaran = UiMapID 627
-
-    local total = C_Reputation.GetFactionParagonInfo(1883)
-    if not total or total == 0 then
-        return
-    end
-
-    local bountyQuests = GetQuestBountyInfoForMapID(627)
-    local info = ChatTypeInfo['SYSTEM']
-    for _, q in ipairs(bountyQuests) do
-        if q.questID == 42170 then
-            local msg = "|cff20ff20The Dreamweavers|r is available."
-            printf(msg)
-            RaidNotice_AddMessage(RaidWarningFrame, msg, info, 18)
-        elseif q.questID == 43179 then
-            local msg = "|cffff00ffThe Kirin Tor|r is available."
-            printf(msg)
-            RaidNotice_AddMessage(RaidWarningFrame, msg, info, 18)
-        end
-    end
-
-end
-
-function _LiteLite:DreamweaversMissionUp()
-    LoadAddOn('Blizzard_GarrisonUI')
-
-    local missions = C_Garrison.GetAvailableMissions(LE_FOLLOWER_TYPE_GARRISON_7_0) or {}
-
-    for _, m in ipairs(missions) do
-        for _, r in ipairs(m.rewards) do
-            if r.itemID and (r.itemID == 141339 or r.itemID == 141988 or r.itemID == 146942 or r.itemID == 150926) then
-                local msg = "|cff20ff20Dreamweavers|r mission available."
-                local info = ChatTypeInfo['SYSTEM']
-                printf(msg)
-                RaidNotice_AddMessage(RaidWarningFrame, msg, info, 18)
-                return
-            end
-        end
-    end
-end
-
-local BfAInvasionMapIDs = {
-    896,    -- Drustvar
-    863,    -- Nazmir
-    942,    -- Stormsong Valley
-    895,    -- Tiragarde Sound
-    864,    -- Vol'dun
-    862,    -- Zuldazar
-}
-
-function _LiteLite:BfAInvasionUp()
-    for _,uiMapID in ipairs(BfAInvasionMapIDs) do
-        if C_InvasionInfo.GetInvasionForUiMapID(uiMapID) then
-            local details = C_Map.GetMapInfo(uiMapID)
-            local msg = "Battle for Azeroth Invasion UP in "..details.name
-            local info = ChatTypeInfo['SYSTEM']
-            printf(msg)
-            RaidNotice_AddMessage(RaidWarningFrame, msg, info, 18)
-            return
-        end
-    end
+]]
 end
 
 function _LiteLite:NameplateSettings()
@@ -192,22 +99,10 @@ function _LiteLite:NameplateSettings()
 end
 
 function _LiteLite:ChatFrameSettings()
-    ChatFrame1:SetSize(512,256)
-    ChatFrame1:ClearAllPoints()
-    ChatFrame1:SetPoint('BOTTOMLEFT', UIParent, 'BOTTOMLEFT' ,38, 8)
-    FCF_SavePositionAndDimensions(ChatFrame1)
-    FCF_RestorePositionAndDimensions(ChatFrame1)
-
-    for i = 1,NUM_CHAT_WINDOWS+1 do
-        local f = _G['ChatFrame'..i]
-        if f then
-            FCF_SetWindowAlpha(f, 0.66)
-            FCF_SetWindowColor(f, 0, 0, 0)
-        end
-    end
+    -- Edit mode?
 end
 
-local function GameTooltipIcon()
+local function GetGameTooltipIcon()
     local _, id = GameTooltip:GetSpell()
     if id then
         return select(3, GetSpellInfo(id))
@@ -276,7 +171,7 @@ function _LiteLite:SetEquipsetIcon(n, arg1)
         return
     end
 
-    arg1 = tonumber(arg1) or GameTooltipIcon()
+    arg1 = tonumber(arg1) or GetGameTooltipIcon()
 
     if arg1 == nil then
         return
@@ -284,11 +179,6 @@ function _LiteLite:SetEquipsetIcon(n, arg1)
 
     printf('Setting equipset icon for %s (%d) to %d', name, n, arg1)
     C_EquipmentSet.ModifyEquipmentSet(n, name, arg1)
-end
-
-function _LiteLite:RunTimedChecks()
-
-    C_Timer.After(900, _LiteLite.RunTimedChecks)
 end
 
 function _LiteLite:SlashCommand(arg)
@@ -305,9 +195,6 @@ function _LiteLite:SlashCommand(arg)
         for k in pairs(self.questsCompleted) do
             self.questsCompleted[k] = 0
         end
-        return true
-    elseif arg == 'cuf-profile' or arg == 'cp' then
-        self:PrimaryRaidProfile()
         return true
     elseif arg == 'chatframe-settings' or arg == 'cs' then
         self:ChatFrameSettings()
@@ -387,7 +274,6 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll adventure-upgrade | au")
     printf("/ll announce-mob | am")
     printf("/ll chatframe-settings")
-    printf("/ll cuf-profile")
     printf("/ll equipset-icon [n [iconid]]")
     printf("/ll equipset-icon auto")
     printf("/ll find-mob substring")
@@ -433,27 +319,26 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('COVENANT_CHOSEN')
 
     self:BiggerFrames()
-    self:ShiftEnchantsScroll()
-    self:HideMainMenuBarArt()
     self:UpdateCovenantMacros()
     self:OtherAddonProfiles()
+    self:MuteDragonridingMounts()
 
+    -- Should probably overlay it
     MerchantRepairItemButton:SetScript('OnClick', function () self:SellJunk() end)
-
-    C_Timer.After(15, _LiteLite.RunTimedChecks)
 end
 
 function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
     if C_Map.GetBestMapForUnit('player') == 534 then -- Tanaan Jungle
         PlaySound(11466)
         self:FlashScreen(10)
+        msg = ORANGE_FONT_COLOR:WrapTextInColorCode(msg)
         UIErrorsFrame:AddMessage(msg, 0.1, 1.0, 0.1)
     end
 end
 
 function _LiteLite:CHAT_MSG_MONSTER_EMOTE(msg, name)
-    msg = ORANGE_FONT_COLOR:WrapTextInColorCode(msg)
     if C_Map.GetBestMapForUnit('player') == 1970 then -- Zereth Mortis
+        msg = ORANGE_FONT_COLOR:WrapTextInColorCode(msg)
         UIErrorsFrame:AddMessage(string.format(msg, name))
     end
 end
@@ -500,25 +385,6 @@ function _LiteLite:ENCOUNTER_END()
     if UnitName('player') == "Tansolo" and math.random() <= 0.2 then
         local n = math.random(#EndQuotes)
         SendChatMessage(EndQuotes[n], 'SAY')
-    end
-end
-
--- Show the old guild UI which is better than the new thing
-
-function _LiteLite:ToggleGuildUI()
-    if InCombatLockdown() then return end
-
-    if not IsInGuild() then return end
-
-    GuildFrame_LoadUI()
-
-    if not GuildFrame then return end
-
-    if GuildFrame:IsShown() then
-        HideUIPanel(GuildFrame)
-    else
-        GuildFrameTab2:Click()
-        ShowUIPanel(GuildFrame)
     end
 end
 
@@ -888,75 +754,6 @@ function _LiteLite:ReportTargetLocation()
     end
 end
 
-function _LiteLite:HideMainMenuBarArt()
-    if MainMenuBarArtFrame then
-        MainMenuBarArtFrame.Background:Hide()
-        MainMenuBarArtFrame.LeftEndCap:Hide()
-        MainMenuBarArtFrame.RightEndCap:Hide()
-    else
-        MainMenuBar.BorderArt:Hide()
-        MainMenuBar.EndCaps:Hide()
-    end
-end
-
-
-local CastFormat = '#showtooltip\n/cast %s'
-local CastAtFormat = '#showtooltip\n/cast [mod:alt][nocombat][@player] %s'
-
-local SignatureAbilities = {
-    [1] = 324739,   -- Kyrian, Summon Steward
-    [2] = 300728,   -- Venthyr, Door of Shadows
-    [3] = 310143,   -- Night Fae, Soulshape
-    [4] = 324631,   -- Necrolord, Fleshcraft
-}
-
-local CastFormats = {
-    [306830] = CastAtFormat,    -- Elysian Decree (Kyrian Demon Hunter)
-    [307865] = CastAtFormat,    -- Spear of Bastion (Kyrian Warrior)
-    [325216] = CastAtFormat,    -- Bonedust Brew (Necrolord Monk)
-}
-
-function _LiteLite:UpdateCovenantMacros()
-    local id = C_Covenants.GetActiveCovenantID()
-    if ( id or 0 ) == 0 then return end
-
-    local sig = GetSpellInfo(SignatureAbilities[id])
-    local sigText = string.format(CastFormat, sig)
-    CreateOrEditMacro('Signature', sigText)
-
-    local covenantName = C_Covenants.GetCovenantData(id).name
-
-    -- Scan the spellbook for a spell whose subtext is the covenant name
-    -- and which isn't the signature ability. Subtext is load on demand
-    -- so we have to use the callback. If there's more than one that matches
-    -- I guess they'll just duke it out.
-
-    local i = 1
-    while true do
-        local name, _, id = GetSpellBookItemName(i, "spell")
-        if not name then break end
-        if id and not tContains(SignatureAbilities, id) then
-            local spell = Spell:CreateFromSpellID(id)
-            spell:ContinueOnSpellLoad(function()
-                if spell:GetSpellSubtext() ~= covenantName then return end
-                local covText = string.format(CastFormats[id] or CastFormat, name)
-                CreateOrEditMacro('Covenant', covText)
-            end)
-        end
-        i = i + 1
-    end
-end
-
--- COVENANT_CHOSEN fires before the spells are updated
-function _LiteLite:COVENANT_CHOSEN()
-    self:RegisterEvent('SOULBIND_ACTIVATED')
-end
-
-function _LiteLite:SOULBIND_ACTIVATED()
-    self:UnregisterEvent('SOULBIND_ACTIVATED')
-    self:UpdateCovenantMacros()
-end
-
 local function PrintIfCompletedQuest(questID)
     ScanTooltip:SetHyperlink("quest:"..questID)
     local name = ScanTooltip.left[1]:GetText()
@@ -995,52 +792,172 @@ function _LiteLite:OtherAddonProfiles()
     self:SetAceProfile(Accountant, 'Default')
 end
 
-local RaidProfileSettings = {
-    autoActivate10Players = false,
-    autoActivate15Players = false,
-    autoActivate25Players = false,
-    autoActivate2Players = false,
-    autoActivate3Players = false,
-    autoActivate40Players = false,
-    autoActivate5Players = false,
-    autoActivatePvE = false,
-    autoActivatePvP = false,
-    autoActivateSpec1 = false,
-    autoActivateSpec2 = false,
-    autoActivateSpec3 = false,
-    autoActivateSpec4 = false,
-    displayAggroHighlight = true,
-    displayBorder = false,
-    displayHealPrediction = true,
-    displayMainTankAndAssist = false,
-    displayNonBossDebuffs = true,
-    displayOnlyDispellableDebuffs = true,
-    displayPets = false,
-    displayPowerBar = false,
-    frameHeight = 45,
-    frameWidth = 72,
-    healthText = "none",
-    horizontalGroups = false,
-    keepGroupsTogether = true,
-    locked = true,
-    shown = true,
-    sortBy = "role",
-    useClassColors = true,
-}
+function _LiteLite:MuteDragonridingMounts()
+    -- These came from a weakaura
+    MuteSoundFile(4634942)
+    MuteSoundFile(4634944)
+    MuteSoundFile(4634946)
+    MuteSoundFile(4634910)
+    MuteSoundFile(4634908)
+    MuteSoundFile(4634912)
+    MuteSoundFile(4634914)
+    MuteSoundFile(4634916)
+    MuteSoundFile(4633292)
+    MuteSoundFile(4633294)
+    MuteSoundFile(4633296)
+    MuteSoundFile(4633298)
+    MuteSoundFile(4633300)
+    MuteSoundFile(4633392)
+    MuteSoundFile(4674593)
+    MuteSoundFile(4674595)
+    MuteSoundFile(4674599)
+    MuteSoundFile(4543973)
+    MuteSoundFile(4543973)
+    MuteSoundFile(4543977)
+    MuteSoundFile(4543979)
+    MuteSoundFile(4627086)
+    MuteSoundFile(4627088)
+    MuteSoundFile(4627090)
+    MuteSoundFile(4627092)
+    MuteSoundFile(4634924)
+    MuteSoundFile(4634926)
+    MuteSoundFile(4634928)
+    MuteSoundFile(4634930)
+    MuteSoundFile(4634932)
+    MuteSoundFile(4550997)
+    MuteSoundFile(4550999)
+    MuteSoundFile(4551001)
+    MuteSoundFile(4551003)
+    MuteSoundFile(4551005)
+    MuteSoundFile(4551007)
+    MuteSoundFile(4551009)
+    MuteSoundFile(4551011)
+    MuteSoundFile(4551013)
+    MuteSoundFile(4551015)
+    MuteSoundFile(4551017)
+    MuteSoundFile(1489053)
+    MuteSoundFile(1489050)
+    MuteSoundFile(540221)
+    MuteSoundFile(540218)
+    MuteSoundFile(540213)
+    MuteSoundFile(540119)
+    MuteSoundFile(540182)
+    MuteSoundFile(540243)
+    MuteSoundFile(540188)
+    MuteSoundFile(540108)
+    MuteSoundFile(540211)
+    MuteSoundFile(540197)
+    MuteSoundFile(1489050)
+    MuteSoundFile(1489051)
+    MuteSoundFile(1489052)
+    MuteSoundFile(1489053)
+    MuteSoundFile(12694571)
+    MuteSoundFile(12694572)
+    MuteSoundFile(12694573)
+    MuteSoundFile(597932)
+    MuteSoundFile(4633302)
+    MuteSoundFile(1563058)
+    MuteSoundFile(803549)
+    MuteSoundFile(803545)
+    MuteSoundFile(803547)
+    MuteSoundFile(803551)
+    MuteSoundFile(1321216)
+    MuteSoundFile(1321217)
+    MuteSoundFile(1321218)
+    MuteSoundFile(1321219)
+    MuteSoundFile(1321220)
+    MuteSoundFile(4634009)
+    MuteSoundFile(4634011)
+    MuteSoundFile(4634013)
+    MuteSoundFile(4634015)
+    MuteSoundFile(4634017)
+    MuteSoundFile(4634019)
+    MuteSoundFile(4634021)
+    MuteSoundFile(547436)
+    MuteSoundFile(4633370)
+    MuteSoundFile(4633372)
+    MuteSoundFile(4633374)
+    MuteSoundFile(4633376)
+    MuteSoundFile(4633378)
+    MuteSoundFile(4633382)
+    MuteSoundFile(4337227)
+    MuteSoundFile(4633304)
+    MuteSoundFile(4633306)
+    MuteSoundFile(4633308)
+    MuteSoundFile(4633310)
+    MuteSoundFile(4633312)
+    MuteSoundFile(4633314)
+    MuteSoundFile(4633338)
+    MuteSoundFile(4633340)
+    MuteSoundFile(4633342)
+    MuteSoundFile(4633344)
+    MuteSoundFile(4633346)
+    MuteSoundFile(4633348)
+    MuteSoundFile(4633350)
+    MuteSoundFile(4633354)
+    MuteSoundFile(4633356)
+    MuteSoundFile(4634009)
+    MuteSoundFile(4634011)
+    MuteSoundFile(4634013)
+    MuteSoundFile(4634015)
+    MuteSoundFile(4634017)
+    MuteSoundFile(4634019)
+    MuteSoundFile(4634021)
+    MuteSoundFile(547436)
+    MuteSoundFile(4633370)
+    MuteSoundFile(4633372)
+    MuteSoundFile(4633374)
+    MuteSoundFile(4633376)
+    MuteSoundFile(4633378)
+    MuteSoundFile(4633382)
+    MuteSoundFile(4337227)
+    MuteSoundFile(4633304)
+    MuteSoundFile(4633306)
+    MuteSoundFile(4633308)
+    MuteSoundFile(4633310)
+    MuteSoundFile(4633312)
+    MuteSoundFile(4633314)
+    MuteSoundFile(4633338)
+    MuteSoundFile(4633340)
+    MuteSoundFile(4633342)
+    MuteSoundFile(4633344)
+    MuteSoundFile(4633346)
+    MuteSoundFile(4633348)
+    MuteSoundFile(4633350)
+    MuteSoundFile(4633354)
+    MuteSoundFile(4633356)
+    MuteSoundFile(547714)
+    MuteSoundFile(547715)
+    MuteSoundFile(547716)
+    MuteSoundFile(4663454)
+    MuteSoundFile(4663456)
+    MuteSoundFile(4663458)
+    MuteSoundFile(4663460)
+    MuteSoundFile(4663462)
+    MuteSoundFile(4663464)
+    MuteSoundFile(4663466)
+    MuteSoundFile(1467222)
+    MuteSoundFile(598016)
+    MuteSoundFile(597968)
+    MuteSoundFile(597998)
+    MuteSoundFile(597968)
+    MuteSoundFile(598004)
+    MuteSoundFile(598010)
+    MuteSoundFile(597989)
+    MuteSoundFile(597932)
+    MuteSoundFile(598028)
+    MuteSoundFile(597986)
+    MuteSoundFile(3014246)
+    MuteSoundFile(3014247)
+    MuteSoundFile(1563054)
+    MuteSoundFile(1563055)
+end
 
-function _LiteLite:PrimaryRaidProfile()
-    local crfm = CompactRaidFrameManager
-    if crfm and crfm.containerResizeFrame:IsShown() then
-        SetRaidProfileSavedPosition(
-            'Primary',
-            false,
-            "BOTTOM", GetScreenHeight()/2,
-            "BOTTOM", GetScreenHeight()/2 - 5*50,
-            "RIGHT", GetScreenWidth()/3
-        )
-        for k,v in pairs(RaidProfileSettings) do
-            SetRaidProfileOption('Primary', k, v)
-        end
-        CompactRaidFrameManager_ResizeFrame_LoadPosition(crfm)
+-- Damn thing is underneath the action bars
+
+function _LiteLite:MoveKeystoneFrame()
+    if ChallengesKeystoneFrame then
+        ChallengesKeystoneFrame:ClearAllPoints()
+        ChallengesKeystoneFrame:SetPoint("TOP", UIParent, "TOP", 0, -60)
     end
 end
