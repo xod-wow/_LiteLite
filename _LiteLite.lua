@@ -319,6 +319,12 @@ function _LiteLite:PLAYER_LOGIN()
     self:OtherAddonProfiles()
     self:MuteDragonridingMounts()
     self:SellJunkButton()
+    self:AutoRepairAll()
+end
+
+function _LiteLite:AutoRepairAll()
+    local function RAI() RepairAllItems() end
+    MerchantRepairAllButton:HookScript('OnShow', RAI)
 end
 
 function _LiteLite:SellJunkButton()
