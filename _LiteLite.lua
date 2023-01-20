@@ -318,9 +318,31 @@ function _LiteLite:PLAYER_LOGIN()
     self:BiggerFrames()
     self:OtherAddonProfiles()
     self:MuteDragonridingMounts()
+    self:SellJunkButton()
+end
 
-    -- Should probably overlay it
-    MerchantRepairItemButton:SetScript('OnClick', function () self:SellJunk() end)
+function _LiteLite:SellJunkButton()
+
+    local b = CreateFrame('Button', nil, MerchantRepairItemButton)
+    b:SetPushedTexture('Interface\\Buttons\\UI-Quickslot-Depress')
+    b:SetHighlightTexture('Interface\\Buttons\\ButtonHilight-Square')
+
+    b.Icon = b:CreateTexture()
+    b.Icon:SetAtlas("bags-junkcoin")
+    b.Icon:SetAllPoints()
+
+    b:SetScript('OnClick', function () self:SellJunk() end)
+    b:SetScript('OnEnter',
+        function (self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+            GameTooltip:SetText('Sell junk')
+        end)
+    b:SetScript('OnLeave', GameTooltip_Hide)
+
+    b:Show()
+    b:SetAllPoints()
+
+    self.SellJunkButton = b
 end
 
 function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
