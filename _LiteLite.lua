@@ -779,8 +779,8 @@ function _LiteLite:ReportTargetLocation()
 end
 
 local function PrintIfCompletedQuest(questID)
-    ScanTooltip:SetHyperlink("quest:"..questID)
-    local name = ScanTooltip.left[1]:GetText()
+    local info = C_TooltipInfo.GetHyperlink("quest:"..questID)
+    local name = info.lines[1].args[2].stringVal
     if name then
         local complete = C_QuestLog.IsQuestFlaggedCompleted(questID)
         local color = complete and GREEN_FONT_COLOR or RED_FONT_COLOR
