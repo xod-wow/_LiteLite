@@ -621,13 +621,14 @@ local function PrintEquipmentQuestRewards(info)
     local item = Item:CreateFromItemID(itemID)
     item:ContinueOnItemLoad(
         function ()
+            local mapInfo = C_Map.GetMapInfo(info.mapID)
             ScanTooltip:SetQuestLogItem(rewardType, i, info.questId, true) 
             local name, link = ScanTooltip:GetItem()
             local equipLoc = select(9, GetItemInfo(itemID))
             if equipLoc ~= "" then
-                printf('  [%s] %s (%d) - %s ', _G[equipLoc], link, itemLevel, info.mapName)
+                printf('  [%s] %s (%d) - %s ', _G[equipLoc], link, itemLevel, mapInfo.name)
             elseif C_Soulbinds.IsItemConduitByItemInfo(link) then
-                printf('  [CONDUIT] %s - %s ', link, info.mapName)
+                printf('  [CONDUIT] %s - %s ', link, mapInfo.name)
             end
         end)
 end
@@ -651,8 +652,7 @@ function _LiteLite:WorldQuestItems(expansion)
             if mapInfo.mapType == Enum.UIMapType.Zone then
                 for _, questInfo in ipairs(C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)) do
                     if C_QuestLog.IsWorldQuest(questInfo.questId) then
-                        questInfo.mapName = mapInfo.name
-                        table.insert(mapQuests, questInfo)
+                        mapQuests[questInfo.questId] = questInfo
                         C_TaskQuest.RequestPreloadRewardData(questInfo.questId)
                     end
                 end
@@ -663,12 +663,12 @@ function _LiteLite:WorldQuestItems(expansion)
     C_Timer.NewTicker(0.5,
         function (self)
             local allKnown = true
-            for _, info in ipairs(mapQuests) do
+            for _, info in pairs(mapQuests) do
                 if not HaveQuestRewardData(info.questId) then allKnown = false break end
             end
             if allKnown then
                 printf("World quest item rewards:")
-                for _, info in ipairs(mapQuests) do
+                for _, info in pairs(mapQuests) do
                     PrintEquipmentQuestRewards(info)
                 end
                 self:Cancel()
