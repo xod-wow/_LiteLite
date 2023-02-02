@@ -255,6 +255,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'copy-chat' or arg1 == 'cc' then
         self:CopyChat()
         return true
+    elseif arg1 == 'catalyst' or arg1 == 'cat' then
+        self:CatalystCharges()
+        return true
     end
 
     -- Two argument options
@@ -983,5 +986,12 @@ function _LiteLite.MoveKeystoneFrame()
     if ChallengesKeystoneFrame then
         ChallengesKeystoneFrame:ClearAllPoints()
         ChallengesKeystoneFrame:SetPoint("TOP", UIParent, "TOP", 0, -60)
+    end
+end
+
+function _LiteLite:CatalystCharges()
+    local info = C_CurrencyInfo.GetCurrencyInfo(2167)
+    if info then
+        printf("%s: %d/%d\n", info.name, info.quantity, info.maxQuantity)
     end
 end
