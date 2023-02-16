@@ -1002,14 +1002,13 @@ end
 function _LiteLite:RotatingMarker()
     local b = CreateFrame('Button', 'RotatingMarker', nil, 'SecureActionButtonTemplate')
     b:SetAttribute("type", "macro")
-    local RotatingMarkerN = 0
-    b:SetScript('PreClick',
-        function (self, mouseButton)
+    SecureHandlerWrapScript(b, 'PreClick', b,
+        [[
             if IsControlKeyDown() then
-                self:SetAttribute("macrotext", "/cwm 0")
+                b:SetAttribute("macrotext", "/cwm 0")
             else
-                RotatingMarkerN = RotatingMarkerN % 8 + 1
-                self:SetAttribute("macrotext", "/wm [@cursor] " .. RotatingMarkerN)
+                RotatingMarkerN = (RotatingMarkerN or 0) % 8 + 1
+                b:SetAttribute("macrotext", "/wm [@cursor] " .. RotatingMarkerN)
             end
-        end)
+        ]])
 end
