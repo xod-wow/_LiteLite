@@ -323,6 +323,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:MuteDragonridingMounts()
     self:SellJunkButton()
     self:AutoRepairAll()
+    self:RotatingMarker()
 end
 
 function _LiteLite:AutoRepairAll()
@@ -994,4 +995,21 @@ function _LiteLite:CatalystCharges()
     if info then
         printf("%s: %d/%d\n", info.name, info.quantity, info.maxQuantity)
     end
+end
+
+
+-- /click RotatingMarker LeftButton 1
+function _LiteLite:RotatingMarker()
+    local b = CreateFrame('Button', 'RotatingMarker', nil, 'SecureActionButtonTemplate')
+    b:SetAttribute("type", "macro")
+    local RotatingMarkerN = 0
+    b:SetScript('PreClick',
+        function (self, mouseButton)
+            if IsControlKeyDown() then
+                self:SetAttribute("macrotext", "/cwm 0")
+            else
+                RotatingMarkerN = RotatingMarkerN % 8 + 1
+                self:SetAttribute("macrotext", "/wm [@cursor] " .. RotatingMarkerN)
+            end
+        end)
 end
