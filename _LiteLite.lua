@@ -1048,7 +1048,12 @@ local function ActionButtonsToString()
         if GetActionInfo(i) then
             map[i] = { GetActionInfo(i) }
             if map[i][1] == "macro" then
-                map[i][3] = GetMacroInfo(map[i][2])
+                local name, icon, text = GetMacroInfo(map[i][2])
+                if name then
+                    map[i][3] = name
+                    map.macros = map.macros or {}
+                    map.macros[name] = { name, icon, text }
+                end
             end
         end
     end
@@ -1087,12 +1092,28 @@ local function SetAction(i, action)
    ClearCursor()
 end
 
+local function SetMacro(info)
+    local name, icon, text = unpack(info)
+    local i = GetMacroInfo(name)
+    if i then
+        EditMacro(i, name, icon, text)
+    else
+        CreateMacro(name, icon, text, true)
+    end
+end
+
 local function ActionButtonsFromString(text)
     local ser = LibStub('AceSerializer-3.0', true)
     if not ser then return end
 
     local isValid, map = ser:Deserialize(text)
     if not isValid then return end
+
+    if map.macros then
+        for _, info in pairs(map.macros) do
+            SetMacro(info)
+        end
+    end
 
     for i = 1, 180 do
         SetAction(i, map[i])
@@ -1107,5 +1128,7 @@ function _LiteLite:ImportExportActionButtons()
             ActionButtonsFromString(text)
         end
     _LiteLiteText.EditBox:SetText(ActionButtonsToString())
+    _LiteLiteText.EditBox:HighlightText()
+    _LiteLiteText.EditBox:SetAutoFocus(true)
     _LiteLiteText:Show()
 end
