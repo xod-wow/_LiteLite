@@ -324,6 +324,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:SellJunkButton()
     self:AutoRepairAll()
     self:RotatingMarker()
+    self:StopSpellAutoPush()
 end
 
 function _LiteLite:AutoRepairAll()
@@ -797,27 +798,41 @@ function _LiteLite:PrintSkips(what)
 end
 
 
-function _LiteLite:SetAceProfile(c, profileName)
+function _LiteLite:SetAceProfile(svName, profileName)
+    if not svName or not _G[svName] then return end
+
+    local acedb = LibStub('AceDB-3.0', true)
+    if not acedb then return end
+
     local PlayerProfileName = string.format('%s - %s', UnitFullName('player'))
-    local ClassProfileName = UnitClass('player')
-    if c then
-        if c.db:GetCurrentProfile() ~= ProfileName then
-            c.db:SetProfile(profileName)
-            if c.db.profiles[PlayerProfileName] then
-                c.db:DeleteProfile(PlayerProfileName)
+    local _, ClassProfileName = UnitClass('player')
+    local RealmProfileName = GetRealmName()
+
+    for db in pairs(acedb.db_registry) do
+        if db.sv == _G[svName] then
+            if db:GetCurrentProfile() ~= profileName then
+                printf('Set %s profile %s', svName, profileName)
+                db:SetProfile(profileName)
             end
-            if c.db.profiles[ClassProfileName] then
-                c.db:DeleteProfile(ClassProfileName)
+            if db.profiles[PlayerProfileName] then
+                printf('Delete %s profile %s', svName, PlayerProfileName)
+                db:DeleteProfile(PlayerProfileName)
+            end
+            if db.profiles[ClassProfileName] then
+                printf('Delete %s profile %s', svName, ClassProfileName)
+                db:DeleteProfile(ClassProfileName)
+            end
+            if db.profiles[RealmProfileName] then
+                printf('Delete %s profile %s', svName, RealmProfileName)
+                db:DeleteProfile(RealmProfileName)
             end
         end
     end
 end
 
 function _LiteLite:OtherAddonProfiles()
-    self:SetAceProfile(HandyNotes, 'Default')
-    self:SetAceProfile(Dominos, 'Default')
-    self:SetAceProfile(Raven, 'Default')
-    self:SetAceProfile(Accountant, 'Default')
+    self:SetAceProfile('HandyNotesDB', 'Default')
+    self:SetAceProfile('EnhancedRaidFramesDB', 'Default')
 end
 
 function _LiteLite:MuteDragonridingMounts()
@@ -1005,10 +1020,18 @@ function _LiteLite:RotatingMarker()
     SecureHandlerWrapScript(b, 'PreClick', b,
         [[
             if IsControlKeyDown() then
-                b:SetAttribute("macrotext", "/cwm 0")
+                self:SetAttribute("n", 0)
+                self:SetAttribute("macrotext", "/cwm 0")
             else
-                RotatingMarkerN = (RotatingMarkerN or 0) % 8 + 1
-                b:SetAttribute("macrotext", "/wm [@cursor] " .. RotatingMarkerN)
+                local n = ( self:GetAttribute("n") or 0 ) % 8 + 1
+                self:SetAttribute("n", n)
+                self:SetAttribute("macrotext", "/wm [@cursor] " .. n)
+                -- RotatingMarkerN = (RotatingMarkerN or 0) % 8 + 1
+                -- self:SetAttribute("macrotext", "/wm [@cursor] " .. RotatingMarkerN)
             end
         ]])
+end
+
+function _LiteLite:StopSpellAutoPush()
+    SetCVar("AutoPushSpellToActionBar", 0)
 end
