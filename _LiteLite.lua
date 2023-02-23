@@ -193,6 +193,9 @@ function _LiteLite:SlashCommand(arg)
             self.questsCompleted[k] = 0
         end
         return true
+    elseif arg == 'actionbuttons' or arg == 'ab' then
+        self:ImportExportActionButtons()
+        return true
     elseif arg == 'chatframe-settings' or arg == 'cs' then
         self:ChatFrameSettings()
         return true
@@ -1034,4 +1037,62 @@ end
 
 function _LiteLite:StopSpellAutoPush()
     SetCVar("AutoPushSpellToActionBar", 0)
+end
+
+local function ActionButtonsToString()
+    local ser = LibStub('AceSerializer-3.0', true)
+    if not ser then return "" end
+
+    local map = {}
+    for i = 1, 180 do
+        if GetActionInfo(i) then
+            map[i] = { GetActionInfo(i) }
+        end
+    end
+
+    return ser:Serialize(map)
+end
+
+local function SetAction(i, action)
+   if not action or not action[1] then
+      PickupAction(i)
+   elseif action[1] == "spell" then
+      PickupSpell(action[2])
+      PlaceAction(i)
+   elseif action[1] == "macro" then
+      PickupMacro(action[2])
+      PlaceAction(i)
+   elseif action[1] == "item" then
+      PickupItem(action[2])
+      PlaceAction(i)
+   elseif action[1] == "flyout" then
+      PickupFlyout(action[2])
+      PlaceAction(i)
+   else
+      print('hmm', unpack(action))
+   end
+   ClearCursor()
+end
+
+local function ActionButtonsFromString(text)
+    local ser = LibStub('AceSerializer-3.0', true)
+    if not ser then return end
+
+    local isValid, map = ser:Deserialize(text)
+    if not isValid then return end
+
+    for i = 1, 180 do
+        SetAction(i, map[i])
+    end
+
+end
+
+function _LiteLite:ImportExportActionButtons()
+    _LiteLiteText.ApplyFunc = 
+        function ()
+            local text = _LiteLiteText.EditBox:GetText()
+            ActionButtonsFromString(text)
+        end
+    _LiteLiteText.EditBox:SetText(ActionButtonsToString())
+    _LiteLiteText:Show()
 end
