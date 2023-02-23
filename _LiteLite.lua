@@ -1047,6 +1047,9 @@ local function ActionButtonsToString()
     for i = 1, 180 do
         if GetActionInfo(i) then
             map[i] = { GetActionInfo(i) }
+            if map[i][1] == "macro" then
+                map[i][3] = GetMacroInfo(map[i][2])
+            end
         end
     end
 
@@ -1070,7 +1073,7 @@ local function SetAction(i, action)
       PickupSpell(action[2])
       PlaceAction(i)
    elseif action[1] == "macro" then
-      PickupMacro(action[2])
+      PickupMacro(action[3])
       PlaceAction(i)
    elseif action[1] == "item" then
       PickupItem(action[2])
