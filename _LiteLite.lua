@@ -1053,6 +1053,16 @@ local function ActionButtonsToString()
     return ser:Serialize(map)
 end
 
+local function PickupFlyout(id)
+   for i = 1, 1000 do
+      local t, infoID = GetSpellBookItemInfo(i, BOOKTYPE_SPELL)
+      if t == "FLYOUT" and infoID == id then
+         PickupSpellBookItem(i, BOOKTYPE_SPELL)
+         return
+      end
+   end
+end
+
 local function SetAction(i, action)
    if not action or not action[1] then
       PickupAction(i)
