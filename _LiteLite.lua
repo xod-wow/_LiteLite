@@ -332,6 +332,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:AutoRepairAll()
     self:RotatingMarker()
     self:StopSpellAutoPush()
+    self:CHAT_MSG_COMBAT_XP_GAIN()
 end
 
 function _LiteLite:AutoRepairAll()
@@ -798,7 +799,7 @@ function _LiteLite:CHAT_MSG_COMBAT_XP_GAIN()
     for i = 1, NUM_CHAT_WINDOWS do
         local f = Chat_GetChatFrame(i)
         if tContains(f.messageTypeList, 'COMBAT_XP_GAIN') then
-            f:AddMessage(msg, r, g, b)
+            f:AddMessage(printTag .. msg, r, g, b)
         end
     end
 end
