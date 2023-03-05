@@ -214,6 +214,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'mythic-plus-history' or arg == 'mph' then
         self:MythicPlusHistory()
         return true
+    elseif arg == 'mythic-plus-dungeons' or arg == 'mpd' then
+        self:MythicPlusDungeons()
+        return true
     elseif arg == 'xp' then
         self:CHAT_MSG_COMBAT_XP_GAIN()
         return true
@@ -284,7 +287,8 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll great-vault | gv")
     printf("/ll gvals text")
     printf("/ll mouseover-macro [spellname]")
-    printf("/ll mythic-plus-history | mp")
+    printf("/ll mythic-plus-dungeons | mpd")
+    printf("/ll mythic-plus-history | mph")
     printf("/ll nameplate-settings")
     printf("/ll quest-baseline")
     printf("/ll quest-report")
@@ -630,7 +634,7 @@ local function PrintEquipmentQuestRewards(info)
     item:ContinueOnItemLoad(
         function ()
             local mapInfo = C_Map.GetMapInfo(info.mapID)
-            ScanTooltip:SetQuestLogItem(rewardType, i, info.questId, true) 
+            ScanTooltip:SetQuestLogItem(rewardType, i, info.questId, true)
             local name, link = ScanTooltip:GetItem()
             local equipLoc = select(9, GetItemInfo(itemID))
             if equipLoc ~= "" then
@@ -685,7 +689,7 @@ function _LiteLite:WorldQuestItems(expansion)
 end
 
 function _LiteLite:KickOfflineRaidMembers()
-    if not UnitIsGroupLeader('player') or not IsInRaid() then   
+    if not UnitIsGroupLeader('player') or not IsInRaid() then
         return
     end
 
@@ -711,6 +715,36 @@ function _LiteLite:MythicPlusHistory()
         printf('% 2d:  %d%s %s',
                 i, info.level, info.completed and '+' or '', name)
     end
+end
+
+local function scoreSort(a, b)
+    if a.name == 'Fortified' then
+        return true
+    else
+        return false
+    end
+end
+
+function _LiteLite:MythicPlusDungeons()
+    local output = { }
+
+    for _, mapID in pairs(C_ChallengeMode.GetMapTable()) do
+        local mapName = C_ChallengeMode.GetMapUIInfo(mapID)
+        local scores, overallScore = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapID)
+        table.insert(output, format('%s : %d', mapName, overallScore))
+        table.sort(scores, scoreSort)
+        for _, info in ipairs(scores) do
+            if info.overTime then
+                table.insert(output, format(' - %s : %d  %d', info.name, info.level, info.score))
+            else
+                table.insert(output, format(' - %s : %d* %d', info.name, info.level, info.score))
+            end
+        end
+        table.insert(output, '')
+    end
+
+    _LiteLiteText.EditBox:SetText(table.concat(output, "\n"))
+    _LiteLiteText:Show()
 end
 
 local function IsJunk(bag, slot)
@@ -1122,7 +1156,7 @@ local function ActionButtonsFromString(text)
 end
 
 function _LiteLite:ImportExportActionButtons()
-    _LiteLiteText.ApplyFunc = 
+    _LiteLiteText.ApplyFunc =
         function ()
             local text = _LiteLiteText.EditBox:GetText()
             ActionButtonsFromString(text)
