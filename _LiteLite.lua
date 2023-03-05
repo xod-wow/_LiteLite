@@ -323,7 +323,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('ENCOUNTER_START')
     self:RegisterEvent('ENCOUNTER_END')
     self:RegisterEvent('CHAT_MSG_COMBAT_XP_GAIN')
-    self:RegisterEvent('COVENANT_CHOSEN')
+    self:RegisterEvent('TRAIT_CONFIG_UPDATED')
 
     self:BiggerFrames()
     self:OtherAddonProfiles()
@@ -1166,4 +1166,36 @@ function _LiteLite:ImportExportActionButtons()
     _LiteLiteText.EditBox:HighlightText()
     _LiteLiteText.EditBox:SetAutoFocus(true)
     _LiteLiteText:Show()
+end
+
+local function UpdateEquipmentSetForLoadout()
+    local specID, specName = PlayerUtil.GetCurrentSpecID()
+    if not specID then return end
+
+    local configID = C_ClassTalents.GetLastSelectedSavedConfigID(specID)
+    local info = C_Traits.GetConfigInfo(configID)
+    if not info or info.type ~= Enum.TraitConfigType.Combat then return end
+
+    local specIndex = GetSpecialization()
+    local specSetID = C_EquipmentSet.GetEquipmentSetForSpec(specIndex)
+    local specSetName
+
+    if specSetID then
+        specSetName = C_EquipmentSet.GetEquipmentSetInfo(specSetID)
+    end
+
+    local loadoutSetName = (specSetName or specName) .. ' ' .. info.name
+    local loadoutSetID = C_EquipmentSet.GetEquipmentSetID(loadoutSetName)
+
+    if loadoutSetID then
+        printf('Change equipment set ' .. loadoutSetName)
+        C_EquipmentSet.UseEquipmentSet(loadoutSetID)
+    elseif specSetID then
+        printf('Change equipment set ' .. specSetName)
+        C_EquipmentSet.UseEquipmentSet(specSetID)
+    end
+end
+
+function _LiteLite:TRAIT_CONFIG_UPDATED()
+    C_Timer.After(0, UpdateEquipmentSetForLoadout)
 end
