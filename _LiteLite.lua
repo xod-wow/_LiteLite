@@ -1173,10 +1173,14 @@ local function UpdateEquipmentSetForLoadout()
     if not specID then return end
 
     local configID = C_ClassTalents.GetLastSelectedSavedConfigID(specID)
+    if not configID then return end
+
     local info = C_Traits.GetConfigInfo(configID)
     if not info or info.type ~= Enum.TraitConfigType.Combat then return end
 
     local specIndex = GetSpecialization()
+    if not specIndex then return end
+
     local specSetID = C_EquipmentSet.GetEquipmentSetForSpec(specIndex)
     local specSetName
 
