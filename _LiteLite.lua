@@ -703,8 +703,7 @@ function _LiteLite:KickOfflineRaidMembers()
 end
 
 function _LiteLite:ShowGreatVault()
-    LoadAddOn('Blizzard_WeeklyRewards')
-    WeeklyRewardsFrame:Show()
+    WeeklyRewards_ShowUI()
 end
 
 function _LiteLite:MythicPlusHistory()
