@@ -193,8 +193,8 @@ function _LiteLite:SlashCommand(arg)
             self.questsCompleted[k] = 0
         end
         return true
-    elseif arg == 'actionbuttons' or arg == 'ab' then
-        self:ImportExportActionButtons()
+    elseif arg == 'spec-config' or arg == 'sc' then
+        self:ImportExportSpecConfig()
         return true
     elseif arg == 'chatframe-settings' or arg == 'cs' then
         self:ChatFrameSettings()
@@ -1074,7 +1074,41 @@ function _LiteLite:StopSpellAutoPush()
     SetCVar("AutoPushSpellToActionBar", 0)
 end
 
-local function ActionButtonsToString()
+local ImportExportMixin = {
+    GetLoadoutExportString = function (self, currentSpecID, configID)
+        local exportStream = ExportUtil.MakeExportDataStream();
+        local configInfo = C_Traits.GetConfigInfo(configID)
+        local treeInfo = C_Traits.GetTreeInfo(configID, configInfo.treeIDs[1])
+        local treeHash = C_Traits.GetTreeHash(treeInfo.ID);
+        local serializationVersion = C_Traits.GetLoadoutSerializationVersion()
+
+        self:WriteLoadoutHeader(exportStream, serializationVersion, currentSpecID, treeHash);
+        self:WriteLoadoutContent(exportStream, configID, treeInfo.ID);
+
+        return exportStream:GetExportString();
+    end,
+    ImportLoadout = function (self, importText, loadoutName)
+        local importStream = ExportUtil.MakeImportDataStream(importText)
+        local headerValid, serializationVersion, specID, treeHash = self:ReadLoadoutHeader(importStream)
+
+        if not headerValid then print('Bad header') return end
+        if specID ~= PlayerUtil.GetCurrentSpecID() then print('Bad spec') return end
+
+        local configID = C_ClassTalents.GetActiveConfigID()
+        local configInfo = C_Traits.GetConfigInfo(configID)
+        local treeInfo = C_Traits.GetTreeInfo(configID, configInfo.treeIDs[1])
+
+        local loadoutContent = self:ReadLoadoutContent(importStream, treeInfo.ID)
+        local loadoutEntryInfo = self:ConvertToImportLoadoutEntryInfo(treeInfo.ID, loadoutContent)
+
+        if not loadoutEntryInfo then print('Loadout did not convert') return end
+
+        C_ClassTalents.ImportLoadout(configID, loadoutEntryInfo, loadoutName)
+    end,
+    GetConfigID = function (self) return C_ClassTalents.GetActiveConfigID() end,
+}
+
+local function SpecConfigToString()
     local ser = LibStub('AceSerializer-3.0', true)
     if not ser then return "" end
 
@@ -1091,6 +1125,17 @@ local function ActionButtonsToString()
                 end
             end
         end
+    end
+
+    ClassTalentFrame_LoadUI()
+    local exporter = CreateFromMixins(ClassTalentImportExportMixin, ImportExportMixin)
+
+    map.loadouts = {}
+
+    local specID = PlayerUtil.GetCurrentSpecID()
+    for _,configID in ipairs(C_ClassTalents.GetConfigIDsBySpecID(specID)) do
+        local info = C_Traits.GetConfigInfo(configID)
+        map.loadouts[info.name] = exporter:GetLoadoutExportString(specID, configID)
     end
 
     return ser:Serialize(map)
@@ -1137,7 +1182,7 @@ local function SetMacro(info)
     end
 end
 
-local function ActionButtonsFromString(text)
+local function SpecConfigFromString(text)
     local ser = LibStub('AceSerializer-3.0', true)
     if not ser then return end
 
@@ -1154,15 +1199,19 @@ local function ActionButtonsFromString(text)
         SetAction(i, map[i])
     end
 
+    local importer = CreateFromMixins(ClassTalentImportExportMixin, ImportExportMixin)
+    for name, data in pairs(map.loadouts or {}) do
+        importer:ImportLoadout(data, name)
+    end
 end
 
-function _LiteLite:ImportExportActionButtons()
+function _LiteLite:ImportExportSpecConfig()
     _LiteLiteText.ApplyFunc =
         function ()
             local text = _LiteLiteText.EditBox:GetText()
-            ActionButtonsFromString(text)
+            SpecConfigFromString(text)
         end
-    _LiteLiteText.EditBox:SetText(ActionButtonsToString())
+    _LiteLiteText.EditBox:SetText(SpecConfigToString())
     _LiteLiteText.EditBox:HighlightText()
     _LiteLiteText.EditBox:SetAutoFocus(true)
     _LiteLiteText:Show()
