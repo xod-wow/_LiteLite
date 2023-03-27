@@ -1117,6 +1117,7 @@ local function SpecConfigToString()
             map[i] = { GetActionInfo(i) }
             if map[i][1] == "macro" then
                 local name, icon, text = GetMacroInfo(map[i][2])
+                if text:find('#showtooltip') then icon = 134400 end
                 if name then
                     map[i][3] = name
                     map.macros = map.macros or {}
@@ -1173,11 +1174,12 @@ end
 
 local function SetMacro(info)
     local name, icon, text = unpack(info)
-    local i = GetMacroInfo(name)
-    if i then
-        EditMacro(i, name, icon, text)
-    else
+    local i, existingName, existingIcon, existingText = GetMacroInfo(name)
+    if text:find('#showtooltip') then icon = 134400 end
+    if i == nil then
         CreateMacro(name, icon, text, true)
+    elseif text ~= existingText then
+        EditMacro(i, name, icon, text)
     end
 end
 
