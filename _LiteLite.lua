@@ -533,7 +533,8 @@ function _LiteLite:CopyPaste()
 end
 
 function _LiteLite:HookTooltip()
-    GameTooltip:HookScript('OnTooltipSetItem',
+    TooltipDataProcessor.AddTooltipPostCall(
+        Enum.TooltipDataType.Item,
         function (ttFrame)
             local _, link = ttFrame:GetItem()
             local id = GetItemInfoFromHyperlink(link)
@@ -542,17 +543,19 @@ function _LiteLite:HookTooltip()
             end
         end)
 
-    GameTooltip:HookScript('OnTooltipSetSpell',
+    TooltipDataProcessor.AddTooltipPostCall(
+        Enum.TooltipDataType.Spell,
         function (ttFrame)
-            local _, id = GameTooltip:GetSpell()
+            local _, id = ttFrame:GetSpell()
             if id then
                 ttFrame:AddDoubleLine("SpellID", id)
             end
         end)
 
-    GameTooltip:HookScript('OnTooltipSetUnit',
+    TooltipDataProcessor.AddTooltipPostCall(
+        Enum.TooltipDataType.Unit,
         function (ttFrame)
-            local _, unit = GameTooltip:GetUnit()
+            local _, unit = ttFrame:GetUnit()
             if unit then
                 local _, _, _, _, _, id = strsplit('-', UnitGUID(unit))
                 if id then
