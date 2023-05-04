@@ -292,6 +292,7 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll nameplate-settings")
     printf("/ll quest-baseline")
     printf("/ll quest-report")
+    printf("/ll spec-config | sc")
     printf("/ll tooltip-ids")
     printf("/ll trinket-macro [spellname]")
     printf("/ll wq-items")
@@ -324,6 +325,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('ENCOUNTER_END')
     self:RegisterEvent('CHAT_MSG_COMBAT_XP_GAIN')
     self:RegisterEvent('TRAIT_CONFIG_UPDATED')
+    self:RegisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
 
     self:BiggerFrames()
     self:OtherAddonProfiles()
@@ -1087,11 +1089,12 @@ local ImportExportMixin = {
         return exportStream:GetExportString();
     end,
     ImportLoadout = function (self, importText, loadoutName)
+        printf('Importing loadout: ' .. loadoutName)
         local importStream = ExportUtil.MakeImportDataStream(importText)
         local headerValid, serializationVersion, specID, treeHash = self:ReadLoadoutHeader(importStream)
 
-        if not headerValid then print('Bad header') return end
-        if specID ~= PlayerUtil.GetCurrentSpecID() then print('Bad spec') return end
+        if not headerValid then printf('Bad header') return end
+        if specID ~= PlayerUtil.GetCurrentSpecID() then printf('Bad spec') return end
 
         local configID = C_ClassTalents.GetActiveConfigID()
         local configInfo = C_Traits.GetConfigInfo(configID)
@@ -1100,9 +1103,13 @@ local ImportExportMixin = {
         local loadoutContent = self:ReadLoadoutContent(importStream, treeInfo.ID)
         local loadoutEntryInfo = self:ConvertToImportLoadoutEntryInfo(treeInfo.ID, loadoutContent)
 
-        if not loadoutEntryInfo then print('Loadout did not convert') return end
+        if not loadoutEntryInfo then printf('Loadout did not convert') return end
 
-        C_ClassTalents.ImportLoadout(configID, loadoutEntryInfo, loadoutName)
+        local ok, err = C_ClassTalents.ImportLoadout(configID, loadoutEntryInfo, loadoutName)
+        if not ok then
+            printf('Loadout import failed: %s: %s', loadoutName, err)
+            return
+        end
     end,
     GetConfigID = function (self) return C_ClassTalents.GetActiveConfigID() end,
 }
@@ -1200,8 +1207,19 @@ local function SpecConfigFromString(text)
         SetAction(i, map[i])
     end
 
+    local currentConfigsByName = {}
+    local specID = PlayerUtil.GetCurrentSpecID()
+    for _,configID in ipairs(C_ClassTalents.GetConfigIDsBySpecID(specID)) do
+        local info = C_Traits.GetConfigInfo(configID)
+        currentConfigsByName[info.name] = configID
+    end
+
     local importer = CreateFromMixins(ClassTalentImportExportMixin, ImportExportMixin)
     for name, data in pairs(map.loadouts or {}) do
+        if currentConfigsByName[name] then
+            printf('Deleting existing loadout: ' .. name)
+            C_ClassTalents.DeleteConfig(currentConfigsByName[name])
+        end
         importer:ImportLoadout(data, name)
     end
 end
@@ -1250,6 +1268,12 @@ local function UpdateEquipmentSetForLoadout()
     end
 end
 
-function _LiteLite:TRAIT_CONFIG_UPDATED()
+function _LiteLite:TRAIT_CONFIG_UPDATED(id)
+    if id == C_ClassTalents.GetActiveConfigID() then
+        C_Timer.After(0, UpdateEquipmentSetForLoadout)
+    end
+end
+
+function _LiteLite:ACTIVE_TALENT_GROUP_CHANGED()
     C_Timer.After(0, UpdateEquipmentSetForLoadout)
 end
