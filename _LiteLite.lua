@@ -1054,7 +1054,7 @@ function _LiteLite.MoveKeystoneFrame()
 end
 
 function _LiteLite:CatalystCharges()
-    local info = C_CurrencyInfo.GetCurrencyInfo(2167)
+    local info = C_CurrencyInfo.GetCurrencyInfo(2533)
     if info then
         printf("%s: %d/%d\n", info.name, info.quantity, info.maxQuantity)
     end
