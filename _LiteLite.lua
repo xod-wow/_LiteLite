@@ -335,6 +335,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RotatingMarker()
     self:StopSpellAutoPush()
     self:CHAT_MSG_COMBAT_XP_GAIN()
+    self:LargerCUFDispelIcons()
 end
 
 function _LiteLite:AutoRepairAll()
@@ -1285,4 +1286,15 @@ end
 
 function _LiteLite:ACTIVE_TALENT_GROUP_CHANGED()
     C_Timer.After(0, UpdateEquipmentSetForLoadout)
+end
+
+function _LiteLite:LargerCUFDispelIcons()
+    hooksecurefunc("CompactUnitFrame_SetUpFrame",
+        function (frame)
+            if not frame:IsForbidden() and frame:GetName() then
+                for _, f in ipairs(frame.dispelDebuffFrames) do
+                    f:SetSize(24, 24)
+                end
+            end
+        end)
 end
