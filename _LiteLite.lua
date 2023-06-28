@@ -1257,25 +1257,24 @@ local function UpdateEquipmentSetForLoadout()
     local info = C_Traits.GetConfigInfo(configID)
     if not info or info.type ~= Enum.TraitConfigType.Combat then return end
 
-    local specIndex = GetSpecialization()
-    if not specIndex then return end
-
-    local specSetID = C_EquipmentSet.GetEquipmentSetForSpec(specIndex)
-    local specSetName
-
-    if specSetID then
-        specSetName = C_EquipmentSet.GetEquipmentSetInfo(specSetID)
-    end
-
-    local loadoutSetName = (specSetName or specName) .. ' ' .. info.name
+    local loadoutSetName = specName .. ' ' .. info.name
     local loadoutSetID = C_EquipmentSet.GetEquipmentSetID(loadoutSetName)
 
     if loadoutSetID then
         printf('Change equipment set ' .. loadoutSetName)
         C_EquipmentSet.UseEquipmentSet(loadoutSetID)
-    elseif specSetID then
+        return
+    end
+
+    local specIndex = GetSpecialization()
+    if not specIndex then return end
+
+    local specSetID = C_EquipmentSet.GetEquipmentSetForSpec(specIndex)
+    if specSetID then
+        local specSetName = C_EquipmentSet.GetEquipmentSetInfo(specSetID)
         printf('Change equipment set ' .. specSetName)
         C_EquipmentSet.UseEquipmentSet(specSetID)
+        return
     end
 end
 
