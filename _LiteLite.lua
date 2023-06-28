@@ -336,6 +336,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:StopSpellAutoPush()
     self:CHAT_MSG_COMBAT_XP_GAIN()
     self:LargerCUFDispelIcons()
+    self:HideProfessionUnspentReminder()
 end
 
 function _LiteLite:AutoRepairAll()
@@ -1295,6 +1296,17 @@ function _LiteLite:LargerCUFDispelIcons()
                 for _, f in ipairs(frame.dispelDebuffFrames) do
                     f:SetSize(24, 24)
                 end
+            end
+        end)
+end
+
+function _LiteLite:HideProfessionUnspentReminder()
+    hooksecurefunc('MainMenuMicroButton_ShowAlert',
+        function (microButton, text, tutorialIndex, cvarBitfield)
+            if text == PROFESSIONS_UNSPENT_SPEC_POINTS_REMINDER then
+                -- print(microButton:GetName(), text, 'triggered')
+                MainMenuMicroButton_HideAlert(microButton)
+                MicroButtonPulseStop(microButton)
             end
         end)
 end
