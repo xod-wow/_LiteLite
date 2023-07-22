@@ -1331,4 +1331,12 @@ function _LiteLite:HideActionButtonEffects()
     for _,e in ipairs(events) do
         ActionBarActionEventsFrame:UnregisterEvent(e)
     end
+
+    -- Stop the SpellActivationAlert start animation
+    hooksecurefunc('ActionButton_ShowOverlayGlow',
+        function (b)
+            b.SpellActivationAlert.ProcStartAnim:Stop()
+            b.SpellActivationAlert.ProcStartFlipbook:SetAlpha(0)
+            b.SpellActivationAlert.ProcLoop:Play()
+        end)
 end
