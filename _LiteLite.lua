@@ -1115,7 +1115,7 @@ local ImportExportMixin = {
         local treeInfo = C_Traits.GetTreeInfo(configID, configInfo.treeIDs[1])
 
         local loadoutContent = self:ReadLoadoutContent(importStream, treeInfo.ID)
-        local loadoutEntryInfo = self:ConvertToImportLoadoutEntryInfo(treeInfo.ID, loadoutContent)
+        local loadoutEntryInfo = self:ConvertToImportLoadoutEntryInfo(configID, treeInfo.ID, loadoutContent)
 
         if not loadoutEntryInfo then printf('Loadout did not convert') return end
 
