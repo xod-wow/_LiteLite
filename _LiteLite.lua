@@ -741,19 +741,21 @@ function _LiteLite:MythicPlusDungeons()
         local mapName, _, mapTimer = C_ChallengeMode.GetMapUIInfo(mapID)
         local scores, overallScore = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapID)
         table.insert(output, format('%s : %d', mapName, overallScore))
-        table.sort(scores, scoreSort)
-        for _, info in ipairs(scores) do
-            local stars
-            if info.durationSec < mapTimer * 0.6 then
-                stars = '+++'
-            elseif info.durationSec < mapTimer * 0.8 then
-                stars = '++'
-            elseif info.durationSec < mapTimer then
-                stars = '+'
-            else
-                stars= ''
+        if scores then
+            table.sort(scores, scoreSort)
+            for _, info in ipairs(scores) do
+                local stars
+                if info.durationSec < mapTimer * 0.6 then
+                    stars = '+++'
+                elseif info.durationSec < mapTimer * 0.8 then
+                    stars = '++'
+                elseif info.durationSec < mapTimer then
+                    stars = '+'
+                else
+                    stars= ''
+                end
+                table.insert(output, format(' - %s : %s%d %d', info.name, stars, info.level, info.score))
             end
-            table.insert(output, format(' - %s : %s%d %d', info.name, stars, info.level, info.score))
         end
     end
 
