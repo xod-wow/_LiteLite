@@ -1259,6 +1259,10 @@ function _LiteLite:ImportExportSpecConfig()
 end
 
 local function UpdateEquipmentSetForLoadout()
+    if not _LiteLite.equipmentSetLoadoutDirty then return end
+
+    _LiteLite.equipmentSetLoadoutDirty = nil
+
     local specID, specName = PlayerUtil.GetCurrentSpecID()
     if not specID then return end
 
@@ -1289,14 +1293,19 @@ local function UpdateEquipmentSetForLoadout()
     end
 end
 
-function _LiteLite:TRAIT_CONFIG_UPDATED(id)
+function _LiteLite:UpdateEquipmentSet()
+    self.equipmentSetLoadoutDirty = true
+    C_Timer.After(0, UpdateEquipmentSetForLoadout)
+end
+
+function _LiteLite:TRAIT_CONFIG_UPDATED(id, ...)
     if id == C_ClassTalents.GetActiveConfigID() then
-        C_Timer.After(0, UpdateEquipmentSetForLoadout)
+        self:UpdateEquipmentSet()
     end
 end
 
-function _LiteLite:ACTIVE_TALENT_GROUP_CHANGED()
-    C_Timer.After(0, UpdateEquipmentSetForLoadout)
+function _LiteLite:ACTIVE_TALENT_GROUP_CHANGED(...)
+    self:UpdateEquipmentSet()
 end
 
 function _LiteLite:LargerCUFDispelIcons()
