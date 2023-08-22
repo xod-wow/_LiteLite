@@ -17,6 +17,11 @@ local TrinketMacroTemplate =
 /cast {1}
 ]]
 
+local CursorMacroTemplate =
+[[#showtooltip {1}
+/cast [mod:alt][@cursor] {1}
+]]
+
 local ScanTooltip = CreateFrame("GameTooltip", "_LiteLiteScanTooltip", nil, "GameTooltipTemplate")
 do
     ScanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
@@ -238,6 +243,9 @@ function _LiteLite:SlashCommand(arg)
         return true
     elseif arg1 == 'trinket-macro' or arg1 == 'tm' then
         self:CreateSpellMacro(TrinketMacroTemplate, arg2)
+        return true
+    elseif arg1 == 'cursort-macro' or arg1 == 'cm' then
+        self:CreateSpellMacro(CursorMacroTemplate, arg2)
         return true
     elseif arg1 == 'gkeys' or arg1 == 'gk' then
         self:SearchGlobalKeys(arg2)
