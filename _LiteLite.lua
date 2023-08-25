@@ -1146,8 +1146,8 @@ local function SpecConfigToString()
             map[i] = { GetActionInfo(i) }
             if map[i][1] == "macro" then
                 local name, icon, text = GetMacroInfo(map[i][2])
-                if text:find('#showtooltip') then icon = 134400 end
                 if name then
+                    if text:find('#showtooltip') then icon = 134400 end
                     map[i][3] = name
                     map.macros = map.macros or {}
                     map.macros[name] = { name, icon, text }
