@@ -1314,7 +1314,6 @@ function _LiteLite:LargerCUFDispelIcons()
             if not frame:IsForbidden() and frame:GetName() then
                 for i = 1, #frame.dispelDebuffFrames do
                     local f = frame.dispelDebuffFrames[i]
-                    print(f)
                     f:SetSize(24, 24)
                 end
             end
