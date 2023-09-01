@@ -1309,10 +1309,12 @@ function _LiteLite:ACTIVE_TALENT_GROUP_CHANGED(...)
 end
 
 function _LiteLite:LargerCUFDispelIcons()
-    hooksecurefunc("CompactUnitFrame_SetUpFrame",
+    hooksecurefunc("CompactUnitFrame_UpdateAll",
         function (frame)
             if not frame:IsForbidden() and frame:GetName() then
-                for _, f in ipairs(frame.dispelDebuffFrames) do
+                for i = 1, #frame.dispelDebuffFrames do
+                    local f = frame.dispelDebuffFrames[i]
+                    print(f)
                     f:SetSize(24, 24)
                 end
             end
