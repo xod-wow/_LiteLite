@@ -338,7 +338,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:BiggerFrames()
     self:OtherAddonProfiles()
     self:MuteDragonridingMounts()
-    -- self:SellJunkButton()
+    self:SellJunkButton()
     self:AutoRepairAll()
     self:RotatingMarker()
     self:StopSpellAutoPush()
@@ -354,27 +354,8 @@ function _LiteLite:AutoRepairAll()
 end
 
 function _LiteLite:SellJunkButton()
-
-    local b = CreateFrame('Button', nil, MerchantRepairItemButton)
-    b:SetPushedTexture('Interface\\Buttons\\UI-Quickslot-Depress')
-    b:SetHighlightTexture('Interface\\Buttons\\ButtonHilight-Square')
-
-    b.Icon = b:CreateTexture()
-    b.Icon:SetAtlas("bags-junkcoin")
-    b.Icon:SetAllPoints()
-
-    b:SetScript('OnClick', function () self:SellJunk() end)
-    b:SetScript('OnEnter',
-        function (self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-            GameTooltip:SetText('Sell junk')
-        end)
-    b:SetScript('OnLeave', GameTooltip_Hide)
-
-    b:Show()
-    b:SetAllPoints()
-
-    self.SellJunkButton = b
+    MerchantSellAllJunkButton:SetScript('OnClick', MerchantFrame_OnSellAllJunkButtonConfirmed)
+    -- MerchantSellAllJunkButton:SetScript('OnClick', self.SellJunk)
 end
 
 function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
@@ -774,28 +755,6 @@ end
 local function IsJunk(bag, slot)
     local info = C_Container.GetContainerItemInfo(bag, slot)
     if info and info.quality == Enum.ItemQuality.Poor and not info.hasNoValue and not info.isLocked then
-        return true
-    end
-end
-
-local function IsDowngrade(bag, slot)
-    local loc = ItemLocation:CreateFromBagAndSlot(bag, slot)
-    if not loc:IsValid() or not C_Item.IsBound(loc) then
-        return
-    end
-    local quality = C_Item.GetItemQuality(loc)
-    if not quality or quality > Enum.ItemQuality.Rare then
-        return
-    end
-    local equipSlot = C_Item.GetItemInventoryType(loc)
-    if equipSlot < INVSLOT_FIRST_EQUIPPED then return end
-    if equipSlot > INVSLOT_LAST_EQUIPPED then return end
-    local item = Item:CreateFromBagAndSlot(bag, slot)
-    local equipped = Item:CreateFromEquipmentSlot(equipSlot)
-    if not equipped.itemLocation:IsValid() then
-        return
-    end
-    if item:GetCurrentItemLevel() < equipped:GetCurrentItemLevel() then
         return true
     end
 end
