@@ -1178,16 +1178,20 @@ local function SpecConfigFromString(text)
     local isValid, map = ser:Deserialize(text)
     if not isValid then return end
 
+    printf('Loading macros')
     if map.macros then
-        for _, info in pairs(map.macros) do
+        for name, info in pairs(map.macros) do
+            printf(' - ' .. name)
             SetMacro(info)
         end
     end
 
+    printf('Setting action bar actions')
     for i = 1, 180 do
         SetAction(i, map[i])
     end
 
+    printf('Setting up loadouts')
     local currentConfigsByName = {}
     local specID = PlayerUtil.GetCurrentSpecID()
     for _,configID in ipairs(C_ClassTalents.GetConfigIDsBySpecID(specID)) do
