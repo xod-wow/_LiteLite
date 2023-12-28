@@ -272,6 +272,10 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'catalyst' or arg1 == 'cat' then
         self:CatalystCharges()
         return true
+    elseif arg1 == 'guild-news' or arg1 == 'gn' then
+        QueryGuildNews()
+        self:SearchGuildNews(arg2)
+        return true
     end
 
     -- Two argument options
@@ -294,6 +298,7 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll gkeys text")
     printf("/ll great-vault | gv")
     printf("/ll gvals text")
+    printf("/ll guild-news <min-ilevel>")
     printf("/ll mouseover-macro [spellname]")
     printf("/ll mythic-plus-dungeons | mpd")
     printf("/ll mythic-plus-history | mph")
@@ -334,6 +339,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('CHAT_MSG_COMBAT_XP_GAIN')
     self:RegisterEvent('TRAIT_CONFIG_UPDATED')
     self:RegisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
+    self:RegisterEvent('LFG_LIST_JOINED_GROUP')
 
     self:BiggerFrames()
     self:OtherAddonProfiles()
@@ -1326,4 +1332,31 @@ function _LiteLite:HideActionButtonEffects()
             b.SpellActivationAlert.ProcStartFlipbook:SetAlpha(0)
             b.SpellActivationAlert.ProcLoop:Play()
         end)
+end
+
+local DATE_FMT = "%.3s %d/%d"
+
+function _LiteLite:SearchGuildNews(minLevel)
+    minLevel = tonumber(minLevel) or 0
+    local lines = {}
+    for i = 1, GetNumGuildNews() do
+        local info = C_GuildInfo.GetGuildNewsInfo(i)
+        if info and info.newsType == NEWS_ITEM_LOOTED then
+            local date = format(DATE_FMT, CALENDAR_WEEKDAY_NAMES[info.weekday + 1], info.day + 1, info.month + 1);
+            local level = GetDetailedItemLevelInfo(info.whatText)
+            if level >= minLevel then
+                table.insert(lines, format("%s %s %d %s", date, info.whoText, level, info.whatText))
+            end
+        end
+    end
+    _LiteLiteText.EditBox:SetText(table.concat(lines, "\n"))
+    _LiteLiteText:Show()
+end
+
+function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)
+    local searchResultInfo = C_LFGList.GetSearchResultInfo(id)
+    local activityName = C_LFGList.GetActivityFullName(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
+    local _, status, _, _, role = C_LFGList.GetApplicationInfo(id)
+    printf("Joined group '%s' as %s (searchResultInfo.name=%s, activityName=%s, status=%s)",
+           kstringGroupName, _G[role], searchResultInfo.name, activityName, status)
 end
