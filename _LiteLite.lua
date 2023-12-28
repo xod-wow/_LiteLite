@@ -1095,16 +1095,20 @@ local ImportExportMixin = {
     GetConfigID = function (self) return C_ClassTalents.GetActiveConfigID() end,
 }
 
+local function GetActionMacroInfo(actionID)
+    local macroName = GetActionText(actionID)
+    return GetMacroInfo(macroName)
+end
+
 local function SpecConfigToString()
     local ser = LibStub('AceSerializer-3.0', true)
     if not ser then return "" end
-
     local map = {}
     for i = 1, 180 do
         if GetActionInfo(i) then
             map[i] = { GetActionInfo(i) }
             if map[i][1] == "macro" then
-                local name, icon, text = GetMacroInfo(map[i][2])
+                local name, icon, text = GetActionMacroInfo(i)
                 if name then
                     if text:find('#showtooltip') then icon = 134400 end
                     map[i][3] = name
