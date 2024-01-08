@@ -253,16 +253,6 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'gvals' or arg1 == 'gv' then
         self:SearchGlobalValues(arg2)
         return true
-    elseif arg1 == 'find-mob' or arg1 == 'fm' then
-        if not arg2 then
-            self:ListScanMobs()
-        else
-            self:ScanForMob(arg2)
-        end
-        return true
-    elseif arg1 == 'clear-find-mob' or arg1 == 'cfm' then
-        self:ClearScanMobs()
-        return true
     elseif arg1 == 'wq-items' or arg1 == 'wqi' then
         self:WorldQuestItems(arg2)
         return true
@@ -273,8 +263,12 @@ function _LiteLite:SlashCommand(arg)
         self:CatalystCharges()
         return true
     elseif arg1 == 'guild-news' or arg1 == 'gn' then
-        QueryGuildNews()
-        self:SearchGuildNews(arg2)
+        _LiteLiteLoot.minlevel = tonumber(arg2)
+        if _LiteLiteLoot:IsShown() then
+            _LiteLiteLoot:Update()
+        else
+            _LiteLiteLoot:Show()
+        end
         return true
     end
 
@@ -285,6 +279,17 @@ function _LiteLite:SlashCommand(arg)
             self:AutoEquipsetIcons()
         else
             self:SetEquipsetIcon(arg2, arg3)
+        end
+        return true
+    elseif arg1 == 'find-mob' or arg1 == 'fm' then
+        if arg2 == 'add' then
+            self:ScanMobAdd(arg3)
+        elseif arg2 == 'del' then
+            self:ScanMobDel(arg3)
+        elseif arg2 == 'clear' then
+            self:ScanMobClear()
+        else
+            self:ScanMobList()
         end
         return true
     end
@@ -349,9 +354,10 @@ function _LiteLite:PLAYER_LOGIN()
     self:RotatingMarker()
     self:StopSpellAutoPush()
     self:CHAT_MSG_COMBAT_XP_GAIN()
-    self:LargerCUFDispelIcons()
+    -- self:LargerCUFDispelIcons()
     self:HideProfessionUnspentReminder()
     self:HideActionButtonEffects()
+    self:UpdateScanning()
 end
 
 function _LiteLite:AutoRepairAll()
@@ -563,27 +569,52 @@ function _LiteLite:HookTooltip()
         end)
 end
 
-function _LiteLite:ListScanMobs()
-    for k,v in pairs(self.scanMobNames or {}) do
-        printf(v)
+function _LiteLite:ScanMobList()
+    printf("Scan for mobs:")
+    if next(self.db.scanMobNames or {}) then
+        for i, name in pairs(self.db.scanMobNames or {}) do
+            printf("%d. %s", i, name)
+        end
+    else
+        printf("   None.")
     end
 end
 
-function _LiteLite:ClearScanMobs()
-    self.scanMobNames = table.wipe(self.scanMobNames or {})
-    self.announcedMobGUID = table.wipe(self.announcedMobGUID or {})
-    self:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
-    self:UnregisterEvent("VIGNETTES_UPDATED")
-    self:UnregisterEvent("VIGNETTE_MINIMAP_UPDATED")
+function _LiteLite:ScanMobClear()
+    self.db.scanMobNames = table.wipe(self.db.scanMobNames or {})
+    self:UpdateScanning()
 end
 
-function _LiteLite:ScanForMob(name)
-    self.scanMobNames = self.scanMobNames or {}
-    self.announcedMobGUID = self.announcedMobGUID or {}
-    table.insert(self.scanMobNames, name:lower())
-    self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-    self:RegisterEvent("VIGNETTES_UPDATED")
-    self:RegisterEvent("VIGNETTE_MINIMAP_UPDATED")
+function _LiteLite:ScanMobAdd(name)
+    self.db.scanMobNames = self.db.scanMobNames or {}
+    table.insert(self.db.scanMobNames, name:lower())
+    self:UpdateScanning()
+end
+
+function _LiteLite:ScanMobDel(name)
+    if self.db.scanMobNames then
+        local n = tonumber(name)
+        if n then
+            table.remove(self.db.scanMobNames, n)
+        else
+            tDeleteItem(self.db.scanMobNames, name:lower())
+        end
+        self:UpdateScanning()
+    end
+end
+
+function _LiteLite:UpdateScanning()
+    if next(self.db.scanMobNames or {}) then
+        self.announcedMobGUID = self.announcedMobGUID or {}
+        self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+        self:RegisterEvent("VIGNETTES_UPDATED")
+        self:RegisterEvent("VIGNETTE_MINIMAP_UPDATED")
+    else
+        self.announcedMobGUID = table.wipe(self.announcedMobGUID or {})
+        self:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
+        self:UnregisterEvent("VIGNETTES_UPDATED")
+        self:UnregisterEvent("VIGNETTE_MINIMAP_UPDATED")
+    end
 end
 
 function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
@@ -592,7 +623,7 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
 
     local npcID = select(6, strsplit('-', UnitGUID(unit)))
 
-    for _, n in ipairs(self.scanMobNames) do
+    for _, n in ipairs(self.db.scanMobNames) do
         if ( name and name:find(n) ) or
            ( npcID and tonumber(n) == tonumber(npcID) ) then
             if not self.announcedMobGUID[guid] then
@@ -612,7 +643,7 @@ function _LiteLite:VIGNETTE_MINIMAP_UPDATED(id)
     local info = C_VignetteInfo.GetVignetteInfo(id)
     if not info or self.announcedMobGUID[info.objectGUID] then return end
 
-    for _, n in ipairs(self.scanMobNames) do
+    for _, n in ipairs(self.db.scanMobNames) do
         if info.name and info.name:lower():find(n) then
             self.announcedMobGUID[info.objectGUID] = info.name
             local msg = format("Vignette %s found", info.name)
@@ -1039,10 +1070,14 @@ function _LiteLite:CatalystCharges()
 end
 
 
--- /click RotatingMarker LeftButton 1
+-- /click RotatingMarker
 function _LiteLite:RotatingMarker()
     local b = CreateFrame('Button', 'RotatingMarker', nil, 'SecureActionButtonTemplate')
+    -- https://github.com/Stanzilla/WoWUIBugs/issues/317#issuecomment-1510847497
+    b:SetAttribute("pressAndHoldAction", true)
     b:SetAttribute("type", "macro")
+    b:SetAttribute("typerelease", "macro")
+
     SecureHandlerWrapScript(b, 'PreClick', b,
         [[
             if IsControlKeyDown() then
@@ -1052,8 +1087,6 @@ function _LiteLite:RotatingMarker()
                 local n = ( self:GetAttribute("n") or 0 ) % 8 + 1
                 self:SetAttribute("n", n)
                 self:SetAttribute("macrotext", "/wm [@cursor] " .. n)
-                -- RotatingMarkerN = (RotatingMarkerN or 0) % 8 + 1
-                -- self:SetAttribute("macrotext", "/wm [@cursor] " .. RotatingMarkerN)
             end
         ]])
 end
@@ -1334,23 +1367,78 @@ function _LiteLite:HideActionButtonEffects()
         end)
 end
 
+_LiteLiteLootMixin = {}
+
+local function InitLootButton(button, data)
+    button.data = data
+    button.Date:SetText(data.date)
+    button.Player:SetText(data.player)
+    button.Level:SetText(data.level)
+    button.Type:SetText(data.type)
+    button.Item:SetText(data.item)
+end
+
+function _LiteLiteLootMixin:Update()
+    local dataProvider = CreateDataProvider(self:GetData())
+    self.ScrollBox:SetDataProvider(dataProvider, ScrollBoxConstants.RetainScrollPosition)
+end
+
+function _LiteLiteLootMixin:OnLoad()
+    self:SetTitle(GUILD_NEWS)
+    ButtonFrameTemplate_HidePortrait(self)
+    local view = CreateScrollBoxListLinearView()
+    view:SetElementInitializer("_LiteLiteLootEntryTemplate", InitLootButton)
+    view:SetPadding(2,2,2,2,5);
+    ScrollUtil.InitScrollBoxListWithScrollBar(self.ScrollBox, self.ScrollBar, view);
+    table.insert(UISpecialFrames, self:GetName())
+
+    self.guild = {}
+    local realm = GetRealmName()
+    C_GuildInfo.GuildRoster()
+    for i = 1, GetNumGuildMembers() do
+        local name, _, _, _, _, _, _, _, _, _, class = GetGuildRosterInfo(i)
+        name = name:gsub("-"..realm, '')
+        self.guild[name] = C_ClassColor.GetClassColor(class):WrapTextInColorCode(name)
+    end
+
+end
+
+function _LiteLiteLootMixin:OnShow()
+    self:RegisterEvent("GUILD_NEWS_UPDATE")
+    QueryGuildNews()
+end
+
+function _LiteLiteLootMixin:OnHide()
+    self:UnregisterAllEvents()
+end
+
+function _LiteLiteLootMixin:OnEvent()
+    self:Update()
+end
+
 local DATE_FMT = "%.3s %d/%d"
 
-function _LiteLite:SearchGuildNews(minLevel)
-    minLevel = tonumber(minLevel) or 0
-    local lines = {}
+function _LiteLiteLootMixin:GetData()
+    local data = {}
     for i = 1, GetNumGuildNews() do
         local info = C_GuildInfo.GetGuildNewsInfo(i)
         if info and info.newsType == NEWS_ITEM_LOOTED then
-            local date = format(DATE_FMT, CALENDAR_WEEKDAY_NAMES[info.weekday + 1], info.day + 1, info.month + 1);
             local level = GetDetailedItemLevelInfo(info.whatText)
-            if level >= minLevel then
-                table.insert(lines, format("%s %s %d %s", date, info.whoText, level, info.whatText))
+            local invType, subType, _, equipSlot = select(6, GetItemInfo(info.whatText))
+            if equipSlot ~= '' and level and level >= ( self.minlevel or 0 ) then
+                local date = format(DATE_FMT, CALENDAR_WEEKDAY_NAMES[info.weekday + 1], info.day + 1, info.month + 1);
+                local entry = {
+                    date    = date,
+                    player  = self.guild[info.whoText] or info.whoText,
+                    level   = level,
+                    type    = _G[equipSlot],
+                    item    = info.whatText
+                }
+                table.insert(data, entry)
             end
         end
     end
-    _LiteLiteText.EditBox:SetText(table.concat(lines, "\n"))
-    _LiteLiteText:Show()
+    return data
 end
 
 function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)

@@ -63,8 +63,81 @@
       </Frames>
   </ScrollFrame>
 
-  <Button name="_LiteLiteAdventureUpgradeButton" hidden="true" inherits="UIPanelButtonTemplate SecureActionButtonTemplate">
-    <Size y="26" />
+  <Button name="_LiteLiteLootEntryTemplate" virtual="true">
+    <Size y="22" />
+    <Layers>
+      <Layer level="BACKGROUND">
+        <FontString parentkey="Date" inherits="GameFontWhite" justifyH="LEFT">
+          <Size x="72" />
+          <Anchors>
+            <Anchor point="LEFT" />
+          </Anchors>
+        </FontString>
+        <FontString parentkey="Player" inherits="GameFontWhite" justifyH="LEFT">
+          <Size x="192" />
+          <Anchors>
+            <Anchor point="LEFT" relativeKey="$parent.Date" relativePoint="RIGHT" />
+          </Anchors>
+        </FontString>
+        <FontString parentkey="Level" inherits="GameFontWhite" justifyH="LEFT">
+          <Size x="64" />
+          <Anchors>
+            <Anchor point="LEFT" relativeKey="$parent.Player" relativePoint="RIGHT" />
+          </Anchors>
+        </FontString>
+        <FontString parentkey="Type" inherits="GameFontWhite" justifyH="LEFT">
+          <Size x="128" />
+          <Anchors>
+            <Anchor point="LEFT" relativeKey="$parent.Level" relativePoint="RIGHT" />
+          </Anchors>
+        </FontString>
+        <FontString parentkey="Item" inherits="GameFontWhite" justifyH="LEFT">
+          <Anchors>
+            <Anchor point="LEFT" relativeKey="$parent.Type" relativePoint="RIGHT" />
+            <Anchor point="RIGHT" />
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+    <Scripts>
+      <OnShow>
+        self:SetWidth(self:GetParent():GetWidth())
+      </OnShow>
+      <OnEnter>
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetHyperlink(self.data.item)
+        GameTooltip:Show()
+      </OnEnter>
+      <OnLeave function="GameTooltip_Hide" />
+      <OnClick>
+        if IsModifiedClick("CHATLINK") then ChatEdit_LinkItem(self.data.item) end
+      </OnClick>
+    </Scripts>
   </Button>
+
+  <Frame name="_LiteLiteLoot" parent="UIParent" topLevel="true" frameStrata="FULLSCREEN_DIALOG" inherits="ButtonFrameTemplate" hidden="true" mixin="_LiteLiteLootMixin">
+    <size x="800" y="478" />
+    <Anchors><Anchor point="CENTER" y="24" /></Anchors>
+    <Frames>
+      <Frame parentKey="ScrollBox" inherits="WoWScrollBoxList">
+        <Anchors>
+          <Anchor point="TOPLEFT" x="16" y="-64" />
+          <Anchor point="BOTTOMRIGHT" x="-34" y="36" />
+        </Anchors>
+      </Frame>
+      <EventFrame parentKey="ScrollBar" inherits="MinimalScrollBar">
+        <Anchors>
+        <Anchor point="TOPLEFT" relativeKey="$parent.ScrollBox" relativePoint="TOPRIGHT" x="4" y="-3"/>
+        <Anchor point="BOTTOMLEFT" relativeKey="$parent.ScrollBox" relativePoint="BOTTOMRIGHT" x="4" y="2"/>
+        </Anchors>
+      </EventFrame>
+    </Frames>
+    <Scripts>
+      <OnLoad method="OnLoad" />
+      <OnShow method="OnShow" />
+      <OnHide method="OnHide" />
+      <OnEvent method="OnEvent" />
+    </Scripts>
+  </Frame>
 
 </Ui>
