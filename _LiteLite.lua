@@ -22,6 +22,15 @@ local CursorMacroTemplate =
 /cast [mod:alt][@cursor] {1}
 ]]
 
+local function maybescape(str)
+    if str:sub(1,1) == '^' or str:sub(-1,1) == '$' then
+        return str
+    else
+        -- cut-and-paste I have no idea how this works
+        return str:gsub('[%-%.%+%[%]%(%)%$%^%%%?%*]', '%%%1')
+    end
+end
+
 local ScanTooltip = CreateFrame("GameTooltip", "_LiteLiteScanTooltip", nil, "GameTooltipTemplate")
 do
     ScanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
@@ -474,7 +483,7 @@ end
 function _LiteLite:SearchGlobalKeys(text)
     if not text then return end
 
-    text = text:lower()
+    text = maybescape(text:lower())
 
     printf("Searching global keys for %s", tostring(text))
 
@@ -493,7 +502,7 @@ end
 function _LiteLite:SearchGlobalValues(text)
     if not text then return end
 
-    text = text:lower()
+    text = maybescape(text:lower())
 
     printf("Searching global values for %s", tostring(text))
 
@@ -624,6 +633,7 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
     local npcID = select(6, strsplit('-', UnitGUID(unit)))
 
     for _, n in ipairs(self.db.scanMobNames) do
+        n = maybescape(n)
         if ( name and name:find(n) ) or
            ( npcID and tonumber(n) == tonumber(npcID) ) then
             if not self.announcedMobGUID[guid] then
@@ -644,6 +654,7 @@ function _LiteLite:VIGNETTE_MINIMAP_UPDATED(id)
     if not info or self.announcedMobGUID[info.objectGUID] then return end
 
     for _, n in ipairs(self.db.scanMobNames) do
+        n = maybescape(n)
         if info.name and info.name:lower():find(n) then
             self.announcedMobGUID[info.objectGUID] = info.name
             local msg = format("Vignette %s found", info.name)
