@@ -115,7 +115,7 @@
     </Scripts>
   </Button>
 
-  <Frame name="_LiteLiteLoot" parent="UIParent" topLevel="true" frameStrata="FULLSCREEN_DIALOG" inherits="ButtonFrameTemplate" hidden="true" mixin="_LiteLiteLootMixin">
+  <Frame name="_LiteLiteLoot" parent="UIParent" topLevel="true" frameStrata="FULLSCREEN_DIALOG" inherits="ButtonFrameTemplate" hidden="true" movable="true" dontSavePosition="true" registerForDrag="LeftButton" mixin="_LiteLiteLootMixin">
     <size x="800" y="478" />
     <Anchors><Anchor point="CENTER" y="24" /></Anchors>
     <Frames>
@@ -137,6 +137,12 @@
       <OnShow method="OnShow" />
       <OnHide method="OnHide" />
       <OnEvent method="OnEvent" />
+      <OnDragStart>
+        self:StartMoving()
+      </OnDragStart>
+      <OnDragStop>
+        self:StopMovingOrSizing()
+      </OnDragStop>
     </Scripts>
   </Frame>
 
