@@ -354,6 +354,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('TRAIT_CONFIG_UPDATED')
     self:RegisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
     self:RegisterEvent('LFG_LIST_JOINED_GROUP')
+    self:RegisterEvent('PLAYER_INTERACTION_MANAGER_FRAME_SHOW')
 
     self:BiggerFrames()
     self:OtherAddonProfiles()
@@ -1458,4 +1459,10 @@ function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)
     local _, status, _, _, role = C_LFGList.GetApplicationInfo(id)
     printf("Joined group '%s' as %s (searchResultInfo.name=%s, activityName=%s, status=%s)",
            kstringGroupName, _G[role], searchResultInfo.name, activityName, status)
+end
+
+function _LiteLite:PLAYER_INTERACTION_MANAGER_FRAME_SHOW(id)
+    if id == Enum.PlayerInteractionType.ItemUpgrade then
+        ShowUIPanel(CharacterFrame)
+    end
 end
