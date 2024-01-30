@@ -243,6 +243,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'skips' then
         self:PrintSkips()
         return true
+    elseif arg == 'dragonridingbar' or arg == 'drb' then
+        self:SetupDragonridingBar()
+        return true
     end
 
     -- One argument options
@@ -854,7 +857,7 @@ end
 
 local function PrintIfCompletedQuest(questID)
     local info = C_TooltipInfo.GetHyperlink("quest:"..questID)
-    local name = info.lines[1].args[2].stringVal
+    local name = info.lines[1].leftText
     if name then
         local complete = C_QuestLog.IsQuestFlaggedCompleted(questID)
         local color = complete and GREEN_FONT_COLOR or RED_FONT_COLOR
@@ -1466,3 +1469,23 @@ function _LiteLite:PLAYER_INTERACTION_MANAGER_FRAME_SHOW(id)
         ShowUIPanel(CharacterFrame)
     end
 end
+
+local DragonridingActions = {
+    [121] = 372608,
+    [122] = 372610,
+    [123] = 361584,
+    [124] = 403092,
+    [125] = 425782,
+    [126] = 374990,
+}
+
+function _LiteLite:SetupDragonridingBar()
+    for actionID, spellID in pairs(DragonridingActions) do
+        local aType, aID, aSubType = GetActionInfo(actionID)
+        if aType ~= 'spell' or aID ~= spellID then
+            PickupSpell(spellID)
+            PlaceAction(actionID)
+        end
+    end
+end
+
