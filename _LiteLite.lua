@@ -1485,6 +1485,7 @@ function _LiteLite:SetupDragonridingBar()
         if aType ~= 'spell' or aID ~= spellID then
             PickupSpell(spellID)
             PlaceAction(actionID)
+            ClearCursor()
         end
     end
 end
