@@ -23,7 +23,7 @@ local CursorMacroTemplate =
 ]]
 
 local function maybescape(str)
-    if str:sub(1,1) == '^' or str:sub(-1,1) == '$' then
+    if str:sub(1,1) == '^' or str:sub(-1) == '$' then
         return str
     else
         -- cut-and-paste I have no idea how this works
@@ -1489,4 +1489,3 @@ function _LiteLite:SetupDragonridingBar()
         end
     end
 end
-
