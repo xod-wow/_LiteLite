@@ -6,3 +6,5 @@
 ## SavedVariables: _LiteLiteDB
 
 _LiteLite.xml
+
+AutoTab.lua
