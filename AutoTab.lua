@@ -87,9 +87,7 @@ local function GetNextTabButton(info, direction)
         currentTab = frame.TabSystem.selectedTabID
         tabButtons = {}
         for _, tab in ipairs(frame.TabSystem.tabs) do
-            if tab:IsShown() and not tab.forceDisabled then
-                table.insert(tabButtons, tab)
-            end
+            table.insert(tabButtons, tab)
         end
         numTabs = #tabButtons
     elseif info.tabKeys then
@@ -110,7 +108,8 @@ local function GetNextTabButton(info, direction)
             newTab = rotateN(newTab, numTabs, direction)
             if newTab == currentTab then break end
             local tabButton = tabButtons[newTab]
-            if tabButton:IsEnabled() then
+            -- This should probably be moved to the info struct
+            if tabButton:IsShown() and not tabButton.forceDisabled and tabButton:IsEnabled() then
                 return tabButton
             end
         end
