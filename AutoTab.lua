@@ -1,62 +1,72 @@
 local AutoTabFrames = {
     {
-        binding =   "TOGGLEACHIEVEMENT",
-        frame =     "AchievementFrame",
-        loader =    "AchievementFrame_LoadUI",
+        frame =                 "AchievementFrame",
+        loadFunc =              "AchievementFrame_LoadUI",
     },
     {
-        binding =   "TOGGLECOLLECTIONS",
-        frame =     "CollectionsJournal",
+        frame =                 "CollectionsJournal",
     },
     {
-        binding =   "TOGGLECHARACTER0",
-        frame =     "CharacterFrame",
+        frame =                 "CharacterFrame",
     },
     {
-        binding =   "TOGGLESPELLBOOK",
-        frame =     "SpellBookFrame",
+        frame =                 "SpellBookFrame",
     },
     {
-        binding =   "TOGGLETALENTS",
-        frame =     "ClassTalentFrame",
-        loader =    "ClassTalentFrame_LoadUI"
+        frame =                 "ClassTalentFrame",
+        loadFunc =              "ClassTalentFrame_LoadUI"
     },
     {
-        binding =   "TOGGLEGROUPFINDER",
-        frame =     "PVEFrame",
+        frame =                 "PVEFrame",
     },
     {
-        binding =   "TOGGLESOCIAL",
-        frame =     "FriendsFrame",
+        frame =                 "FriendsFrame",
     },
     {
-        binding =   "TOGGLEGUILDTAB",
-        frame =     "CommunitiesFrame",
-        loader =    "Communities_LoadUI",
-        tabKeys =   { "ChatTab", "RosterTab", "GuildBenefitsTab", "GuildInfoTab" },
+        frame =                 "CommunitiesFrame",
+        loadFunc =              "Communities_LoadUI",
+        tabKeys =               { "ChatTab", "RosterTab", "GuildBenefitsTab", "GuildInfoTab" },
     },
     {
-        binding =   "TOGGLEENCOUNTERJOURNAL",
-        frame =     "EncounterJournal",
-        loader =    "EncounterJournal_LoadUI",
+        frame =                 "EncounterJournal",
+        loadFunc =              "EncounterJournal_LoadUI",
+    },
+    {
+        frame =                 "AuctionHouseFrame",
+        loadFunc =              "AuctionHouseFrame_LoadUI",
+    },
+    {
+        frame =                 "MerchantFrame",
+    },
+    {
+        frame =                 "MailFrame",
+    },
+    {
+        frame =                 "GuildBankFrame",
+        loadInteractionType =   Enum.PlayerInteractionType.GuildBanker,
     },
 }
 
 CreateFrame("Button", "AutoTabButton", nil, "SecureActionButtonTemplate")
 
+local function rotateN(currentVal, numVals, increment)
+    return  ( currentVal - 1 + increment ) % numVals + 1
+end
+
 function AutoTabButton:PreClick(key)
     if InCombatLockdown() then return end
-    local info = self[key]
+    local info = self.activeFrames[1]
     if not info then return end
     local frame = _G[info.frame]
+    local direction = key == 'TAB' and 1 or -1
     if frame.Tabs and frame.selectedTab then
         local tab = frame.selectedTab
-        local newTab = tab % frame.numTabs + 1
+        local newTab = rotateN(tab, frame.numTabs, direction)
         local tabButton = frame.Tabs[newTab]
         self:SetAttribute("clickbutton", tabButton)
     elseif frame.numTabs and frame.selectedTab then
         local tab = frame.selectedTab
-        local newTab = tab % frame.numTabs + 1
+        local newTab = rotateN(tab, frame.numTabs, direction)
         local tabButton = _G[frame:GetName().."Tab"..newTab]
         self:SetAttribute("clickbutton", tabButton)
     elseif frame.Tabs and frame.currentTab then
@@ -68,13 +78,13 @@ function AutoTabButton:PreClick(key)
             end
         end
         if tab then
-            local newTab = tab % frame.numTabs + 1
+            local newTab = rotateN(tab, frame.numTabs, direction)
             local tabButton = frame.Tabs[newTab]
             self:SetAttribute("clickbutton", tabButton)
         end
     elseif frame.TabSystem then
         local tab = frame.TabSystem.selectedTabID
-        local newTab = tab % #frame.TabSystem.tabs + 1
+        local newTab = rotateN(tab, #frame.TabSystem.tabs, direction)
         local tabButton = frame.TabSystem.tabs[newTab]
         self:SetAttribute("clickbutton", tabButton)
     elseif info.tabKeys then
@@ -85,50 +95,74 @@ function AutoTabButton:PreClick(key)
                 break
             end
         end
-        local newTab = tab % #info.tabKeys + 1
+        local newTab = rotateN(tab, #info.tabKeys, direction)
         tabButton = frame[info.tabKeys[newTab]]
         self:SetAttribute("clickbutton", tabButton)
     end
 end
 
+
+function AutoTabButton:HookTabKeys()
+    SetOverrideBindingClick(self, true, 'TAB', self:GetName(), 'TAB')
+    SetOverrideBindingClick(self, true, 'SHIFT-TAB', self:GetName(), 'SHIFT-TAB')
+end
+
+function AutoTabButton:UnhookTabKeys()
+    ClearOverrideBindings(self)
+end
+
 function AutoTabButton:SetUpFrame(info)
     if info.hooked then return end
     local frame = _G[info.frame]
-    frame:HookScript("OnShow",
-        function ()
-            if InCombatLockdown() then return end
-            local key = GetBindingKey(info.binding)
-            if key then
-                self[key] = info
-                SetOverrideBindingClick(self, true, key, self:GetName(), key)
-            end
-        end)
-    frame:HookScript("OnHide",
-        function ()
-            if InCombatLockdown() then return end
-            local key = GetBindingKey(info.binding)
-            if key then
-                SetOverrideBinding(self, true, key, nil)
-                self[key] = nil
-            end
-        end)
+    -- print('SetUpFrame', frame:GetName())
+
+    local function OnShow()
+        tDeleteItem(self.activeFrames, info)
+        table.insert(self.activeFrames, 1, info)
+        if InCombatLockdown() then return end
+        self:HookTabKeys()
+    end
+
+    local function OnHide()
+        tDeleteItem(self.activeFrames, info)
+        if InCombatLockdown() then return end
+        if not next(self.activeFrames) then
+            self:UnhookTabKeys()
+        end
+    end
+
+    frame:HookScript("OnShow", OnShow)
+    frame:HookScript("OnHide", OnHide)
+    if frame:IsShown() then OnShow() end
+        
     info.hooked = true
 end
 
 function AutoTabButton:OnEvent(event, ...)
-    print('abc')
     if event == "PLAYER_LOGIN" then
         self:Initialize()
     elseif event == "PLAYER_REGEN_DISABLED" then
-        ClearOverrideBindings(self)
+        self:UnhookTabKeys()
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        if next(self.activeFrames) then
+            self:HookTabKeys()
+        end
+    elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" then
+        local interactionType = ...
+        for _, info in ipairs(AutoTabFrames) do
+            if info.loadInteractionType and info.loadInteractionType == interactionType then
+                self:SetUpFrame(info)
+            end
+        end
     end
 end
 
 function AutoTabButton:Initialize()
+    self.activeFrames = {}
     for _, info in ipairs(AutoTabFrames) do
-        if info.loader then
-            hooksecurefunc(info.loader, function () self:SetUpFrame(info) end)
-        else
+        if info.loadFunc then
+            hooksecurefunc(info.loadFunc, function () self:SetUpFrame(info) end)
+        elseif _G[info.frame] then
             self:SetUpFrame(info)
         end
     end
@@ -136,6 +170,8 @@ function AutoTabButton:Initialize()
     self:RegisterForClicks("AnyUp", "AnyDown")
     self:SetScript("PreClick", self.PreClick)
     self:RegisterEvent("PLAYER_REGEN_DISABLED")
+    self:RegisterEvent("PLAYER_REGEN_ENABLED")
+    self:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
 end
 
 AutoTabButton:SetScript("OnEvent", AutoTabButton.OnEvent)
