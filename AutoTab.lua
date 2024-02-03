@@ -10,6 +10,10 @@ local AutoTabFrames = {
         frame =                 "CharacterFrame",
     },
     {
+        frame =                 "InspectFrame",
+        loadFunc =              "InspectFrame_LoadUI",
+    },
+    {
         frame =                 "SpellBookFrame",
     },
     {
