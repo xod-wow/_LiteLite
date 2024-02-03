@@ -45,6 +45,10 @@ local AutoTabFrames = {
         frame =                 "GuildBankFrame",
         loadInteractionType =   Enum.PlayerInteractionType.GuildBanker,
     },
+    {
+        frame =                 "ProfessionsFrame",
+        loadFunc =              "ProfessionsFrame_LoadUI",
+    },
 }
 
 CreateFrame("Button", "AutoTabButton", nil, "SecureActionButtonTemplate")
@@ -53,52 +57,73 @@ local function rotateN(currentVal, numVals, increment)
     return  ( currentVal - 1 + increment ) % numVals + 1
 end
 
+local function GetNextTabButton(info, direction)
+    local frame = _G[info.frame]
+    local tabButtons, currentTab, numTabs
+
+    -- Try to handle all the different tabbing mechanisms
+
+    if frame.Tabs and frame.selectedTab then
+        currentTab = frame.selectedTab
+        tabButtons = frame.Tabs
+        numTabs = frame.numTabs
+    elseif frame.numTabs and frame.selectedTab then
+        currentTab = frame.selectedTab
+        tabButtons = { }
+        for i = 1, frame.numTabs do
+            table.insert(tabButtons, _G[frame:GetName().."Tab"..i])
+        end
+        numTabs = #tabButtons
+    elseif frame.Tabs and frame.currentTab then
+        for i, tabButton in ipairs(frame.Tabs) do
+            if tabButton == frame.currentTab then
+                currentTab = i
+                break
+            end
+        end
+        tabButtons = frame.Tabs
+        numTabs = frame.numTabs
+    elseif frame.TabSystem then
+        currentTab = frame.TabSystem.selectedTabID
+        tabButtons = {}
+        for _, tab in ipairs(frame.TabSystem.tabs) do
+            if tab:IsShown() and not tab.forceDisabled then
+                table.insert(tabButtons, tab)
+            end
+        end
+        numTabs = #tabButtons
+    elseif info.tabKeys then
+        tabButtons = {}
+        local tab = 0
+        for i, tabKey in ipairs(info.tabKeys) do
+            table.insert(tabButtons, frame[tabKey])
+            if frame[tabKey]:GetChecked() then
+                currentTab = i
+            end
+        end
+        numTabs = #tabButtons
+    end
+
+    if currentTab then
+        newTab = currentTab
+        while true do
+            newTab = rotateN(newTab, numTabs, direction)
+            if newTab == currentTab then break end
+            local tabButton = tabButtons[newTab]
+            if tabButton:IsEnabled() then
+                return tabButton
+            end
+        end
+    end
+end
+
 function AutoTabButton:PreClick(key)
     if InCombatLockdown() then return end
     local info = self.activeFrames[1]
     if not info then return end
-    local frame = _G[info.frame]
     local direction = key == 'TAB' and 1 or -1
-    if frame.Tabs and frame.selectedTab then
-        local tab = frame.selectedTab
-        local newTab = rotateN(tab, frame.numTabs, direction)
-        local tabButton = frame.Tabs[newTab]
-        self:SetAttribute("clickbutton", tabButton)
-    elseif frame.numTabs and frame.selectedTab then
-        local tab = frame.selectedTab
-        local newTab = rotateN(tab, frame.numTabs, direction)
-        local tabButton = _G[frame:GetName().."Tab"..newTab]
-        self:SetAttribute("clickbutton", tabButton)
-    elseif frame.Tabs and frame.currentTab then
-        local tab
-        for i, tabButton in ipairs(frame.Tabs) do
-            if tabButton == frame.currentTab then
-                tab = i
-                break
-            end
-        end
-        if tab then
-            local newTab = rotateN(tab, frame.numTabs, direction)
-            local tabButton = frame.Tabs[newTab]
-            self:SetAttribute("clickbutton", tabButton)
-        end
-    elseif frame.TabSystem then
-        local tab = frame.TabSystem.selectedTabID
-        local newTab = rotateN(tab, #frame.TabSystem.tabs, direction)
-        local tabButton = frame.TabSystem.tabs[newTab]
-        self:SetAttribute("clickbutton", tabButton)
-    elseif info.tabKeys then
-        local tab = 0
-        for i, tabKey in ipairs(info.tabKeys) do
-            if frame[tabKey]:GetChecked() then
-                tab = i
-                break
-            end
-        end
-        local newTab = rotateN(tab, #info.tabKeys, direction)
-        tabButton = frame[info.tabKeys[newTab]]
-        self:SetAttribute("clickbutton", tabButton)
-    end
+    local tabButton = GetNextTabButton(info, direction)
+    self:SetAttribute("clickbutton", tabButton)
 end
 
 
@@ -114,7 +139,6 @@ end
 function AutoTabButton:SetUpFrame(info)
     if info.hooked then return end
     local frame = _G[info.frame]
-    -- print('SetUpFrame', frame:GetName())
 
     local function OnShow()
         tDeleteItem(self.activeFrames, info)
