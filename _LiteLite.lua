@@ -69,15 +69,21 @@ function _LiteLite:BiggerFrames()
     QuestFrame:HookScript('OnShow', Embiggen)
     GossipFrame:HookScript('OnShow', Embiggen)
     ItemTextFrame:HookScript('OnShow', Embiggen)
-    hooksecurefunc('Communities_LoadUI',
-        function ()
-            CommunitiesFrame:HookScript('OnShow', Embiggen)
-        end)
-    hooksecurefunc('EncounterJournal_LoadUI',
-        function ()
-            EncounterJournal:HookScript('OnShow', Embiggen)
-        end)
-    hooksecurefunc('ChallengeMode_LoadUI', self.MoveKeystoneFrame)
+    if Communities_LoadUI then
+        hooksecurefunc('Communities_LoadUI',
+            function ()
+                CommunitiesFrame:HookScript('OnShow', Embiggen)
+            end)
+    end
+    if EncounterJournal_LoadUI then
+        hooksecurefunc('EncounterJournal_LoadUI',
+            function ()
+                EncounterJournal:HookScript('OnShow', Embiggen)
+            end)
+    end
+    if ChallengeMode_LoadUI then
+        hooksecurefunc('ChallengeMode_LoadUI', self.MoveKeystoneFrame)
+    end
 end
 
 function _LiteLite:FlashScreen(seconds)
@@ -379,8 +385,10 @@ function _LiteLite:AutoRepairAll()
 end
 
 function _LiteLite:SellJunkButton()
-    MerchantSellAllJunkButton:SetScript('OnClick', MerchantFrame_OnSellAllJunkButtonConfirmed)
-    -- MerchantSellAllJunkButton:SetScript('OnClick', self.SellJunk)
+    if MerchantSellAllJunkButton then
+        MerchantSellAllJunkButton:SetScript('OnClick', MerchantFrame_OnSellAllJunkButtonConfirmed)
+        -- MerchantSellAllJunkButton:SetScript('OnClick', self.SellJunk)
+    end
 end
 
 function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
@@ -620,13 +628,17 @@ function _LiteLite:UpdateScanning()
     if next(self.db.scanMobNames or {}) then
         self.announcedMobGUID = self.announcedMobGUID or {}
         self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-        self:RegisterEvent("VIGNETTES_UPDATED")
-        self:RegisterEvent("VIGNETTE_MINIMAP_UPDATED")
+        if WOW_PROJECT_ID == 1 then
+            self:RegisterEvent("VIGNETTES_UPDATED")
+            self:RegisterEvent("VIGNETTE_MINIMAP_UPDATED")
+        end
     else
         self.announcedMobGUID = table.wipe(self.announcedMobGUID or {})
         self:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
-        self:UnregisterEvent("VIGNETTES_UPDATED")
-        self:UnregisterEvent("VIGNETTE_MINIMAP_UPDATED")
+        if WOW_PROJECT_ID == 1 then
+            self:UnregisterEvent("VIGNETTES_UPDATED")
+            self:UnregisterEvent("VIGNETTE_MINIMAP_UPDATED")
+        end
     end
 end
 
@@ -1354,6 +1366,8 @@ end
 
 
 function _LiteLite:HideActionButtonEffects()
+    if WOW_PROJECT_ID ~= 1 then return end
+
     -- Stop the castbar inside the actionbuttons
     local events = {
         "UNIT_SPELLCAST_INTERRUPTED",
