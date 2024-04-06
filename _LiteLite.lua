@@ -31,6 +31,9 @@ local function maybescape(str)
     end
 end
 
+local SecureButton = CreateFrame('Button', '_LiteLiteSecureButton', nil, 'SecureActionButtonTemplate')
+SecureButton:RegisterForClicks('AnyDown', 'AnyUp')
+
 local ScanTooltip = CreateFrame("GameTooltip", "_LiteLiteScanTooltip", nil, "GameTooltipTemplate")
 do
     ScanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
@@ -59,6 +62,11 @@ local printTag = ORANGE_FONT_COLOR:WrapTextInColorCode("LiteLite: ")
 local function printf(fmt, ...)
     local msg = string.format(fmt, ...)
     SELECTED_CHAT_FRAME:AddMessage(printTag .. msg)
+end
+
+local function printfc(fmt, color, ...)
+    local msg = string.format(fmt, ...)
+    SELECTED_CHAT_FRAME:AddMessage(printTag .. color:WrapTextInColorCode(msg))
 end
 
 local function Embiggen(f)
@@ -219,6 +227,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'chatframe-settings' or arg == 'cs' then
         self:ChatFrameSettings()
         return true
+    elseif arg == 'check-elemental-storms' or arg == 'ces' then
+        self:CheckElementalStorms()
+        return true
     elseif arg == 'nameplate-settings' or arg == 'ns' then
         self:NameplateSettings()
         return true
@@ -310,6 +321,11 @@ function _LiteLite:SlashCommand(arg)
             self:ScanMobList()
         end
         return true
+    elseif arg1 == 'bind-macro' or arg1 == 'bm' then
+        self.bindKey = arg2
+        self.bindMacro = arg3
+        self:SetBindMacro()
+        return true
     end
 
     printf("/ll adventure-upgrade | au")
@@ -377,6 +393,8 @@ function _LiteLite:PLAYER_LOGIN()
     self:HideProfessionUnspentReminder()
     self:HideActionButtonEffects()
     self:UpdateScanning()
+    self:ClearTrackedPerksActivities()
+    self:SetBindMacro()
 end
 
 function _LiteLite:AutoRepairAll()
@@ -699,7 +717,7 @@ local function PrintEquipmentQuestRewards(info)
             ScanTooltip:SetQuestLogItem(rewardType, i, info.questId, true)
             local name, link = ScanTooltip:GetItem()
             local equipLoc = select(9, GetItemInfo(itemID))
-            if equipLoc ~= "" then
+            if equipLoc ~= "INVTYPE_NON_EQUIP_IGNORE" then
                 printf('  [%s] %s (%d) - %s ', _G[equipLoc], link, itemLevel, mapInfo.name)
             elseif C_Soulbinds.IsItemConduitByItemInfo(link) then
                 printf('  [CONDUIT] %s - %s ', link, mapInfo.name)
@@ -1342,11 +1360,10 @@ function _LiteLite:ACTIVE_TALENT_GROUP_CHANGED(...)
 end
 
 function _LiteLite:LargerCUFDispelIcons()
-    hooksecurefunc("CompactUnitFrame_UpdateAll",
+    hooksecurefunc("CompactUnitFrame_UpdateAuras",
         function (frame)
             if not frame:IsForbidden() and frame:GetName() then
-                for i = 1, #frame.dispelDebuffFrames do
-                    local f = frame.dispelDebuffFrames[i]
+                for _,f in ipairs(frame.dispelDebuffFrames) do
                     f:SetSize(24, 24)
                 end
             end
@@ -1501,5 +1518,82 @@ function _LiteLite:SetupDragonridingBar()
             PlaceAction(actionID)
             ClearCursor()
         end
+    end
+end
+
+local StormMapAchievements =  {
+    [2022] = {
+        id = 16468,
+        ['ElementalStorm-Lesser-Air'] = 1,
+        ['ElementalStorm-Lesser-Earth'] = 2,
+        ['ElementalStorm-Lesser-Fire'] = 3,
+        ['ElementalStorm-Lesser-Water'] = 4,
+    },
+    [2023] = {
+        id = 16476,
+        ['ElementalStorm-Lesser-Air'] = 1,
+        ['ElementalStorm-Lesser-Earth'] = 2,
+        ['ElementalStorm-Lesser-Fire'] = 3,
+        ['ElementalStorm-Lesser-Water'] = 4,
+    },
+    [2024] = {
+        id = 16484,
+        ['ElementalStorm-Lesser-Air'] = 1,
+        ['ElementalStorm-Lesser-Earth'] = 2,
+        ['ElementalStorm-Lesser-Fire'] = 3,
+        ['ElementalStorm-Lesser-Water'] = 4,
+    },
+    [2025] = {
+        id = 16489,
+        ['ElementalStorm-Lesser-Air'] = 1,
+        ['ElementalStorm-Lesser-Earth'] = 2,
+        ['ElementalStorm-Lesser-Fire'] = 3,
+        ['ElementalStorm-Lesser-Water'] = 4,
+    },
+}
+
+
+local CompletedColors = {
+    [true] = GREEN_FONT_COLOR,
+    [false] = RED_FONT_COLOR,
+}
+
+function _LiteLite:CheckElementalStorms()
+    local found = false
+    for uiMapID, achData in pairs(StormMapAchievements) do
+        local mapName = C_Map.GetMapInfo(uiMapID).name
+        local poiIDs = C_AreaPoiInfo.GetAreaPOIForMap(uiMapID)
+        for _, poiID in ipairs(poiIDs) do
+            local info = C_AreaPoiInfo.GetAreaPOIInfo(uiMapID, poiID)
+            if strfind(info.description, 'Cobalt Assembly') then
+                info.isPrimaryMapForPOI = ( uiMapID == 2024 )
+            end
+            if info.isPrimaryMapForPOI and info.name == "Elemental Storm" then
+                local critID = achData[info.atlasName]
+                local name, _, completed = GetAchievementCriteriaInfo(achData.id, critID)
+                local c = CompletedColors[completed]
+                printfc('%s : %s (%s)', c, mapName, name, completed and "DONE" or "MISSING")
+                printf(info.description)
+                found = true
+            end
+        end
+    end
+    if not found then
+        printf('No storm active')
+    end
+end
+
+function _LiteLite:ClearTrackedPerksActivities()
+    local ids = C_PerksActivities.GetTrackedPerksActivities().trackedIDs
+    for _, id in ipairs(ids) do
+       C_PerksActivities.RemoveTrackedPerksActivity(id)
+    end
+end
+
+function _LiteLite:SetBindMacro()
+    if self.db.bindKey and self.db.bindMacro then
+        SecureButton:SetAttribute('type', 'macro')
+        SecureButton:SetAttribute('macrotext', self.db.bindMacro)
+        SetOverrideBindingClick(SecureButton, true, self.db.bindKey, SecureButton:GetName())
     end
 end
