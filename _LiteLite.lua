@@ -322,8 +322,8 @@ function _LiteLite:SlashCommand(arg)
         end
         return true
     elseif arg1 == 'bind-macro' or arg1 == 'bm' then
-        self.bindKey = arg2
-        self.bindMacro = arg3
+        self.db.bindKey = arg2
+        self.db.bindMacro = arg3:gsub("\\n", "\n")
         self:SetBindMacro()
         return true
     end
