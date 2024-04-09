@@ -1584,6 +1584,7 @@ function _LiteLite:CheckElementalStorms()
 end
 
 function _LiteLite:ClearTrackedPerksActivities()
+    if not C_PerksActivities then return end
     local ids = C_PerksActivities.GetTrackedPerksActivities().trackedIDs
     for _, id in ipairs(ids) do
        C_PerksActivities.RemoveTrackedPerksActivity(id)
