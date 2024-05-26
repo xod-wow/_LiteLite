@@ -268,6 +268,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'dragonridingbar' or arg == 'drb' then
         self:SetupDragonridingBar()
         return true
+    elseif arg == 'panda-gems' or arg == 'pg' then
+        PandaGem:Show()
+        return true
     end
 
     -- One argument options

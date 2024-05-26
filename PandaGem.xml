@@ -1,0 +1,96 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+
+  <Script file="PandaGem.lua"/>
+
+  <Button name="PandaGemEntryTemplate" virtual="true" inherits="SecureActionButtonTemplate" mixin="PandaGemEntryMixin">
+    <Size y="22" />
+    <Frames>
+      <Button parentKey="Combine" inherits="InsecureActionButtonTemplate UIPanelButtonTemplate" text="C">
+        <Size x="16" y="16" />
+          <Anchors>
+            <Anchor point="LEFT" x="4" />
+          </Anchors>
+      </Button>
+    </Frames>
+        
+    <Layers>
+      <Layer level="BACKGROUND">
+        <Texture parentKey="Stripe" setAllPoints="true">
+          <Color r="0.98" g="0.98" b="1" a="0.1" />
+        </Texture>
+      </Layer>
+      <Layer level="ARTWORK">
+        <FontString parentkey="Text" inherits="GameFontWhite" justifyH="LEFT">
+          <Anchors>
+            <Anchor point="LEFT" relativeKey="$parent.Combine" relativePoint="RIGHT" x="4" />
+          </Anchors>
+        </FontString>
+        <Texture parentKey="Icon">
+          <Size x="16" y="16" />
+          <Anchors>
+            <Anchor point="RIGHT" x="-8" />
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+    <Scripts>
+      <OnLoad inherit="APPEND" method="OnLoad" />
+      <OnShow inherit="APPEND" method="OnShow" />
+      <OnEnter inherit="APPEND" method="OnEnter" />
+      <OnLeave inherit="APPEND" method="OnLeave" />
+    </Scripts>
+  </Button>
+
+  <Button name="PandaGemCombineAllTemplate" virtual="true" inherits="SecureActionButtonTemplate UIPanelButtonTemplate" mixin="PandaGemCombineAllMixin" text="COMBINE">
+    <Size x="96" Y="22" />
+    <Scripts>
+      <OnLoad inherit="APPEND" method="OnLoad" />
+    </Scripts>
+  </Button>
+    
+  <Frame name="PandaGem" parent="UIParent" topLevel="true" frameStrata="FULLSCREEN_DIALOG" inherits="ButtonFrameTemplate" hidden="true" movable="true" dontSavePosition="true" registerForDrag="LeftButton" mixin="PandaGemMixin">
+    <size x="640" y="478" />
+    <Anchors><Anchor point="CENTER" y="24" /></Anchors>
+    <Frames>
+      <Button parentKey="CombineAll" inherits="PandaGemCombineAllTemplate">
+        <Anchors>
+          <Anchor point="TOPRIGHT" x="-16" y="-32" />
+        </Anchors>
+      </Button>
+      <Frame parentKey="EquippedScroll" inherits="WoWScrollBoxList">
+        <Anchors>
+          <Anchor point="TOPLEFT" x="16" y="-64" />
+          <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOM" x="-12" y="36" />
+        </Anchors>
+      </Frame>
+      <EventFrame parentKey="EquippedScrollBar" inherits="MinimalScrollBar">
+        <Anchors>
+        <Anchor point="TOPLEFT" relativeKey="$parent.EquippedScroll" relativePoint="TOPRIGHT" x="8" y="-3"/>
+        <Anchor point="BOTTOMLEFT" relativeKey="$parent.EquippedScroll" relativePoint="BOTTOMRIGHT" x="4" y="2"/>
+        </Anchors>
+      </EventFrame>
+      <Frame parentKey="BagsScroll" inherits="WoWScrollBoxList">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativePoint="TOP" x="12" y="-64" />
+          <Anchor point="BOTTOMRIGHT" x="-34" y="36" />
+        </Anchors>
+      </Frame>
+      <EventFrame parentKey="BagsScrollBar" inherits="MinimalScrollBar">
+        <Anchors>
+        <Anchor point="TOPLEFT" relativeKey="$parent.BagsScroll" relativePoint="TOPRIGHT" x="4" y="-3"/>
+        <Anchor point="BOTTOMLEFT" relativeKey="$parent.BagsScroll" relativePoint="BOTTOMRIGHT" x="4" y="2"/>
+        </Anchors>
+      </EventFrame>
+    </Frames>
+    <Scripts>
+      <OnLoad method="OnLoad" />
+      <OnShow method="OnShow" />
+      <OnHide method="OnHide" />
+      <OnEvent method="OnEvent" />
+      <OnUpdate method="OnUpdate" />
+      <OnDragStart method="OnDragStart" />
+      <OnDragStop method="OnDragStop" />
+    </Scripts>
+  </Frame>
+
+</Ui>

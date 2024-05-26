@@ -6,3 +6,4 @@
 ## SavedVariables: _LiteLiteDB
 
 _LiteLite.xml
+PandaGem.xml
