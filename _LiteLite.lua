@@ -22,6 +22,11 @@ local CursorMacroTemplate =
 /cast [mod:alt][@cursor] {1}
 ]]
 
+local PlayerMacroTemplate =
+[[#showtooltip {1}
+/cast [mod:alt][@player] {1}
+]]
+
 local function maybescape(str)
     if str:sub(1,1) == '^' or str:sub(-1) == '$' then
         return str
@@ -273,8 +278,11 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'trinket-macro' or arg1 == 'tm' then
         self:CreateSpellMacro(TrinketMacroTemplate, arg2)
         return true
-    elseif arg1 == 'cursort-macro' or arg1 == 'cm' then
+    elseif arg1 == 'cursor-macro' or arg1 == 'cm' then
         self:CreateSpellMacro(CursorMacroTemplate, arg2)
+        return true
+    elseif arg1 == 'player-macro' or arg1 == 'pm' then
+        self:CreateSpellMacro(PlayerMacroTemplate, arg2)
         return true
     elseif arg1 == 'gkeys' or arg1 == 'gk' then
         self:SearchGlobalKeys(arg2)
@@ -338,7 +346,6 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll great-vault | gv")
     printf("/ll gvals text")
     printf("/ll guild-news <min-ilevel>")
-    printf("/ll mouseover-macro [spellname]")
     printf("/ll mythic-plus-dungeons | mpd")
     printf("/ll mythic-plus-history | mph")
     printf("/ll nameplate-settings")
@@ -346,6 +353,9 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll quest-report")
     printf("/ll spec-config | sc")
     printf("/ll tooltip-ids")
+    printf("/ll cursor-macro [spellname]")
+    printf("/ll mouseover-macro [spellname]")
+    printf("/ll player-macro [spellname]")
     printf("/ll trinket-macro [spellname]")
     printf("/ll wq-items")
     return true
@@ -689,7 +699,7 @@ function _LiteLite:VIGNETTE_MINIMAP_UPDATED(id)
 
     for _, n in ipairs(self.db.scanMobNames) do
         n = maybescape(n)
-        if info.name and info.name:lower():find(n) then
+        if info.name and ( n:lower() == 'vignette' or info.name:lower():find(n) ) then
             self.announcedMobGUID[info.objectGUID] = info.name
             local msg = format("Vignette %s found", info.name)
             printf(msg)
@@ -887,6 +897,7 @@ end
 
 local function PrintIfCompletedQuest(questID)
     local info = C_TooltipInfo.GetHyperlink("quest:"..questID)
+    if not info then return end
     local name = info.lines[1].leftText
     if name then
         local complete = C_QuestLog.IsQuestFlaggedCompleted(questID)
@@ -1491,8 +1502,7 @@ function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)
     local searchResultInfo = C_LFGList.GetSearchResultInfo(id)
     local activityName = C_LFGList.GetActivityFullName(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
     local _, status, _, _, role = C_LFGList.GetApplicationInfo(id)
-    printf("Joined group '%s' as %s (searchResultInfo.name=%s, activityName=%s, status=%s)",
-           kstringGroupName, _G[role], searchResultInfo.name, activityName, status)
+    printf("Joined %s name %s as %s", activityName, kstringGroupName, _G[role])
 end
 
 function _LiteLite:PLAYER_INTERACTION_MANAGER_FRAME_SHOW(id)
