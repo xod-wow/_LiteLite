@@ -180,7 +180,7 @@ function PandaGemMixin:AddGemInfo(info, item)
 
     -- Gems that are inside sockets don't have ItemLocation or stack
     info.stackCount = item:HasItemLocation() and item:GetStackCount()
-    info.maxStackSize = item:GetMaxStackSize()
+    info.maxStackSize = item:GetItemMaxStackSize()
 
     local _, spellID = C_Item.GetItemSpell(info.link)
     info.spellID = spellID
