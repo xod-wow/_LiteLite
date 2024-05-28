@@ -29,19 +29,6 @@ local ExampleSocketGems = {
     [216627]    = "EMPTY_SOCKET_TINKER",
 }
 
-local SocketTypeTable = {}
-do
-    for gemItemID, gemSocketType in pairs(ExampleSocketGems) do
-        local item = Item:CreateFromItemID(gemItemID)
-        item:ContinueOnItemLoad(
-            function ()
-                local tt = C_TooltipInfo.GetHyperlink(item:GetItemLink())
-                local socketText = tt.lines[2].leftText:gsub("|c........(.*)|r", "%1")
-                SocketTypeTable[socketText] = gemSocketType
-            end)
-    end
-end
-
 local GemSocketSortOrder = {
     ["EMPTY_SOCKET_META"]           = 1,
     ["EMPTY_SOCKET_COGWHEEL"]       = 3,
@@ -87,9 +74,11 @@ function PandaGemEntryMixin:OnShow()
 end
 
 function PandaGemEntryMixin:OnEnter()
-    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:SetHyperlink(self.item:GetItemLink())
-    GameTooltip:Show()
+    if self.item then
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetHyperlink(self.item:GetItemLink())
+        GameTooltip:Show()
+    end
 end
 
 function PandaGemEntryMixin:OnLeave()
@@ -104,66 +93,91 @@ end
 
 PandaGemMixin  = {}
 
-local function InitGemButton(button, info)
+function PandaGemMixin:BuildSocketTypeTable()
+    self.SocketTypeTable = {}
+    for gemItemID, gemSocketType in pairs(ExampleSocketGems) do
+        local item = Item:CreateFromItemID(gemItemID)
+        item:ContinueOnItemLoad(
+            function ()
+                local tt = C_TooltipInfo.GetItemByID(item:GetItemID())
+                if not tt or not tt.lines then  
+                    print(gemItemID, item:GetItemName(), item:GetItemLink())
+                else
+                    local socketText = tt.lines[2].leftText:gsub("|c........(.*)|r", "%1")
+                    self.SocketTypeTable[socketText] = gemSocketType
+                end
+            end)
+    end
+end
+
+local function InitGemButtonBags(button, info)
     button.item = info.item
     button.location = info.location
     button.Stripe:SetShown(info.index % 2 == 1)
     local c = info.item:GetItemQualityColor()
     local name = c.color:WrapTextInColorCode(info.item:GetItemName())
-    local count = info.item:GetItemLocation() and info.item:GetStackCount() or nil
-    local equipmentSlot = info.location:GetEquipmentSlot()
-    if count then
-        button.Text:SetText(format("%s (%d)", name, count))
-    elseif equipmentSlot then
-        local equipmentSlotName = InventorySlotTable[equipmentSlot] or ( 'WTF ' .. slot )
-        button.Text:SetText(name .. ' - ' ..  equipmentSlotName)
-    else
-        button.Text:SetText(name)
-    end
+    local count = info.item:GetStackCount()
+    button.Text:SetText(format("%s (%d)", name, count))
     button.Icon:SetTexture(info.item:GetItemIcon())
 
     button.Combine:Hide()
-    if info.location:IsBagAndSlot() then
-        local _, spellID = C_Item.GetItemSpell(info.item:GetItemLink())
-        if spellID and count and count >= 3 then
-            button.Combine:SetAttribute("type", "item")
-            button.Combine:SetAttribute("item", info.item:GetItemName())
-            button.Combine:Show()
-        end
+    local _, spellID = C_Item.GetItemSpell(info.item:GetItemLink())
+    if spellID and count and count >= 3 then
+        button.Combine:SetAttribute("type", "item")
+        button.Combine:SetAttribute("item", info.item:GetItemName())
+        button.Combine:Show()
     end
 
-    if info.location:IsEquipmentSlot() then
-        button:SetScript('PreClick', function () SocketInventoryItem(equipmentSlot) end)
-        button:SetScript('PostClick', function () CloseSocketInfo() end)
-        button:SetAttribute("type", "macro")
-        button:SetAttribute("macrotext", format("/cast Extract Gem\n/click ItemSocketingSocket%d", info.socketIndex))
-        return
-    end
-    local equipmentSlot, socketIndex = PandaGem:FindSocketForGem(info)
+    local equipmentSlot, gemSocketIndex = PandaGem:FindSocketForGem(info)
     if equipmentSlot then
         local bag, slot = info.location:GetBagAndSlot()
         button:SetScript('PreClick',
             function ()
                 SocketInventoryItem(equipmentSlot)
                 C_Container.PickupContainerItem(bag, slot)
-                ClickSocketButton(socketIndex)
+                ClickSocketButton(gemSocketIndex)
                 AcceptSockets()
                 CloseSocketInfo()
             end)
         button:SetAttribute("type", nil)
-        button:SetScript('PostClick', nil)
-        return
+    else
+        button:SetScript('PreClick', nil)
+        button:SetAttribute("type", nil)
     end
+end
 
-    button:SetScript('PreClick', nil)
-    button:SetScript('PostClick', nil)
-    button:SetAttribute("type", nil)
+local function InitGemButtonEquipped(button, info)
+    button.item = info.item
+    button.location = info.location
+    button.Stripe:SetShown(info.index % 2 == 1)
+
+    local equipmentSlot = info.location:GetEquipmentSlot()
+    local equipmentSlotName = InventorySlotTable[equipmentSlot]
+
+    if info.item then
+        local c = info.item:GetItemQualityColor()
+        local name = c.color:WrapTextInColorCode(info.item:GetItemName())
+        button.Text:SetText(format("%s - %s", equipmentSlotName, name))
+        button.Icon:SetTexture(info.item:GetItemIcon())
+        button.Icon:Show()
+        button:SetScript('PreClick', function () SocketInventoryItem(equipmentSlot) end)
+        button:SetScript('PostClick', function () CloseSocketInfo() end)
+        button:SetAttribute("type", "macro")
+        button:SetAttribute("macrotext", format("/cast Extract Gem\n/click ItemSocketingSocket%d", info.gemSocketIndex))
+    else
+        button.Text:SetText(format("%s - %s", equipmentSlotName, EMPTY))
+        button.Icon:Hide()
+        button:SetScript('PreClick', nil)
+        button:SetScript('PostClick', nil)
+        button:SetAttribute("type", nil)
+    end
 end
 
 function PandaGemMixin:FindSocketForGem(gemInfo)
     for _, socketInfo in ipairs(self.freeGemSockets) do
         if socketInfo.gemSocketType == gemInfo.gemSocketType then
-            return socketInfo.equipmentSlot, socketInfo.socketIndex
+            local equipmentSlot = socketInfo.location:GetEquipmentSlot()
+            return equipmentSlot, socketInfo.gemSocketIndex
         end
     end
 end
@@ -173,7 +187,7 @@ function PandaGemMixin:AddGem(t, info)
     if classId == 3 and subClassId == 9 then
         local tt = C_TooltipInfo.GetHyperlink(info.item:GetItemLink())
         local socketText = tt.lines[2].leftText:gsub("|c........(.*)|r", "%1")
-        info.gemSocketType = SocketTypeTable[socketText]
+        info.gemSocketType = self.SocketTypeTable[socketText]
         table.insert(t, info)
     end
 end
@@ -199,40 +213,28 @@ end
 
 function PandaGemMixin:AddEquippedItem(equippedItem)
     local equippedItemLink = equippedItem:GetItemLink()
-    for i = 1, 3 do
-        local gemName, gemLink = C_Item.GetItemGem(equippedItemLink, i)
-        if gemName and gemLink then
-            local info = {
-                item = Item:CreateFromItemLink(gemLink),
-                location = equippedItem:GetItemLocation(),
-                socketIndex = i,
-            }
-            if not info.item:IsItemEmpty() then
-                info.item:ContinueOnItemLoad(
-                    function ()
-                        self:AddGem(self.equipped, info)
-                        self.needsUpdate = true
-                    end)
-            end
-        end
-    end
-end
-
--- Assumes all sockets are the same type (which is true afaik)
-function PandaGemMixin:AddFreeGemSlots(item)
-    local link = item:GetItemLink()
-    local stats = C_Item.GetItemStats(link)
-    local equipmentSlot = item:GetItemLocation():GetEquipmentSlot()
+    local stats = C_Item.GetItemStats(equippedItemLink)
+    local equipmentSlot = equippedItem:GetItemLocation():GetEquipmentSlot()
     for stat, count in pairs(stats) do
         if stat:find("EMPTY_SOCKET") then
             for i = 1, count do
-                if C_Item.GetItemGem(link, i) == nil then
-                    local info = {
-                        equipmentSlot = equipmentSlot,
-                        gemSocketType = stat,
-                        socketIndex = i,
-                    }
+                local info = {
+                    location = equippedItem:GetItemLocation(),
+                    gemSocketType = stat,
+                    gemSocketIndex = i,
+                }
+                local gemName, gemLink = C_Item.GetItemGem(equippedItemLink, i)
+                if gemName and gemLink then
+                    info.item = Item:CreateFromItemLink(gemLink)
+                    info.item:ContinueOnItemLoad(
+                        function ()
+                            self:AddGem(self.equipped, info)
+                            self.needsUpdate = true
+                        end)
+                else
                     table.insert(self.freeGemSockets, info)
+                    table.insert(self.equipped, info)
+                    self.needsUpdate = true
                 end
             end
         end
@@ -248,7 +250,6 @@ function PandaGemMixin:RefreshEquippedData()
             item:ContinueOnItemLoad(
                 function ()
                     self:AddEquippedItem(item)
-                    self:AddFreeGemSlots(item)
                     self.needsUpdate = true
                 end)
         end
@@ -302,33 +303,24 @@ function PandaGemMixin:Update()
 end
 
 function PandaGemMixin:OnLoad()
+    self:SetTitle("Panda Gem")
+    ButtonFrameTemplate_HidePortrait(self)
+    local view = CreateScrollBoxListLinearView()
+    view:SetElementInitializer("PandaGemEntryTemplate", InitGemButtonBags)
+    -- view:SetPadding(2,2,2,2,5);
+    ScrollUtil.InitScrollBoxListWithScrollBar(self.BagsScroll, self.BagsScrollBar, view);
+    view = CreateScrollBoxListLinearView()
+    view:SetElementInitializer("PandaGemEntryTemplate", InitGemButtonEquipped)
+    ScrollUtil.InitScrollBoxListWithScrollBar(self.EquippedScroll, self.EquippedScrollBar, view);
+    table.insert(UISpecialFrames, self:GetName())
+    self:RegisterEvent('PLAYER_LOGIN')
+end
+
+function PandaGemMixin:Initialize()
     self.bags = {}
     self.equipped = {}
     self.freeGemSockets = {}
-    self:SetTitle("Panda Gem")
-    ButtonFrameTemplate_HidePortrait(self)
-    local view = CreateScrollBoxListLinearView()
-    view:SetElementInitializer("PandaGemEntryTemplate", InitGemButton)
-    -- view:SetPadding(2,2,2,2,5);
-    ScrollUtil.InitScrollBoxListWithScrollBar(self.BagsScroll, self.BagsScrollBar, view);
-    view = CreateScrollBoxListLinearView()
-    view:SetElementInitializer("PandaGemEntryTemplate", InitGemButton)
-    ScrollUtil.InitScrollBoxListWithScrollBar(self.EquippedScroll, self.EquippedScrollBar, view);
-    table.insert(UISpecialFrames, self:GetName())
-end
-
-function PandaGemMixin:OnLoad()
-    self.data = {}
-    self:SetTitle("Panda Gem")
-    ButtonFrameTemplate_HidePortrait(self)
-    local view = CreateScrollBoxListLinearView()
-    view:SetElementInitializer("PandaGemEntryTemplate", InitGemButton)
-    -- view:SetPadding(2,2,2,2,5);
-    ScrollUtil.InitScrollBoxListWithScrollBar(self.BagsScroll, self.BagsScrollBar, view);
-    view = CreateScrollBoxListLinearView()
-    view:SetElementInitializer("PandaGemEntryTemplate", InitGemButton)
-    ScrollUtil.InitScrollBoxListWithScrollBar(self.EquippedScroll, self.EquippedScrollBar, view);
-    table.insert(UISpecialFrames, self:GetName())
+    self:BuildSocketTypeTable()
 end
 
 function PandaGemMixin:OnShow()
@@ -340,17 +332,26 @@ end
 function PandaGemMixin:OnHide()
     self:UnregisterEvent('BAG_UPDATE_DELAYED')
     self.needsUpdate = nil
+    self.needsRefresh = nil
 end
 
-function PandaGemMixin:OnEvent()
-    self:RefreshData()
-    self.needsUpdate = true
+function PandaGemMixin:OnEvent(event, ...)
+    if event == 'PLAYER_LOGIN' then
+        self:Initialize()
+    else
+        self.needsRefresh = true
+        self.needsUpdate = true
+    end
 end
 
 function PandaGemMixin:OnUpdate()
+    if self.needsRefresh then
+        self:RefreshData()
+        self.needsRefresh = nil
+    end
     if self.needsUpdate then
-        self.needsUpdate = nil
         self:Update()
+        self.needsUpdate = nil
     end
 end
 

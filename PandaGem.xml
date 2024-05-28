@@ -5,7 +5,7 @@
   <Button name="PandaGemEntryTemplate" virtual="true" inherits="SecureActionButtonTemplate" mixin="PandaGemEntryMixin">
     <Size y="22" />
     <Frames>
-      <Button parentKey="Combine" inherits="InsecureActionButtonTemplate UIPanelButtonTemplate" text="C">
+      <Button parentKey="Combine" inherits="InsecureActionButtonTemplate UIPanelButtonTemplate" text="C" hidden="true">
         <Size x="16" y="16" />
           <Anchors>
             <Anchor point="LEFT" x="4" />
