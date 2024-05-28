@@ -47,15 +47,12 @@ function PandaGemCombineAllMixin:Update()
     local parent = self:GetParent()
     self:Disable()
     for _, info in ipairs(parent.bags) do
-        if info.location:IsBagAndSlot() then
-            local count = info.item:GetStackCount()
-            local _, spellID = C_Item.GetItemSpell(info.item:GetItemLink())
-            if spellID and count and count >= 3 then
-                self:SetAttribute("type", "item")
-                self:SetAttribute("item", info.item:GetItemName())
-                self:Enable()
-                return
-            end
+        local _, spellID = C_Item.GetItemSpell(info.link)
+        if spellID and info.stackCount and info.stackCount >= 3 then
+            self:SetAttribute("type", "item")
+            self:SetAttribute("item", info.name)
+            self:Enable()
+            return
         end
     end
 end
@@ -74,9 +71,9 @@ function PandaGemEntryMixin:OnShow()
 end
 
 function PandaGemEntryMixin:OnEnter()
-    if self.item then
+    if self.info.link then
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetHyperlink(self.item:GetItemLink())
+        GameTooltip:SetHyperlink(self.info.link)
         GameTooltip:Show()
     end
 end
@@ -87,7 +84,7 @@ end
 
 function PandaGemEntryMixin:OnClick()
     if IsModifiedClick("CHATLINK") then
-        ChatEdit_LinkItem(self.item:GetItemLink())
+        ChatEdit_LinkItem(self.info.link)
     end
 end
 
@@ -111,30 +108,25 @@ function PandaGemMixin:BuildSocketTypeTable()
 end
 
 local function InitGemButtonBags(button, info)
-    button.item = info.item
-    button.location = info.location
+    button.info = info
     button.Stripe:SetShown(info.index % 2 == 1)
-    local c = info.item:GetItemQualityColor()
-    local name = c.color:WrapTextInColorCode(info.item:GetItemName())
-    local count = info.item:GetStackCount()
-    button.Text:SetText(format("%s (%d)", name, count))
-    button.Icon:SetTexture(info.item:GetItemIcon())
+    button.Text:SetText(format("%s (%d)", info.nameWithQuality, info.stackCount))
+    button.Icon:SetTexture(info.icon)
 
     button.Combine:Hide()
-    local _, spellID = C_Item.GetItemSpell(info.item:GetItemLink())
-    if spellID and count and count >= 3 then
+    local _, spellID = C_Item.GetItemSpell(info.link)
+    if spellID and info.stackCount and info.stackCount >= 3 then
         button.Combine:SetAttribute("type", "item")
-        button.Combine:SetAttribute("item", info.item:GetItemName())
+        button.Combine:SetAttribute("item", info.name)
         button.Combine:Show()
     end
 
     local equipmentSlot, gemSocketIndex = PandaGem:FindSocketForGem(info)
     if equipmentSlot then
-        local bag, slot = info.location:GetBagAndSlot()
         button:SetScript('PreClick',
             function ()
                 SocketInventoryItem(equipmentSlot)
-                C_Container.PickupContainerItem(bag, slot)
+                C_Container.PickupContainerItem(info.bag, info.slot)
                 ClickSocketButton(gemSocketIndex)
                 AcceptSockets()
                 CloseSocketInfo()
@@ -147,25 +139,19 @@ local function InitGemButtonBags(button, info)
 end
 
 local function InitGemButtonEquipped(button, info)
-    button.item = info.item
-    button.location = info.location
+    button.info = info
     button.Stripe:SetShown(info.index % 2 == 1)
 
-    local equipmentSlot = info.location:GetEquipmentSlot()
-    local equipmentSlotName = InventorySlotTable[equipmentSlot]
-
     if info.item then
-        local c = info.item:GetItemQualityColor()
-        local name = c.color:WrapTextInColorCode(info.item:GetItemName())
-        button.Text:SetText(format("%s - %s", equipmentSlotName, name))
-        button.Icon:SetTexture(info.item:GetItemIcon())
+        button.Text:SetText(format("%s - %s", info.equipmentSlotName, info.nameWithQuality))
+        button.Icon:SetTexture(info.icon)
         button.Icon:Show()
-        button:SetScript('PreClick', function () SocketInventoryItem(equipmentSlot) end)
+        button:SetScript('PreClick', function () SocketInventoryItem(info.equipmentSlot) end)
         button:SetScript('PostClick', function () CloseSocketInfo() end)
         button:SetAttribute("type", "macro")
         button:SetAttribute("macrotext", format("/cast Extract Gem\n/click ItemSocketingSocket%d", info.gemSocketIndex))
     else
-        button.Text:SetText(format("%s - %s", equipmentSlotName, EMPTY))
+        button.Text:SetText(format("%s - %s", info.equipmentSlotName, _G[info.gemSocketType]))
         button.Icon:Hide()
         button:SetScript('PreClick', nil)
         button:SetScript('PostClick', nil)
@@ -176,8 +162,7 @@ end
 function PandaGemMixin:FindSocketForGem(gemInfo)
     for _, socketInfo in ipairs(self.freeGemSockets) do
         if socketInfo.gemSocketType == gemInfo.gemSocketType then
-            local equipmentSlot = socketInfo.location:GetEquipmentSlot()
-            return equipmentSlot, socketInfo.gemSocketIndex
+            return socketInfo.equipmentSlot, socketInfo.gemSocketIndex
         end
     end
 end
@@ -188,6 +173,14 @@ function PandaGemMixin:AddGem(t, info)
         local tt = C_TooltipInfo.GetHyperlink(info.item:GetItemLink())
         local socketText = tt.lines[2].leftText:gsub("|c........(.*)|r", "%1")
         info.gemSocketType = self.SocketTypeTable[socketText]
+        info.name = info.item:GetItemName()
+        info.color = info.item:GetItemQualityColor().color
+        info.nameWithQuality = info.color:WrapTextInColorCode(info.name)
+        if info.bag then
+            info.stackCount = info.item:GetStackCount()
+        end
+        info.link = info.item:GetItemLink()
+        info.icon = info.item:GetItemIcon()
         table.insert(t, info)
     end
 end
@@ -198,7 +191,8 @@ function PandaGemMixin:RefreshBagsData()
         for slot = 1, C_Container.GetContainerNumSlots(bag) do
             local info = {
                 item = Item:CreateFromBagAndSlot(bag, slot),
-                location = ItemLocation:CreateFromBagAndSlot(bag, slot),
+                bag = bag,
+                slot = slot,
             }
             if not info.item:IsItemEmpty() then
                 info.item:ContinueOnItemLoad(
@@ -219,13 +213,15 @@ function PandaGemMixin:AddEquippedItem(equippedItem)
         if stat:find("EMPTY_SOCKET") then
             for i = 1, count do
                 local info = {
-                    location = equippedItem:GetItemLocation(),
+                    equipmentSlot = equipmentSlot,
+                    equipmentSlotName = InventorySlotTable[equipmentSlot],
                     gemSocketType = stat,
                     gemSocketIndex = i,
                 }
-                local gemName, gemLink = C_Item.GetItemGem(equippedItemLink, i)
-                if gemName and gemLink then
-                    info.item = Item:CreateFromItemLink(gemLink)
+                -- GetItemGem has cache chicken and egg problem, lookup by ID
+                local gemID = C_Item.GetItemGemID(equippedItemLink, i)
+                if gemID then
+                    info.item = Item:CreateFromItemID(gemID)
                     info.item:ContinueOnItemLoad(
                         function ()
                             self:AddGem(self.equipped, info)
@@ -288,7 +284,7 @@ function PandaGemMixin:RefreshData()
     table.sort(self.bags, CompareGem)
     table.sort(self.equipped,
         function (a, b)
-            return a.location:GetEquipmentSlot() < b.location:GetEquipmentSlot()
+            return a.equipmentSlot < b.equipmentSlot
         end)
 end
 
