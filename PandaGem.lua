@@ -142,7 +142,7 @@ local function InitGemButtonEquipped(button, info)
     button.info = info
     button.Stripe:SetShown(info.index % 2 == 1)
 
-    if info.item then
+    if info.name then
         button.Text:SetText(format("%s - %s", info.equipmentSlotName, info.nameWithQuality))
         button.Icon:SetTexture(info.icon)
         button.Icon:Show()
@@ -167,38 +167,48 @@ function PandaGemMixin:FindSocketForGem(gemInfo)
     end
 end
 
-function PandaGemMixin:AddGem(t, info)
-    local classId, subClassId = select(6, C_Item.GetItemInfoInstant(info.item:GetItemLink()))
-    if classId == 3 and subClassId == 9 then
-        local tt = C_TooltipInfo.GetHyperlink(info.item:GetItemLink())
-        local socketText = tt.lines[2].leftText:gsub("|c........(.*)|r", "%1")
-        info.gemSocketType = self.SocketTypeTable[socketText]
-        info.name = info.item:GetItemName()
-        info.color = info.item:GetItemQualityColor().color
-        info.nameWithQuality = info.color:WrapTextInColorCode(info.name)
-        if info.bag then
-            info.stackCount = info.item:GetStackCount()
-        end
-        info.link = info.item:GetItemLink()
-        info.icon = info.item:GetItemIcon()
-        table.insert(t, info)
-    end
+-- Items can be evicted from the cache at any second so we have to grab all
+-- the fields we are going to use now and stash them away.
+
+function PandaGemMixin:AddGemInfo(info, item)
+    info.name = item:GetItemName()
+    info.color = item:GetItemQualityColor().color
+    info.quality = item:GetItemQuality()
+    info.nameWithQuality = info.color:WrapTextInColorCode(info.name)
+    info.link = item:GetItemLink()
+    info.icon = item:GetItemIcon()
+
+    -- Gems that are inside sockets don't have ItemLocation or stack
+    info.stackCount = item:HasItemLocation() and item:GetStackCount()
+    info.maxStackSize = item:GetMaxStackSize()
+
+    local _, spellID = C_Item.GetItemSpell(info.link)
+    info.spellID = spellID
+
+    local tt = C_TooltipInfo.GetHyperlink(item:GetItemLink())
+    local socketText = tt.lines[2].leftText:gsub("|c........(.*)|r", "%1")
+    info.gemSocketType = self.SocketTypeTable[socketText]
 end
 
 function PandaGemMixin:RefreshBagsData()
     self.bags = {}
     for bag = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
         for slot = 1, C_Container.GetContainerNumSlots(bag) do
+            local item = Item:CreateFromBagAndSlot(bag, slot)
             local info = {
-                item = Item:CreateFromBagAndSlot(bag, slot),
                 bag = bag,
                 slot = slot,
             }
-            if not info.item:IsItemEmpty() then
-                info.item:ContinueOnItemLoad(
+            if not item:IsItemEmpty() then
+                item:ContinueOnItemLoad(
                     function ()
-                        self:AddGem(self.bags, info)
-                        self.needsUpdate = true
+                        local link = item:GetItemLink()
+                        local classId, subClassId = select(6, C_Item.GetItemInfoInstant(link))
+                        if classId == 3 and subClassId == 9 then
+                            self:AddGemInfo(info, item)
+                            table.insert(self.bags, info)
+                            self.needsUpdate = true
+                        end
                     end)
             end
         end
@@ -215,16 +225,17 @@ function PandaGemMixin:AddEquippedItem(equippedItem)
                 local info = {
                     equipmentSlot = equipmentSlot,
                     equipmentSlotName = InventorySlotTable[equipmentSlot],
-                    gemSocketType = stat,
+                    gemSocketType = stat,   -- Needed here for sockets
                     gemSocketIndex = i,
                 }
-                -- GetItemGem has cache chicken and egg problem, lookup by ID
+                -- GetItemGem has cache chicken-and-egg problem, lookup by ID
                 local gemID = C_Item.GetItemGemID(equippedItemLink, i)
                 if gemID then
-                    info.item = Item:CreateFromItemID(gemID)
-                    info.item:ContinueOnItemLoad(
+                    local item = Item:CreateFromItemID(gemID)
+                    item:ContinueOnItemLoad(
                         function ()
-                            self:AddGem(self.equipped, info)
+                            self:AddGemInfo(info, item)
+                            table.insert(self.equipped, info)
                             self.needsUpdate = true
                         end)
                 else
@@ -257,10 +268,8 @@ local function CompareGem(a, b)
         return GemSocketSortOrder[a.gemSocketType] < GemSocketSortOrder[b.gemSocketType]
     end
 
-    local aStack = a.item:GetItemLocation() and a.item:GetStackCount() or 1
-    local bStack = b.item:GetItemLocation() and b.item:GetStackCount() or 1
-    local aCombine = (C_Item.GetItemSpell(a.item:GetItemLink()) ~= nil and aStack >= 3)
-    local bCombine = (C_Item.GetItemSpell(b.item:GetItemLink()) ~= nil and bStack >= 3)
+    local aCombine = a.spellID and a.stackCount and a.stackCount >= 3
+    local bCombine = b.spellID and b.stackCount and b.stackCount >= 3
 
     if aCombine and not bCombine then
         return true
@@ -268,14 +277,11 @@ local function CompareGem(a, b)
         return false
     end
 
-    local aQuality = a.item:GetItemQuality()
-    local bQuality = b.item:GetItemQuality()
-
-    if aQuality ~= bQuality then
-        return aQuality > bQuality
+    if a.quality ~= b.quality then
+        return a.quality > b.quality
     end
 
-    return a.item:GetItemName() < b.item:GetItemName()
+    return a.name < b.name
 end
 
 function PandaGemMixin:RefreshData()
