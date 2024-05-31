@@ -284,14 +284,21 @@ local function CompareGem(a, b)
     return a.name < b.name
 end
 
+local function CompareEquipped(a, b)
+    if GemSocketSortOrder[a.gemSocketType] ~= GemSocketSortOrder[b.gemSocketType] then
+        return GemSocketSortOrder[a.gemSocketType] < GemSocketSortOrder[b.gemSocketType]
+    end
+    if a.equipmentSlot ~= b.equipmentSlot then
+        return a.equipmentSlot < b.equipmentSlot
+    end
+    return a.gemSocketIndex < b.gemSocketIndex
+end
+
 function PandaGemMixin:RefreshData()
     self:RefreshBagsData()
     self:RefreshEquippedData()
     table.sort(self.bags, CompareGem)
-    table.sort(self.equipped,
-        function (a, b)
-            return a.equipmentSlot < b.equipmentSlot
-        end)
+    table.sort(self.equipped, CompareEquipped)
 end
 
 function PandaGemMixin:Update()
