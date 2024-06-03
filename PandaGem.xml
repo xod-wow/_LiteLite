@@ -4,15 +4,6 @@
 
   <Button name="PandaGemEntryTemplate" virtual="true" inherits="SecureActionButtonTemplate" mixin="PandaGemEntryMixin">
     <Size y="22" />
-    <Frames>
-      <Button parentKey="Combine" inherits="InsecureActionButtonTemplate UIPanelButtonTemplate" text="C" hidden="true">
-        <Size x="16" y="16" />
-          <Anchors>
-            <Anchor point="LEFT" x="4" />
-          </Anchors>
-      </Button>
-    </Frames>
-        
     <Layers>
       <Layer level="BACKGROUND">
         <Texture parentKey="Stripe" setAllPoints="true">
@@ -20,67 +11,83 @@
         </Texture>
       </Layer>
       <Layer level="ARTWORK">
-        <FontString parentkey="Text" inherits="GameFontWhite" justifyH="LEFT">
-          <Anchors>
-            <Anchor point="LEFT" relativeKey="$parent.Combine" relativePoint="RIGHT" x="4" />
-          </Anchors>
-        </FontString>
         <Texture parentKey="Icon">
           <Size x="16" y="16" />
           <Anchors>
-            <Anchor point="RIGHT" x="-8" />
+            <Anchor point="LEFT" x="4" />
           </Anchors>
         </Texture>
+        <FontString parentkey="Text" inherits="GameFontWhite" justifyH="LEFT">
+          <Anchors>
+            <Anchor point="LEFT" relativeKey="$parent.Icon" relativePoint="RIGHT" x="4" />
+            <Anchor point="RIGHT" relativePoint="RIGHT" x="-4" />
+          </Anchors>
+        </FontString>
       </Layer>
     </Layers>
     <Scripts>
       <OnLoad inherit="APPEND" method="OnLoad" />
-      <OnShow inherit="APPEND" method="OnShow" />
       <OnEnter inherit="APPEND" method="OnEnter" />
       <OnLeave inherit="APPEND" method="OnLeave" />
     </Scripts>
   </Button>
 
   <Button name="PandaGemCombineAllTemplate" virtual="true" inherits="SecureActionButtonTemplate UIPanelButtonTemplate" mixin="PandaGemCombineAllMixin" text="COMBINE">
-    <Size x="96" Y="22" />
+    <Size x="96" Y="20" />
     <Scripts>
       <OnLoad inherit="APPEND" method="OnLoad" />
     </Scripts>
   </Button>
-    
+
+  <Frame name="PandaGemScrollTemplate" inherits="WoWScrollBoxList" virtual="true">
+    <Layers>
+      <Layer level="TOOLTIP">
+        <FontString parentkey="Title" inherits="GameFontNormal" justifyH="LEFT">
+          <Anchors>
+            <Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" x="12" y="8" />
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+    <Frames>
+      <EventFrame parentKey="ScrollBar" inherits="MinimalScrollBar" />
+    </Frames>
+  </Frame>
+
   <Frame name="PandaGem" parent="UIParent" topLevel="true" frameStrata="FULLSCREEN_DIALOG" inherits="ButtonFrameTemplate" hidden="true" movable="true" dontSavePosition="true" registerForDrag="LeftButton" mixin="PandaGemMixin">
-    <size x="640" y="478" />
+    <size x="1000" y="424" />
     <Anchors><Anchor point="CENTER" y="24" /></Anchors>
     <Frames>
       <Button parentKey="CombineAll" inherits="PandaGemCombineAllTemplate">
         <Anchors>
-          <Anchor point="TOPRIGHT" x="-16" y="-32" />
+          <Anchor point="BOTTOMRIGHT" x="-16" y="4" />
         </Anchors>
       </Button>
-      <Frame parentKey="EquippedScroll" inherits="WoWScrollBoxList">
-        <Anchors>
-          <Anchor point="TOPLEFT" x="16" y="-64" />
-          <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOM" x="-12" y="36" />
-        </Anchors>
+
+      <Frame parentArray="Scrolls" inherits="PandaGemScrollTemplate">
+        <KeyValues>
+          <KeyValue key="gemSocketType" value="EMPTY_SOCKET_META" type="string" />
+        </KeyValues>
       </Frame>
-      <EventFrame parentKey="EquippedScrollBar" inherits="MinimalScrollBar">
-        <Anchors>
-        <Anchor point="TOPLEFT" relativeKey="$parent.EquippedScroll" relativePoint="TOPRIGHT" x="8" y="-3"/>
-        <Anchor point="BOTTOMLEFT" relativeKey="$parent.EquippedScroll" relativePoint="BOTTOMRIGHT" x="4" y="2"/>
-        </Anchors>
-      </EventFrame>
-      <Frame parentKey="BagsScroll" inherits="WoWScrollBoxList">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativePoint="TOP" x="12" y="-64" />
-          <Anchor point="BOTTOMRIGHT" x="-34" y="36" />
-        </Anchors>
+
+      <Frame parentArray="Scrolls" inherits="PandaGemScrollTemplate">
+        <KeyValues>
+          <KeyValue key="gemSocketType" value="EMPTY_SOCKET_TINKER" type="string" />
+        </KeyValues>
       </Frame>
-      <EventFrame parentKey="BagsScrollBar" inherits="MinimalScrollBar">
-        <Anchors>
-        <Anchor point="TOPLEFT" relativeKey="$parent.BagsScroll" relativePoint="TOPRIGHT" x="4" y="-3"/>
-        <Anchor point="BOTTOMLEFT" relativeKey="$parent.BagsScroll" relativePoint="BOTTOMRIGHT" x="4" y="2"/>
-        </Anchors>
-      </EventFrame>
+
+      <Frame parentArray="Scrolls" inherits="PandaGemScrollTemplate">
+        <KeyValues>
+          <KeyValue key="gemSocketType" value="EMPTY_SOCKET_COGWHEEL" type="string" />
+        </KeyValues>
+      </Frame>
+
+      <Frame parentArray="Scrolls" inherits="PandaGemScrollTemplate">
+        <KeyValues>
+          <KeyValue key="gemSocketType" value="EMPTY_SOCKET_PRISMATIC" type="string" />
+        </KeyValues>
+      </Frame>
+
     </Frames>
     <Scripts>
       <OnLoad method="OnLoad" />

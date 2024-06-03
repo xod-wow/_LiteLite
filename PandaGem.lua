@@ -36,6 +36,9 @@ local GemSocketSortOrder = {
     ["EMPTY_SOCKET_PRISMATIC"]      = 4,
 }
 
+
+--[[----------------------------------------------------------------------------]]--
+
 PandaGemCombineAllMixin = {}
 
 function PandaGemCombineAllMixin:OnLoad()
@@ -46,7 +49,7 @@ end
 function PandaGemCombineAllMixin:Update()
     local parent = self:GetParent()
     self:Disable()
-    for _, info in ipairs(parent.bags) do
+    for _, info in ipairs(parent.gems) do
         local _, spellID = C_Item.GetItemSpell(info.link)
         if spellID and info.stackCount and info.stackCount >= 3 then
             self:SetAttribute("type", "item")
@@ -57,17 +60,14 @@ function PandaGemCombineAllMixin:Update()
     end
 end
 
+
+--[[----------------------------------------------------------------------------]]--
+
 PandaGemEntryMixin = {}
 
 function PandaGemEntryMixin:OnLoad()
-    self.Combine:RegisterForClicks("AnyDown")
-    self.Combine:SetAttribute("pressAndHoldAction", 1)
     self:RegisterForClicks("AnyDown")
     self:SetAttribute("pressAndHoldAction", 1)
-end
-
-function PandaGemEntryMixin:OnShow()
-    self:SetWidth(self:GetParent():GetWidth())
 end
 
 function PandaGemEntryMixin:OnEnter()
@@ -88,6 +88,48 @@ function PandaGemEntryMixin:OnClick()
     end
 end
 
+function PandaGemEntryMixin:Initialize(info)
+    self.info = info
+
+    self.Stripe:SetShown(not info.index or info.index % 2 == 1)
+    self.Icon:SetTexture(info.icon)
+
+    self:SetScript("PreClick", nil)
+    self:SetScript("PostClick", nil)
+    self:SetAttribute("type", nil)
+
+    if info.bag and info.slot and info.gemSocketIndex then
+        self.Text:SetText(format("%s (B)", info.nameWithQuality))
+        self:SetScript('PreClick', function () SocketInventoryItem(info.equipmentSlot) end)
+        self:SetScript('PostClick', function () CloseSocketInfo() end)
+        self:SetAttribute("type", "macro")
+        self:SetAttribute("macrotext", format("/cast Extract Gem\n/use %d %d", info.bag, info.slot))
+    elseif info.equipmentSlotName then
+        self.Text:SetText(format("%s (E)", info.nameWithQuality))
+        self:SetScript('PreClick', function () SocketInventoryItem(info.equipmentSlot) end)
+        self:SetScript('PostClick', function () CloseSocketInfo() end)
+        self:SetAttribute("type", "macro")
+        self:SetAttribute("macrotext", format("/cast Extract Gem\n/click ItemSocketingSocket%d", info.gemSocketIndex))
+    else
+        self.Text:SetText(format("%s (%d)", info.nameWithQuality, info.stackCount))
+        local equipmentSlot, gemSocketIndex = PandaGem:FindSocketForGem(info)
+        if equipmentSlot then
+            self:SetScript("PostClick",
+                function ()
+                    SocketInventoryItem(equipmentSlot)
+                    C_Container.PickupContainerItem(info.bag, info.slot)
+                    ClickSocketButton(gemSocketIndex)
+                    AcceptSockets()
+                    CloseSocketInfo()
+                end)
+            self:SetAttribute("type", nil)
+        end
+    end
+end
+
+
+--[[----------------------------------------------------------------------------]]--
+
 PandaGemMixin  = {}
 
 function PandaGemMixin:BuildSocketTypeTable()
@@ -107,58 +149,6 @@ function PandaGemMixin:BuildSocketTypeTable()
     end
 end
 
-local function InitGemButtonBags(button, info)
-    button.info = info
-    button.Stripe:SetShown(info.index % 2 == 1)
-    button.Text:SetText(format("%s (%d)", info.nameWithQuality, info.stackCount))
-    button.Icon:SetTexture(info.icon)
-
-    button.Combine:Hide()
-    local _, spellID = C_Item.GetItemSpell(info.link)
-    if spellID and info.stackCount and info.stackCount >= 3 then
-        button.Combine:SetAttribute("type", "item")
-        button.Combine:SetAttribute("item", info.name)
-        button.Combine:Show()
-    end
-
-    local equipmentSlot, gemSocketIndex = PandaGem:FindSocketForGem(info)
-    if equipmentSlot then
-        button:SetScript('PreClick',
-            function ()
-                SocketInventoryItem(equipmentSlot)
-                C_Container.PickupContainerItem(info.bag, info.slot)
-                ClickSocketButton(gemSocketIndex)
-                AcceptSockets()
-                CloseSocketInfo()
-            end)
-        button:SetAttribute("type", nil)
-    else
-        button:SetScript('PreClick', nil)
-        button:SetAttribute("type", nil)
-    end
-end
-
-local function InitGemButtonEquipped(button, info)
-    button.info = info
-    button.Stripe:SetShown(info.index % 2 == 1)
-
-    if info.name then
-        button.Text:SetText(format("%s - %s", info.equipmentSlotName, info.nameWithQuality))
-        button.Icon:SetTexture(info.icon)
-        button.Icon:Show()
-        button:SetScript('PreClick', function () SocketInventoryItem(info.equipmentSlot) end)
-        button:SetScript('PostClick', function () CloseSocketInfo() end)
-        button:SetAttribute("type", "macro")
-        button:SetAttribute("macrotext", format("/cast Extract Gem\n/click ItemSocketingSocket%d", info.gemSocketIndex))
-    else
-        button.Text:SetText(format("%s - %s", info.equipmentSlotName, _G[info.gemSocketType]))
-        button.Icon:Hide()
-        button:SetScript('PreClick', nil)
-        button:SetScript('PostClick', nil)
-        button:SetAttribute("type", nil)
-    end
-end
-
 function PandaGemMixin:FindSocketForGem(gemInfo)
     for _, socketInfo in ipairs(self.freeGemSockets) do
         if socketInfo.gemSocketType == gemInfo.gemSocketType then
@@ -170,77 +160,84 @@ end
 -- Items can be evicted from the cache at any second so we have to grab all
 -- the fields we are going to use now and stash them away.
 
-function PandaGemMixin:AddGemInfo(info, item)
-    info.name = item:GetItemName()
-    info.color = item:GetItemQualityColor().color
-    info.quality = item:GetItemQuality()
-    info.nameWithQuality = info.color:WrapTextInColorCode(info.name)
-    info.link = item:GetItemLink()
-    info.icon = item:GetItemIcon()
+function PandaGemMixin:ProcessGem(item, location, gemSocketIndex)
+    local name = item:GetItemName()
+    local color = item:GetItemQualityColor().color
 
-    -- Gems that are inside sockets don't have ItemLocation or stack
-    info.stackCount = item:HasItemLocation() and item:GetStackCount()
-    info.maxStackSize = item:GetItemMaxStackSize()
+    local info = {
+        name = name,
+        color = color,
+        quality = item:GetItemQuality(),
+        nameWithQuality = color:WrapTextInColorCode(name),
+        link = item:GetItemLink(),
+        icon = item:GetItemIcon(),
 
+        -- Gems that are inside sockets don't have ItemLocation or stack
+        stackCount = item:HasItemLocation() and item:GetStackCount(),
+        maxStackSize = item:GetItemMaxStackSize(),
+
+        gemSocketIndex = gemSocketIndex,
+    }
+
+    info.bag, info.slot = location:GetBagAndSlot()
+
+    local equipmentSlot = location:GetEquipmentSlot()
+    info.equipmentSlot = equipmentSlot
+    info.equipmentSlotName = InventorySlotTable[equipmentSlot]
+    
     local _, spellID = C_Item.GetItemSpell(info.link)
     info.spellID = spellID
 
     local tt = C_TooltipInfo.GetHyperlink(item:GetItemLink())
     local socketText = tt.lines[2].leftText:gsub("|c........(.*)|r", "%1")
     info.gemSocketType = self.SocketTypeTable[socketText]
+
+    table.insert(self.gems, info)
 end
 
-function PandaGemMixin:RefreshBagsData()
-    self.bags = {}
-    for bag = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
-        for slot = 1, C_Container.GetContainerNumSlots(bag) do
-            local item = Item:CreateFromBagAndSlot(bag, slot)
-            local info = {
-                bag = bag,
-                slot = slot,
-            }
-            if not item:IsItemEmpty() then
-                item:ContinueOnItemLoad(
-                    function ()
-                        local link = item:GetItemLink()
-                        local classId, subClassId = select(6, C_Item.GetItemInfoInstant(link))
-                        if classId == 3 and subClassId == 9 then
-                            self:AddGemInfo(info, item)
-                            table.insert(self.bags, info)
-                            self.needsUpdate = true
-                        end
-                    end)
-            end
-        end
+function PandaGemMixin:ProcessFreeSocket(location, gemSocketIndex, gemSocketType)
+    local bag, slot = location:GetBagAndSlot()
+    local equipmentSlot = location:GetEquipmentSlot()
+
+    local info = {
+        bag = bag,
+        slot = slot,
+        equipmentSlot = equipmentSlot,
+        equipmentSlotName = InventorySlotTable[equipmentSlot],
+        gemSocketType = gemSocketType,
+        gemSocketIndex = gemSocketIndex,
+    }
+    table.insert(self.freeGemSockets, info)
+end
+
+function PandaGemMixin:ProcessItem(item)
+    local link = item:GetItemLink()
+    local location = item:GetItemLocation()
+
+    -- Is it a gem itself
+    local classId, subClassId = select(6, C_Item.GetItemInfoInstant(link))
+    if classId == 3 and subClassId == 9 then
+        self:ProcessGem(item, location)
+        self.needsUpdate = true
+        return
     end
-end
 
-function PandaGemMixin:AddEquippedItem(equippedItem)
-    local equippedItemLink = equippedItem:GetItemLink()
-    local stats = C_Item.GetItemStats(equippedItemLink)
-    local equipmentSlot = equippedItem:GetItemLocation():GetEquipmentSlot()
+    -- Does it have sockets
+    local stats = C_Item.GetItemStats(link)
     for stat, count in pairs(stats) do
         if stat:find("EMPTY_SOCKET") then
             for i = 1, count do
-                local info = {
-                    equipmentSlot = equipmentSlot,
-                    equipmentSlotName = InventorySlotTable[equipmentSlot],
-                    gemSocketType = stat,   -- Needed here for sockets
-                    gemSocketIndex = i,
-                }
                 -- GetItemGem has cache chicken-and-egg problem, lookup by ID
-                local gemID = C_Item.GetItemGemID(equippedItemLink, i)
+                local gemID = C_Item.GetItemGemID(link, i)
                 if gemID then
-                    local item = Item:CreateFromItemID(gemID)
-                    item:ContinueOnItemLoad(
+                    local gemItem = Item:CreateFromItemID(gemID)
+                    gemItem:ContinueOnItemLoad(
                         function ()
-                            self:AddGemInfo(info, item)
-                            table.insert(self.equipped, info)
+                            self:ProcessGem(gemItem, location, i)
                             self.needsUpdate = true
                         end)
                 else
-                    table.insert(self.freeGemSockets, info)
-                    table.insert(self.equipped, info)
+                    self:ProcessFreeSocket(location, i, stat)
                     self.needsUpdate = true
                 end
             end
@@ -248,19 +245,39 @@ function PandaGemMixin:AddEquippedItem(equippedItem)
     end
 end
 
+function PandaGemMixin:RefreshBagsData()
+    self.gems = {}
+    for bag = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
+        for slot = 1, C_Container.GetContainerNumSlots(bag) do
+            local item = Item:CreateFromBagAndSlot(bag, slot)
+            if not item:IsItemEmpty() then
+                item:ContinueOnItemLoad(
+                    function ()
+                        self:ProcessItem(item)
+                        self.needsUpdate = true
+                    end)
+            end
+        end
+    end
+end
+
 function PandaGemMixin:RefreshEquippedData()
-    self.equipped = {}
     self.freeGemSockets = {}
     for slot = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
         local item = Item:CreateFromEquipmentSlot(slot)
         if not item:IsItemEmpty() then
             item:ContinueOnItemLoad(
                 function ()
-                    self:AddEquippedItem(item)
+                    self:ProcessItem(item)
                     self.needsUpdate = true
                 end)
         end
     end
+end
+
+function PandaGemMixin:RefreshData()
+    self:RefreshBagsData()
+    self:RefreshEquippedData()
 end
 
 local function CompareGem(a, b)
@@ -268,66 +285,129 @@ local function CompareGem(a, b)
         return GemSocketSortOrder[a.gemSocketType] < GemSocketSortOrder[b.gemSocketType]
     end
 
-    local aCombine = a.spellID and a.stackCount and a.stackCount >= 3
-    local bCombine = b.spellID and b.stackCount and b.stackCount >= 3
-
-    if aCombine and not bCombine then
-        return true
-    elseif not aCombine and bCombine then
-        return false
-    end
-
     if a.quality ~= b.quality then
         return a.quality > b.quality
     end
 
-    return a.name < b.name
-end
-
-local function CompareEquipped(a, b)
-    if GemSocketSortOrder[a.gemSocketType] ~= GemSocketSortOrder[b.gemSocketType] then
-        return GemSocketSortOrder[a.gemSocketType] < GemSocketSortOrder[b.gemSocketType]
+    if a.name ~= b.name then
+        return a.name < b.name
     end
-    if a.equipmentSlot ~= b.equipmentSlot then
-        return a.equipmentSlot < b.equipmentSlot
-    end
-    return a.gemSocketIndex < b.gemSocketIndex
-end
 
-function PandaGemMixin:RefreshData()
-    self:RefreshBagsData()
-    self:RefreshEquippedData()
-    table.sort(self.bags, CompareGem)
-    table.sort(self.equipped, CompareEquipped)
+    if a.equipmentSlot and not b.equipmentSlot then
+        return true
+    elseif not a.equipmentSlot and b.equipmentSlot then
+        return false
+    end
 end
 
 function PandaGemMixin:Update()
-    for index, info in ipairs(self.bags) do info.index = index end
-    for index, info in ipairs(self.equipped) do info.index = index end
-    local dataProvider = CreateDataProvider(self.bags)
-    self.BagsScroll:SetDataProvider(dataProvider, ScrollBoxConstants.RetainScrollPosition)
-    dataProvider = CreateDataProvider(self.equipped)
-    self.EquippedScroll:SetDataProvider(dataProvider, ScrollBoxConstants.RetainScrollPosition)
+    table.sort(self.gems, CompareGem)
+    for i, scroll in ipairs(self.Scrolls) do
+        local function socketTypeMatch(e) return e.gemSocketType == scroll.gemSocketType end
+        local free = tFilter(self.freeGemSockets, socketTypeMatch, true)
+        scroll.Title:SetText(format("%s (%d Empty)", _G[scroll.gemSocketType], #free))
+        local data = tFilter(self.gems, socketTypeMatch, true)
+        for index, info in ipairs(data) do info.index = index end
+        local dataProvider = CreateDataProvider(data)
+        scroll:SetDataProvider(dataProvider, ScrollBoxConstants.RetainScrollPosition)
+    end
     self.CombineAll:Update()
 end
 
 function PandaGemMixin:OnLoad()
     self:SetTitle("Panda Gem")
     ButtonFrameTemplate_HidePortrait(self)
-    local view = CreateScrollBoxListLinearView()
-    view:SetElementInitializer("PandaGemEntryTemplate", InitGemButtonBags)
-    -- view:SetPadding(2,2,2,2,5);
-    ScrollUtil.InitScrollBoxListWithScrollBar(self.BagsScroll, self.BagsScrollBar, view);
-    view = CreateScrollBoxListLinearView()
-    view:SetElementInitializer("PandaGemEntryTemplate", InitGemButtonEquipped)
-    ScrollUtil.InitScrollBoxListWithScrollBar(self.EquippedScroll, self.EquippedScrollBar, view);
+
+    local columnGap = 8
+    local columnWidth = ( self:GetWidth() - 32 - ( #self.Scrolls - 1 ) * columnGap ) / #self.Scrolls
+    local scrollBarSpace = self.Scrolls[1].ScrollBar:GetWidth() * 2
+    
+    local scrollWidth = columnWidth - scrollBarSpace
+
+    for i, scroll in ipairs(self.Scrolls) do
+        local view = CreateScrollBoxListLinearView()
+        view:SetElementInitializer("PandaGemEntryTemplate", PandaGemEntryMixin.Initialize)
+        ScrollUtil.InitScrollBoxListWithScrollBar(scroll, scroll.ScrollBar, view)
+
+        -- For visibility
+        scroll.Title:SetParent(self)
+        scroll.ScrollBar:SetParent(self)
+
+        scroll.ScrollBar:ClearAllPoints()
+        scroll.ScrollBar:SetPoint("TOP", scroll, "TOPRIGHT", scrollBarSpace/2, -3)
+        scroll.ScrollBar:SetPoint("BOTTOM", scroll, "BOTTOM", 0, 2)
+
+        scroll:SetWidth(scrollWidth)
+        scroll:ClearAllPoints()
+        scroll:SetPoint("TOP", self, "TOP", 0, -64)
+        scroll:SetPoint("BOTTOM", self, "BOTTOM", 0, 36)
+        if i == 1 then
+            scroll:SetPoint("LEFT", self, "LEFT", 16, 0)
+        else
+            scroll:SetPoint("LEFT", self.Scrolls[i-1], "RIGHT", scrollBarSpace + columnGap, 0)
+        end
+    end
+
+--[[
+    local function LineFactory(elementData)
+        return "ScrollBoxDragLineTemplate"
+    end
+
+    local function AnchoringHandler(anchorFrame, candidateFrame, candidateArea)
+        if candidateArea == DragIntersectionArea.Above then
+            anchorFrame:SetPoint("BOTTOMLEFT", candidateFrame, "TOPLEFT", 0, 0)
+            anchorFrame:SetPoint("BOTTOMRIGHT", candidateFrame, "TOPRIGHT", 0, 0)
+        elseif candidateArea == DragIntersectionArea.Below then
+            anchorFrame:SetPoint("TOPLEFT", candidateFrame, "BOTTOMLEFT", 0, 0)
+            anchorFrame:SetPoint("TOPRIGHT", candidateFrame, "BOTTOMRIGHT", 0, 0)
+        end
+    end
+
+    local function Initializer(button, sourceButton)
+        button:Initialize(sourceButton.info)
+        button:SetScript('OnEnter', nil)
+        button:SetScript('OnLeave', nil)
+        button:SetScript('OnShow', nil)
+        button.Stripe:SetColorTexture(0, 0, 0, 1)
+        button.Stripe:Show()
+        button:SetWidth(sourceButton:GetWidth())
+        button:SetFrameStrata('TOOLTIP')
+    end
+
+    local function CursorFactory(elementData)
+        return "PandaGemEntryTemplate", Initializer
+    end
+
+    dragBehavior = ScrollUtil.AddLinearDragBehavior(self.BagsScroll,
+                        CursorFactory, LineFactory, AnchoringHandler)
+    dragBehavior:SetReorderable(true)
+    dragBehavior:SetDragRelativeToCursor(true)
+
+    dragBehavior:SetNotifyDragSource(
+        function (sourceFrame, drag)
+            sourceFrame:SetAlpha(drag and .5 or 1)
+            sourceFrame:DesaturateHierarchy(drag and 1 or 0)
+            sourceFrame:SetMouseMotionEnabled(not drag)
+        end)
+
+    dragBehavior:SetNotifyDragCandidates(
+        function (candidateFrame, drag)
+            candidateFrame:SetMouseMotionEnabled(not drag)
+        end)
+
+    dragBehavior:SetSourceDragCondition(
+        function (sourceFrame, sourceElementData)
+            return true
+        end)
+]]
+
     table.insert(UISpecialFrames, self:GetName())
+
     self:RegisterEvent('PLAYER_LOGIN')
 end
 
 function PandaGemMixin:Initialize()
-    self.bags = {}
-    self.equipped = {}
+    self.gems = {}
     self.freeGemSockets = {}
     self:BuildSocketTypeTable()
 end
