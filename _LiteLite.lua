@@ -82,6 +82,7 @@ function _LiteLite:BiggerFrames()
     QuestFrame:HookScript('OnShow', Embiggen)
     GossipFrame:HookScript('OnShow', Embiggen)
     ItemTextFrame:HookScript('OnShow', Embiggen)
+    TabardFrame:HookScript('OnShow', Embiggen)
     if Communities_LoadUI then
         hooksecurefunc('Communities_LoadUI',
             function ()
