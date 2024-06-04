@@ -224,6 +224,10 @@ function PandaGemMixin:ProcessItem(item)
 
     -- Does it have sockets
     local stats = C_Item.GetItemStats(link)
+    if stats == nil then
+        return
+    end
+
     for stat, count in pairs(stats) do
         if stat:find("EMPTY_SOCKET") then
             for i = 1, count do
