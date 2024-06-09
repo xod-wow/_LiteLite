@@ -105,7 +105,7 @@ function PandaGemEntryMixin:Initialize(info)
         self:SetAttribute("type", "macro")
         self:SetAttribute("macrotext", format("/cast Extract Gem\n/use %d %d", info.bag, info.slot))
     elseif info.equipmentSlotName then
-        self.Text:SetText(format("%s (E)", info.nameWithQuality))
+        self.Text:SetText(format("%s (E%d)", info.nameWithQuality, info.stackCount))
         self:SetScript('PreClick', function () SocketInventoryItem(info.equipmentSlot) end)
         self:SetScript('PostClick', function () CloseSocketInfo() end)
         self:SetAttribute("type", "macro")
@@ -285,6 +285,12 @@ function PandaGemMixin:RefreshData()
 end
 
 local function CompareGem(a, b)
+    if a.equipmentSlot and not b.equipmentSlot then
+        return true
+    elseif not a.equipmentSlot and b.equipmentSlot then
+        return false
+    end
+
     if GemSocketSortOrder[a.gemSocketType] ~= GemSocketSortOrder[b.gemSocketType] then
         return GemSocketSortOrder[a.gemSocketType] < GemSocketSortOrder[b.gemSocketType]
     end
@@ -296,21 +302,34 @@ local function CompareGem(a, b)
     if a.name ~= b.name then
         return a.name < b.name
     end
+end
 
-    if a.equipmentSlot and not b.equipmentSlot then
-        return true
-    elseif not a.equipmentSlot and b.equipmentSlot then
-        return false
+function PandaGemMixin:Aggregate(data)
+    local seen, ag = {}, {}
+    for i, info in ipairs(data) do
+        info = CopyTable(info)
+        if info.equipmentSlot then
+            if not seen[info.link] then
+                info.stackCount = info.stackCount or 1
+                seen[info.link] = info
+                table.insert(ag, info)
+            else
+                seen[info.link].stackCount = seen[info.link].stackCount + 1
+            end
+        else
+            table.insert(ag, info)
+        end
     end
+    table.sort(ag, CompareGem)
+    return ag
 end
 
 function PandaGemMixin:Update()
-    table.sort(self.gems, CompareGem)
     for i, scroll in ipairs(self.Scrolls) do
         local function socketTypeMatch(e) return e.gemSocketType == scroll.gemSocketType end
         local free = tFilter(self.freeGemSockets, socketTypeMatch, true)
         scroll.Title:SetText(format("%s (%d Empty)", _G[scroll.gemSocketType], #free))
-        local data = tFilter(self.gems, socketTypeMatch, true)
+        local data = self:Aggregate(tFilter(self.gems, socketTypeMatch, true))
         for index, info in ipairs(data) do info.index = index end
         local dataProvider = CreateDataProvider(data)
         scroll:SetDataProvider(dataProvider, ScrollBoxConstants.RetainScrollPosition)
