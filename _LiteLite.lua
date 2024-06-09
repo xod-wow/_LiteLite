@@ -409,6 +409,11 @@ function _LiteLite:PLAYER_LOGIN()
     self:UpdateScanning()
     self:ClearTrackedPerksActivities()
     self:SetBindMacro()
+
+    -- Remix fml
+    if PlayerGetTimerunningSeasonID and PlayerGetTimerunningSeasonID() == 1 then
+        OpenAllMail:Hide()
+    end
 end
 
 function _LiteLite:AutoRepairAll()
