@@ -169,7 +169,7 @@ local function CreateOrEditMacro(macroName, macroText, isLocal)
 end
 
 function _LiteLite:CreateSpellMacro(template, spell)
-    spell = spell or GameTooltipSpellInfo()
+    spell = spell or GameTooltip:GetSpell()
     if not spell then
         return
     end
