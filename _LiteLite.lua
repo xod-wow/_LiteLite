@@ -409,10 +409,13 @@ function _LiteLite:PLAYER_LOGIN()
     self:UpdateScanning()
     self:ClearTrackedPerksActivities()
     self:SetBindMacro()
+    self:RemixFix()
+end
 
-    -- Remix fml
+function _LiteLite:RemixFix()
     if PlayerGetTimerunningSeasonID and PlayerGetTimerunningSeasonID() == 1 then
-        OpenAllMail:Hide()
+        MailFrame:HookScript('OnShow',
+            function () OpenAllMail:SetShown(UnitLevel('player') == 70) end)
     end
 end
 
