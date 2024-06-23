@@ -51,7 +51,7 @@ function PandaGemCombineAllMixin:Update()
     self:Disable()
     for _, info in ipairs(parent.gems) do
         local _, spellID = C_Item.GetItemSpell(info.link)
-        if spellID and info.stackCount and info.stackCount >= 3 then
+        if spellID and info.stackCount and info.stackCount > 3 then
             self:SetAttribute("type", "item")
             self:SetAttribute("item", info.name)
             self:Enable()
