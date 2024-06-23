@@ -705,15 +705,29 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
     end
 end
 
+function _LiteLite:VignetteMatches(scanMobName, info)
+    scanMobName = maybescape(scanMobName):lower()
+    local guidType = strsplit('-', info.objectGUID)
+    if scanMobName == 'vignette' then
+        return true
+    elseif guidType and guidType:lower() == scanMobName then
+        return true
+    elseif info.name and info.name:lower():find(scanMobName) then
+        return true
+    else
+        return false
+    end
+
+end
+
 function _LiteLite:VIGNETTE_MINIMAP_UPDATED(id)
     local info = C_VignetteInfo.GetVignetteInfo(id)
     if not info or self.announcedMobGUID[info.objectGUID] then return end
 
     for _, n in ipairs(self.db.scanMobNames) do
-        n = maybescape(n)
-        if info.name and ( n:lower() == 'vignette' or info.name:lower():find(n) ) then
+        if self:VignetteMatches(n, info) then
             self.announcedMobGUID[info.objectGUID] = info.name
-            local msg = format("Vignette %s found", info.name)
+            local msg = format("Vignette %s found guid %s", info.name, info.objectGUID)
             printf(msg)
             PlaySound(11466)
         end
