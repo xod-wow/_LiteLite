@@ -139,7 +139,7 @@ function PandaGemMixin:BuildSocketTypeTable()
         item:ContinueOnItemLoad(
             function ()
                 local tt = C_TooltipInfo.GetItemByID(item:GetItemID())
-                if not tt or not tt.lines then  
+                if not tt or not tt.lines then
                     print(gemItemID, item:GetItemName(), item:GetItemLink())
                 else
                     local socketText = tt.lines[2].leftText:gsub("|c........(.*)|r", "%1")
@@ -184,7 +184,7 @@ function PandaGemMixin:ProcessGem(item, location, gemSocketIndex)
     local equipmentSlot = location:GetEquipmentSlot()
     info.equipmentSlot = equipmentSlot
     info.equipmentSlotName = InventorySlotTable[equipmentSlot]
-    
+
     local _, spellID = C_Item.GetItemSpell(info.link)
     info.spellID = spellID
 
@@ -344,7 +344,7 @@ function PandaGemMixin:OnLoad()
     local columnGap = 8
     local columnWidth = ( self:GetWidth() - 32 - ( #self.Scrolls - 1 ) * columnGap ) / #self.Scrolls
     local scrollBarSpace = self.Scrolls[1].ScrollBar:GetWidth() * 2
-    
+
     local scrollWidth = columnWidth - scrollBarSpace
 
     for i, scroll in ipairs(self.Scrolls) do

@@ -184,7 +184,7 @@ function _LiteLite:AutoEquipsetIcons()
     for _, n in ipairs(C_EquipmentSet.GetEquipmentSetIDs()) do
         local specIndex = C_EquipmentSet.GetEquipmentSetAssignedSpec(n)
         if specIndex then
-            arg1 = select(4, GetSpecializationInfo(specIndex))
+            local arg1 = select(4, GetSpecializationInfo(specIndex))
             self:SetEquipsetIcon(n, arg1)
         end
     end
@@ -213,6 +213,7 @@ function _LiteLite:SetEquipsetIcon(n, arg1)
 end
 
 function _LiteLite:SlashCommand(arg)
+    local arg1, arg2, arg3
 
     -- Zero argument options
     if arg == 'quest-report' or arg == 'qr' then
@@ -275,7 +276,7 @@ function _LiteLite:SlashCommand(arg)
     end
 
     -- One argument options
-    local arg1, arg2 = string.split(' ', arg, 2)
+    arg1, arg2 = string.split(' ', arg, 2)
     if arg1 == 'mouseover-macro' or arg1 == 'mm' then
         self:CreateSpellMacro(MouseoverMacroTemplate, arg2)
         return true
@@ -314,7 +315,7 @@ function _LiteLite:SlashCommand(arg)
     end
 
     -- Two argument options
-    local arg1, arg2, arg3 = string.split(' ', arg, 3)
+    arg1, arg2, arg3 = string.split(' ', arg, 3)
     if arg1 == 'equipset-icon' or arg1 == 'esi' then
         if arg2 == 'auto' then
             self:AutoEquipsetIcons()
@@ -420,8 +421,7 @@ function _LiteLite:RemixFix()
 end
 
 function _LiteLite:AutoRepairAll()
-    local function RAI() RepairAllItems() end
-    MerchantRepairAllButton:HookScript('OnShow', RAI)
+    MerchantRepairAllButton:HookScript('OnShow', RepairAllItems)
 end
 
 function _LiteLite:SellJunkButton()
@@ -1258,7 +1258,7 @@ local function PickupFlyout(id)
    for i = 1, 1000 do
       local t, infoID = GetSpellBookItemInfo(i, BOOKTYPE_SPELL)
       if t == "FLYOUT" and infoID == id then
-         PickupSpellBookItem(i, BOOKTYPE_SPELL)
+         C_Spell.PickupSpellBookItem(i, BOOKTYPE_SPELL)
          return
       end
    end
@@ -1268,7 +1268,7 @@ local function SetAction(i, action)
    if not action or not action[1] then
       PickupAction(i)
    elseif action[1] == "spell" then
-      PickupSpell(action[2])
+      C_Spell.PickupSpell(action[2])
       PlaceAction(i)
    elseif action[1] == "macro" then
       PickupMacro(action[3])
@@ -1550,7 +1550,7 @@ function _LiteLite:SetupDragonridingBar()
     for actionID, spellID in pairs(DragonridingActions) do
         local aType, aID, aSubType = GetActionInfo(actionID)
         if aType ~= 'spell' or aID ~= spellID then
-            PickupSpell(spellID)
+            C_Spell.PickupSpell(spellID)
             PlaceAction(actionID)
             ClearCursor()
         end
