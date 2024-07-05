@@ -421,7 +421,7 @@ function _LiteLite:RemixFix()
 end
 
 function _LiteLite:AutoRepairAll()
-    MerchantRepairAllButton:HookScript('OnShow', RepairAllItems)
+    MerchantRepairAllButton:HookScript('OnShow', function () RepairAllItems() end)
 end
 
 function _LiteLite:SellJunkButton()
