@@ -430,24 +430,28 @@ function PandaGemMixin:OnLoad()
 end
 
 function PandaGemMixin:Initialize()
+    if WOW_PROJECT_ID ~= 1 then return end
     self.gems = {}
     self.freeGemSockets = {}
     self:BuildSocketTypeTable()
 end
 
 function PandaGemMixin:OnShow()
+    if WOW_PROJECT_ID ~= 1 then return end
     self:RegisterEvent('BAG_UPDATE_DELAYED')
     self:RefreshData()
     self:Update()
 end
 
 function PandaGemMixin:OnHide()
+    if WOW_PROJECT_ID ~= 1 then return end
     self:UnregisterEvent('BAG_UPDATE_DELAYED')
     self.needsUpdate = nil
     self.needsRefresh = nil
 end
 
 function PandaGemMixin:OnEvent(event, ...)
+    if WOW_PROJECT_ID ~= 1 then return end
     if event == 'PLAYER_LOGIN' then
         self:Initialize()
     else
