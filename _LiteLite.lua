@@ -1526,9 +1526,20 @@ end
 
 function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)
     local searchResultInfo = C_LFGList.GetSearchResultInfo(id)
-    local activityName = C_LFGList.GetActivityFullName(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
     local _, status, _, _, role = C_LFGList.GetApplicationInfo(id)
-    printf("Joined %s name %s as %s", activityName, kstringGroupName, _G[role])
+    -- print(id)
+    -- DevTools_Dump(searchResultInfo)
+    -- DevTools_Dump({ C_LFGList.GetApplicationInfo(id) })
+    local activityName = C_LFGList.GetActivityFullName(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
+
+    printf(format('Joined %s "%s" as %s', activityName, kstringGroupName, _G[role]))
+
+    local chatMsg = format('Joined %s as %s', activityName, _G[role])
+    if IsInGroup() then
+        SendChatMessage(chatMsg, "PARTY")
+    else
+        EventUtil.RegisterOnceFrameEventAndCallback("GROUP_JOINED", function () SendChatMessage(chatMsg, "PARTY") end)
+    end
 end
 
 function _LiteLite:PLAYER_INTERACTION_MANAGER_FRAME_SHOW(id)
