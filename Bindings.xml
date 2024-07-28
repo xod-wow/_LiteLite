@@ -1,0 +1,4 @@
+<Bindings>
+    <Binding name="CLICK RotatingMarker:LeftButton" category="_LiteLite">
+    </Binding>
+</Bindings>

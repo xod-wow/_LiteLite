@@ -1527,18 +1527,20 @@ end
 function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)
     local searchResultInfo = C_LFGList.GetSearchResultInfo(id)
     local _, status, _, _, role = C_LFGList.GetApplicationInfo(id)
-    -- print(id)
-    -- DevTools_Dump(searchResultInfo)
-    -- DevTools_Dump({ C_LFGList.GetApplicationInfo(id) })
     local activityName = C_LFGList.GetActivityFullName(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
 
     printf(format('Joined %s "%s" as %s', activityName, kstringGroupName, _G[role]))
 
+    -- kstring is gone before the GROUP_JOINED so can't use it
+
     local chatMsg = format('Joined %s as %s', activityName, _G[role])
+    local function sendmsg()
+        SendChatMessage(chatMsg, IsInRaid() and "RAID" or "PARTY")
+    end
     if IsInGroup() then
-        SendChatMessage(chatMsg, "PARTY")
+        sendmsg()
     else
-        EventUtil.RegisterOnceFrameEventAndCallback("GROUP_JOINED", function () SendChatMessage(chatMsg, "PARTY") end)
+        EventUtil.RegisterOnceFrameEventAndCallback("GROUP_JOINED", sendmsg)
     end
 end
 
