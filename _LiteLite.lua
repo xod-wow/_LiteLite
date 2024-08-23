@@ -83,12 +83,7 @@ function _LiteLite:BiggerFrames()
     GossipFrame:HookScript('OnShow', Embiggen)
     ItemTextFrame:HookScript('OnShow', Embiggen)
     TabardFrame:HookScript('OnShow', Embiggen)
-    if Communities_LoadUI then
-        hooksecurefunc('Communities_LoadUI',
-            function ()
-                CommunitiesFrame:HookScript('OnShow', Embiggen)
-            end)
-    end
+    CommunitiesFrame:HookScript('OnShow', Embiggen)
     if EncounterJournal_LoadUI then
         hooksecurefunc('EncounterJournal_LoadUI',
             function ()
@@ -763,7 +758,9 @@ end
 
 function _LiteLite:WorldQuestItems(expansion)
     local maps
-    if not expansion or expansion == 'df' then
+    if not expansion or expansion == 'tww' then
+        maps = { 2274 }
+    elseif expansion == 'df' then
         maps = { 1978 }
     elseif expansion == 'sl' then
         maps = { 1550 }
@@ -1240,7 +1237,8 @@ local function SpecConfigToString()
         end
     end
 
-    ClassTalentFrame_LoadUI()
+    LoadAddOn('Blizzard_PlayerSpells')
+
     local exporter = CreateFromMixins(ClassTalentImportExportMixin, ImportExportMixin)
 
     map.loadouts = {}
