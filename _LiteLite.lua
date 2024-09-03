@@ -216,6 +216,9 @@ function _LiteLite:SlashCommand(arg)
         self:ScanQuestsCompleted(now)
         self:ReportQuestsCompleted()
         return true
+    elseif arg == 'delves' then
+        self:ListDelves()
+        return true
     elseif arg == 'quest-baseline' or arg == 'qb' then
         local now = GetServerTime()
         self:ScanQuestsCompleted()
@@ -338,7 +341,9 @@ function _LiteLite:SlashCommand(arg)
 
     printf("/ll adventure-upgrade | au")
     printf("/ll announce-mob | am")
+    printf("/ll button-macro [|bm] <key> <macrotext>")
     printf("/ll chatframe-settings")
+    printf("/ll delves")
     printf("/ll equipset-icon [n [iconid]]")
     printf("/ll equipset-icon auto")
     printf("/ll find-mob substring")
@@ -1643,5 +1648,54 @@ function _LiteLite:SetBindMacro()
         SecureButton:SetAttribute('type', 'macro')
         SecureButton:SetAttribute('macrotext', self.db.bindMacro)
         SetOverrideBindingClick(SecureButton, true, self.db.bindKey, SecureButton:GetName())
+    end
+end
+
+local delveMaps = { 2248, 2214, 2215, 2255 }
+
+-- {
+--  atlasName="delves-regular",
+--  description="Delve",
+--  isAlwaysOnFlightmap=false,
+--  isPrimaryMapForPOI=true,
+--  highlightVignettesOnHover=false,
+--  linkedUiMapID=2269,
+--  areaPoiID=7863,
+--  name="Earthcrawl Mines",
+--  position={
+--    RotateDirection=<function>,
+--    GetLength=<function>,
+--    Normalize=<function>,
+--    Dot=<function>,
+--    GetLengthSquared=<function>,
+--    GetXY=<function>,
+--    OnLoad=<function>,
+--    IsZero=<function>,
+--    DivideBy=<function>,
+--    x=0.38592737913132,
+--    y=0.73871922492981,
+--    Subtract=<function>,
+--    Clone=<function>,
+--    Cross=<function>,
+--    ScaleBy=<function>,
+--    SetXY=<function>,
+--    IsEqualTo=<function>,
+--    Add=<function>
+--  },
+--  shouldGlow=false,
+--  isCurrentEvent=false,
+--  highlightWorldQuestsOnHover=false
+-- }
+
+function _LiteLite:ListDelves()
+    for _, mapID in ipairs(delveMaps) do
+        local mapInfo = C_Map.GetMapInfo(mapID)
+        local delveList = C_AreaPoiInfo.GetDelvesForMap(mapID)
+        for _, poiID in ipairs(delveList) do
+            local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
+            if poiInfo.isPrimaryMapForPOI then
+                printf("%s: %s %s", mapInfo.name, poiInfo.name, tostring(poiInfo.shouldGlow))
+            end
+        end
     end
 end
