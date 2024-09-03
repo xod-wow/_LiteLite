@@ -1694,7 +1694,11 @@ function _LiteLite:ListDelves()
         for _, poiID in ipairs(delveList) do
             local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
             if poiInfo.isPrimaryMapForPOI then
-                printf("%s: %s %s", mapInfo.name, poiInfo.name, tostring(poiInfo.shouldGlow))
+                local name = poiInfo.name
+                if poiInfo.atlasName == 'delves-bountiful' then
+                    name = GOLD_FONT_COLOR:WrapTextInColorCode(name)
+                end
+                printf("%s: %s", mapInfo.name, name)
             end
         end
     end
