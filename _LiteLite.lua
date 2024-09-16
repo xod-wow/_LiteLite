@@ -393,6 +393,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('CHAT_MSG_COMBAT_XP_GAIN')
     self:RegisterEvent('TRAIT_CONFIG_UPDATED')
     self:RegisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
+    self:RegisterEvent('PLAYER_REGEN_ENABLED')
     self:RegisterEvent('LFG_LIST_JOINED_GROUP')
     self:RegisterEvent('PLAYER_INTERACTION_MANAGER_FRAME_SHOW')
 
@@ -1351,6 +1352,8 @@ function _LiteLite:ImportExportSpecConfig()
 end
 
 local function UpdateEquipmentSetForLoadout()
+    if InCombatLockdown() then return end
+
     if not _LiteLite.equipmentSetLoadoutDirty then return end
 
     _LiteLite.equipmentSetLoadoutDirty = nil
@@ -1398,6 +1401,10 @@ end
 
 function _LiteLite:ACTIVE_TALENT_GROUP_CHANGED(...)
     self:UpdateEquipmentSet()
+end
+
+function _LiteLite:PLAYER_REGEN_ENABLED()
+    UpdateEquipmentSetForLoadout()
 end
 
 function _LiteLite:LargerCUFDispelIcons()
