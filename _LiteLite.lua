@@ -574,6 +574,7 @@ function _LiteLite:CopyChat(sourceFrame)
     local lines = {}
     for i = 1, sourceFrame:GetNumMessages() do
         local msg = sourceFrame:GetMessageInfo(i)
+        msg = msg:gsub("|K(.-)|k", "<kstring>")
         table.insert(lines, msg or "")
     end
     _LiteLiteText.EditBox:SetText(table.concat(lines, "\n"))
