@@ -823,6 +823,8 @@ end
 
 function _LiteLite:ShowGreatVault()
     WeeklyRewards_ShowUI()
+    WeeklyRewardsFrame:SetUpConditionalActivities()
+    WeeklyRewardsFrame:Refresh()
 end
 
 function _LiteLite:MythicPlusHistory()
