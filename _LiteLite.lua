@@ -131,7 +131,7 @@ end
 local function GetGameTooltipIcon()
     local _, id = GameTooltip:GetSpell()
     if id then
-        return select(3, GetSpellInfo(id))
+        return C_Spell.GetSpellTexture(id)
     end
     _,  id = GameTooltip:GetItem()
     if id then
