@@ -1539,21 +1539,25 @@ end
 
 function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)
     local searchResultInfo = C_LFGList.GetSearchResultInfo(id)
-    local _, status, _, _, role = C_LFGList.GetApplicationInfo(id)
-    local activityName = C_LFGList.GetActivityFullName(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
+    local activityInfo = C_LFGList.GetActivityInfoTable(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
 
-    printf(format('Joined %s "%s" as %s', activityName, kstringGroupName, _G[role]))
+    DevTools_Dump(activityInfo)
 
-    -- kstring is gone before the GROUP_JOINED so can't use it
+    if activityInfo.isMythicPlusActivity then
+        local _, status, _, _, role = C_LFGList.GetApplicationInfo(id)
+        printf(format('Joined %s "%s" as %s', activityInfo.fullName, kstringGroupName, _G[role]))
 
-    local chatMsg = format('Joined %s as %s', activityName, _G[role])
-    local function sendmsg()
-        SendChatMessage(chatMsg, IsInRaid() and "RAID" or "PARTY")
-    end
-    if IsInGroup() then
-        sendmsg()
-    else
-        EventUtil.RegisterOnceFrameEventAndCallback("GROUP_JOINED", sendmsg)
+        -- kstring is gone before the GROUP_JOINED so can't use it
+
+        local chatMsg = format('Joined %s as %s', activityInfo.fullName, _G[role])
+        local function sendmsg()
+            SendChatMessage(chatMsg, IsInRaid() and "RAID" or "PARTY")
+        end
+        if IsInGroup() then
+            sendmsg()
+        else
+            EventUtil.RegisterOnceFrameEventAndCallback("GROUP_JOINED", sendmsg)
+        end
     end
 end
 
