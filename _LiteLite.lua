@@ -296,6 +296,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'wq-items' or arg1 == 'wqi' then
         self:WorldQuestItems(arg2)
         return true
+    elseif arg1 == 'wq-list' or arg1 == 'wql' then
+        self:WorldQuestList(arg2)
+        return true
     elseif arg1 == 'copy-chat' or arg1 == 'cc' then
         self:CopyChat()
         return true
@@ -742,6 +745,39 @@ function _LiteLite:VIGNETTES_UPDATED()
     end
 end
 
+local function PrintQuestRewards(info)
+    local questContainer = ContinuableContainer:Create()
+
+    local numRewards = GetNumQuestLogRewards(info.questId)
+    if numRewards == 0 then
+        return
+    end
+
+    for i = 1, numRewards do
+        local _, _, _, _, _, itemID = GetQuestLogRewardInfo(i, info.questId)
+        local item = Item:CreateFromItemID(itemID)
+        questContainer:AddContinuable(item)
+    end
+
+    local mapInfo = C_Map.GetMapInfo(info.mapID)
+
+    ContinuableContainer:ContinueOnLoad(
+        function ()
+            local name = C_TaskQuest.GetQuestInfoByQuestID(info.questId)
+            local qt = format("quest %s - %s", name, mapInfo.name)
+            local copper = GetQuestLogRewardMoney(info.questId)
+            if copper > 0 then
+                printf("  %s %s", GetMoneyString(copper), qt)
+            end
+            for i = 1, numRewards do
+                local itemName, itemTexture, numItems, quality, _, itemID, itemLevel = GetQuestLogRewardInfo(i, info.questId)
+                ScanTooltip:SetQuestLogItem("reward", i, info.questId, true)
+                local name, link = ScanTooltip:GetItem()
+                printf("  %sx%d %s", link, numItems, qt)
+            end
+        end)
+end
+
 local function PrintEquipmentQuestRewards(info)
     local i, rewardType = QuestUtils_GetBestQualityItemRewardIndex(info.questId)
     if not i or i == 0 then return end
@@ -763,7 +799,7 @@ local function PrintEquipmentQuestRewards(info)
         end)
 end
 
-function _LiteLite:WorldQuestItems(expansion)
+function _LiteLite:WorldQuestProcess(expansion, printFunc)
     local maps
     if not expansion or expansion == 'tww' then
         maps = { 2274 }
@@ -799,13 +835,21 @@ function _LiteLite:WorldQuestItems(expansion)
                 if not HaveQuestRewardData(info.questId) then allKnown = false break end
             end
             if allKnown then
-                printf("World quest item rewards:")
+                printf("World quest rewards:")
                 for _, info in pairs(mapQuests) do
-                    PrintEquipmentQuestRewards(info)
+                    printFunc(info)
                 end
                 self:Cancel()
             end
         end, 10)
+end
+
+function _LiteLite:WorldQuestItems(expansion)
+    self:WorldQuestProcess(expansion, PrintEquipmentQuestRewards)
+end
+
+function _LiteLite:WorldQuestList(expansion)
+    self:WorldQuestProcess(expansion, PrintQuestRewards)
 end
 
 function _LiteLite:KickOfflineRaidMembers()
