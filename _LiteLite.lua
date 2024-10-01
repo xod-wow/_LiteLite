@@ -1760,4 +1760,25 @@ function _LiteLite:ListDelves()
             end
         end
     end
+
+    -- Seems to be no way to get a list of delve runs the way you can with M+
+    -- Figure out what the highest ilevel reward is and see how many we've done
+    -- that would give that reward. Relies on the a vault slot showing more than
+    -- the threshold until you complete the next one.
+
+    local activities = C_WeeklyRewards.GetActivities(Enum.WeeklyRewardChestThresholdType.World)
+    local activityTierID = activities[1].activityTierID
+    local maxItemLevel
+    for i = 1, 32 do
+        local _, _, _, itemLevel = C_WeeklyRewards.GetNextActivitiesIncrease(activityTierID)
+        maxItemLevel = itemLevel or maxItemLevel
+    end
+
+    local progress = 0
+    for _, info in ipairs(activities) do
+        local itemLink = C_WeeklyRewards.GetExampleRewardItemHyperlinks(info.id)
+        local itemLevel = itemLink and C_Item.GetDetailedItemLevelInfo(itemLink)
+        if itemLevel == maxItemLevel then progress = info.progress end
+    end
+    printf("Max level delves completed: %d/%d", progress, activities[3].threshold)
 end
