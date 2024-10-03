@@ -1770,7 +1770,7 @@ function _LiteLite:ListDelves()
     local activityTierID = activities[1].activityTierID
     local maxItemLevel
     for i = 1, 32 do
-        local _, _, _, itemLevel = C_WeeklyRewards.GetNextActivitiesIncrease(activityTierID)
+        local _, _, _, itemLevel = C_WeeklyRewards.GetNextActivitiesIncrease(activityTierID, i)
         maxItemLevel = itemLevel or maxItemLevel
     end
 
