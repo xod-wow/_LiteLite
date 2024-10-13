@@ -216,9 +216,6 @@ function _LiteLite:SlashCommand(arg)
         self:ScanQuestsCompleted(now)
         self:ReportQuestsCompleted()
         return true
-    elseif arg == 'delves' then
-        self:ListDelves()
-        return true
     elseif arg == 'quest-baseline' or arg == 'qb' then
         local now = GetServerTime()
         self:ScanQuestsCompleted()
@@ -293,17 +290,18 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'gvals' or arg1 == 'gv' then
         self:SearchGlobalValues(arg2)
         return true
-    elseif arg1 == 'wq-items' or arg1 == 'wqi' then
-        self:WorldQuestItems(arg2)
-        return true
-    elseif arg1 == 'wq-list' or arg1 == 'wql' then
-        self:WorldQuestList(arg2)
-        return true
     elseif arg1 == 'copy-chat' or arg1 == 'cc' then
         self:CopyChat()
         return true
     elseif arg1 == 'catalyst' or arg1 == 'cat' then
         self:CatalystCharges()
+        return true
+    elseif arg1 == 'world-quest' or arg1 == 'wq' then
+        if arg2 then
+            self:WorldQuestList(string.split(' ', arg2))
+        else
+            self:WorldQuestList()
+        end
         return true
     elseif arg1 == 'guild-news' or arg1 == 'gn' then
         _LiteLiteLoot.minlevel = tonumber(arg2)
@@ -312,6 +310,9 @@ function _LiteLite:SlashCommand(arg)
         else
             _LiteLiteLoot:Show()
         end
+        return true
+    elseif arg1 == 'delves' then
+        self:ListDelves(arg2)
         return true
     end
 
@@ -331,9 +332,18 @@ function _LiteLite:SlashCommand(arg)
             self:ScanMobDel(arg3)
         elseif arg2 == 'clear' then
             self:ScanMobClear()
-        else
-            self:ScanMobList()
         end
+        self:ScanMobList()
+        return true
+    elseif arg1 == 'trade-scan' or arg1 == 'ts' then
+        if arg2 == 'add' then
+            self:TradeScanAdd(arg3)
+        elseif arg2 == 'del' then
+            self:TradeScanDel(arg3)
+        elseif arg2 == 'clear' then
+            self:TradeScanClear(arg3)
+        end
+        self:TradeScanList()
         return true
     elseif arg1 == 'bind-macro' or arg1 == 'bm' then
         self.db.bindKey = arg2
@@ -635,6 +645,72 @@ function _LiteLite:HookTooltip()
         end)
 end
 
+local function FindMatchingLink(chatMsgText, text)
+    for link in chatMsgText:gmatch([[|c.-|H.-|h.-|h|r]]) do
+        if link:lower():find(text) then
+            return link
+        end
+    end
+end
+
+function _LiteLite:CHAT_MSG_CHANNEL(...)
+    local zoneChannelID = select(7, ...)
+    if zoneChannelID == 1 or zoneChannelID == 2 then
+        local chatMsgText, chatMsgSender = ...
+        for i, text in ipairs(self.db.tradeScan or {}) do
+            if chatMsgText:lower():find(text) then
+                local link = FindMatchingLink(chatMsgText, text)
+                if link then
+                    _LiteLiteWhisper:Open('I can craft ' .. link .. ', guaranteed 5* with 3* mats', chatMsgSender)
+                else
+                    _LiteLiteWhisper:Open('I can craft your item', chatMsgSender)
+                end
+                printf("%s : %s", chatMsgSender, chatMsgText)
+                PlaySound(11466)
+            end
+        end
+    end
+end
+
+function _LiteLite:TradeScanList()
+    printf("Scan for trade:")
+    if next(self.db.tradeScan or {}) then
+        for i, text in ipairs(self.db.tradeScan or {}) do
+            printf("%d. %s", i, text)
+        end
+    else
+        printf("   None.")
+    end
+end
+
+function _LiteLite:TradeScanClear()
+    self.db.tradeScan = table.wipe(self.db.tradeScan or {})
+    self:UpdateScanning()
+end
+
+function _LiteLite:TradeScanAdd(text)
+    if text:find('|') then
+        text = text:gsub('|A.-|a', ''):match('%[(.-) ?%]')
+    end
+    if text then
+        self.db.tradeScan = self.db.tradeScan or {}
+        table.insert(self.db.tradeScan, text:lower())
+        self:UpdateScanning()
+    end
+end
+
+function _LiteLite:TradeScanDel(text)
+    if self.db.tradeScan then
+        local n = tonumber(text)
+        if n then
+            table.remove(self.db.tradeScan, n)
+        else
+            tDeleteItem(self.db.tradeScan, text:lower())
+        end
+        self:UpdateScanning()
+    end
+end
+
 function _LiteLite:ScanMobList()
     printf("Scan for mobs:")
     if next(self.db.scanMobNames or {}) then
@@ -684,6 +760,11 @@ function _LiteLite:UpdateScanning()
             self:UnregisterEvent("VIGNETTES_UPDATED")
             self:UnregisterEvent("VIGNETTE_MINIMAP_UPDATED")
         end
+    end
+    if next(self.db.tradeScan or {}) then
+        self:RegisterEvent("CHAT_MSG_CHANNEL")
+    else
+        self:UnregisterEvent("CHAT_MSG_CHANNEL")
     end
 end
 
@@ -799,6 +880,18 @@ local function PrintEquipmentQuestRewards(info)
         end)
 end
 
+local function PrintReputationQuestRewards(info)
+    local name, faction, capped = C_TaskQuest.GetQuestInfoByQuestID(info.questId)
+    if faction and C_QuestLog.QuestContainsFirstTimeRepBonusForPlayer(info.questId) then
+        local secondsRemaining = C_TaskQuest.GetQuestTimeLeftSeconds(info.questId)
+        local color = QuestUtils_GetQuestTimeColor(secondsRemaining or 0)
+        local formatterOutput = WorldQuestsSecondsFormatter:Format(secondsRemaining)
+        local mapInfo = C_Map.GetMapInfo(info.mapID)
+        local factionData = C_MajorFactions.GetMajorFactionData(faction)
+        printf("  %s - %s - %s", mapInfo.name, name, color:WrapTextInColorCode(formatterOutput))
+    end
+end
+
 function _LiteLite:WorldQuestProcess(expansion, printFunc)
     local maps
     if not expansion or expansion == 'tww' then
@@ -819,8 +912,8 @@ function _LiteLite:WorldQuestProcess(expansion, printFunc)
         for _,mapInfo in pairs(childInfo or {}) do
             if mapInfo.mapType == Enum.UIMapType.Zone then
                 for _, questInfo in ipairs(C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)) do
-                    if C_QuestLog.IsWorldQuest(questInfo.questId) then
-                        mapQuests[questInfo.questId] = questInfo
+                    if C_QuestLog.IsWorldQuest(questInfo.questId) and questInfo.mapID == mapInfo.mapID then
+                        table.insert(mapQuests, questInfo)
                         C_TaskQuest.RequestPreloadRewardData(questInfo.questId)
                     end
                 end
@@ -844,12 +937,25 @@ function _LiteLite:WorldQuestProcess(expansion, printFunc)
         end, 10)
 end
 
-function _LiteLite:WorldQuestItems(expansion)
-    self:WorldQuestProcess(expansion, PrintEquipmentQuestRewards)
-end
+function _LiteLite:WorldQuestList(...)
+    local filter, expansion
 
-function _LiteLite:WorldQuestList(expansion)
-    self:WorldQuestProcess(expansion, PrintQuestRewards)
+    for i = 1, select('#', ...) do
+        local arg = select(i, ...)
+        if arg:sub(1,1) == '-' then
+            filter = arg
+        else
+            expansion = arg
+        end
+    end
+
+    if filter == nil then
+        self:WorldQuestProcess(expansion, PrintQuestRewards)
+    elseif filter:sub(2,2) == 'i' then
+        self:WorldQuestProcess(expansion, PrintEquipmentQuestRewards)
+    elseif filter:sub(2,2) == 'r' then
+        self:WorldQuestProcess(expansion, PrintReputationQuestRewards)
+    end
 end
 
 function _LiteLite:KickOfflineRaidMembers()
@@ -1202,7 +1308,8 @@ function _LiteLite:CatalystCharges()
 end
 
 
--- /click RotatingMarker
+-- Also does ping mouseover now
+
 function _LiteLite:RotatingMarker()
     local b = CreateFrame('Button', 'RotatingMarker', nil, 'SecureActionButtonTemplate')
     -- https://github.com/Stanzilla/WoWUIBugs/issues/317#issuecomment-1510847497
@@ -1212,7 +1319,9 @@ function _LiteLite:RotatingMarker()
 
     SecureHandlerWrapScript(b, 'PreClick', b,
         [[
-            if IsControlKeyDown() then
+            if IsShiftKeyDown() then
+                self:SetAttribute("macrotext", "/ping [@mouseover,help] warning; [@mouseover] attack")
+            elseif IsControlKeyDown() then
                 self:SetAttribute("n", 0)
                 self:SetAttribute("macrotext", "/cwm 0")
             else
@@ -1290,7 +1399,7 @@ local function SpecConfigToString()
         end
     end
 
-    LoadAddOn('Blizzard_PlayerSpells')
+    C_AddOns.LoadAddOn('Blizzard_PlayerSpells')
 
     local exporter = CreateFromMixins(ClassTalentImportExportMixin, ImportExportMixin)
 
@@ -1507,6 +1616,8 @@ function _LiteLite:HideActionButtonEffects()
         end)
 end
 
+--[[------------------------------------------------------------------------]]--
+
 _LiteLiteLootMixin = {}
 
 local function InitLootButton(button, data)
@@ -1604,6 +1715,59 @@ function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)
         end
     end
 end
+
+--[[------------------------------------------------------------------------]]--
+
+_LiteLiteWhisperMixin = {}
+
+function _LiteLiteWhisperMixin:OnLoad()
+    self:SetTitle(WHISPER)
+end
+
+function _LiteLiteWhisperMixin:Open(message, recipient)
+    self.Message:SetText(message or "")
+    self.Recipient:SetText(recipient or "")
+    self:Show()
+end
+
+function _LiteLiteWhisperMixin:OnHide()
+    self.Message:SetText('')
+    self.Recipient:SetText('')
+end
+
+function _LiteLiteWhisperMixin:SendWhisper()
+    SendChatMessage(self.Message:GetText(), "WHISPER", nil, self.Recipient:GetText())
+    self:Hide()
+end
+
+
+--[[------------------------------------------------------------------------]]--
+
+function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)
+    local searchResultInfo = C_LFGList.GetSearchResultInfo(id)
+    local activityInfo = C_LFGList.GetActivityInfoTable(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
+
+    DevTools_Dump(activityInfo)
+
+    if activityInfo.isMythicPlusActivity then
+        local _, status, _, _, role = C_LFGList.GetApplicationInfo(id)
+        printf(format('Joined %s "%s" as %s', activityInfo.fullName, kstringGroupName, _G[role]))
+
+        -- kstring is gone before the GROUP_JOINED so can't use it
+
+        local chatMsg = format('Joined %s as %s', activityInfo.fullName, _G[role])
+        local function sendmsg()
+            SendChatMessage(chatMsg, IsInRaid() and "RAID" or "PARTY")
+        end
+        if IsInGroup() then
+            sendmsg()
+        else
+            EventUtil.RegisterOnceFrameEventAndCallback("GROUP_JOINED", sendmsg)
+        end
+    end
+end
+
+--[[------------------------------------------------------------------------]]--
 
 function _LiteLite:PLAYER_INTERACTION_MANAGER_FRAME_SHOW(id)
     if id == Enum.PlayerInteractionType.ItemUpgrade then
@@ -1745,7 +1909,7 @@ local delveMaps = { 2248, 2214, 2215, 2255 }
 --  highlightWorldQuestsOnHover=false
 -- }
 
-function _LiteLite:ListDelves()
+function _LiteLite:ListDelves(bountifulOnly)
     for _, mapID in ipairs(delveMaps) do
         local mapInfo = C_Map.GetMapInfo(mapID)
         local delveList = C_AreaPoiInfo.GetDelvesForMap(mapID)
@@ -1755,8 +1919,10 @@ function _LiteLite:ListDelves()
                 local name = poiInfo.name
                 if poiInfo.atlasName == 'delves-bountiful' then
                     name = GOLD_FONT_COLOR:WrapTextInColorCode(name)
+                    printf("%s: %s", mapInfo.name, name)
+                elseif not bountifulOnly then
+                    printf("%s: %s", mapInfo.name, name)
                 end
-                printf("%s: %s", mapInfo.name, name)
             end
         end
     end
