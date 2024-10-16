@@ -335,16 +335,6 @@ function _LiteLite:SlashCommand(arg)
         end
         self:ScanMobList()
         return true
-    elseif arg1 == 'trade-scan' or arg1 == 'ts' then
-        if arg2 == 'add' then
-            self:TradeScanAdd(arg3)
-        elseif arg2 == 'del' then
-            self:TradeScanDel(arg3)
-        elseif arg2 == 'clear' then
-            self:TradeScanClear(arg3)
-        end
-        self:TradeScanList()
-        return true
     elseif arg1 == 'bind-macro' or arg1 == 'bm' then
         self.db.bindKey = arg2
         self.db.bindMacro = arg3:gsub("\\n", "\n")
@@ -645,72 +635,6 @@ function _LiteLite:HookTooltip()
         end)
 end
 
-local function FindMatchingLink(chatMsgText, text)
-    for link in chatMsgText:gmatch([[|c.-|H.-|h.-|h|r]]) do
-        if link:lower():find(text) then
-            return link
-        end
-    end
-end
-
-function _LiteLite:CHAT_MSG_CHANNEL(...)
-    local zoneChannelID = select(7, ...)
-    if zoneChannelID == 1 or zoneChannelID == 2 then
-        local chatMsgText, chatMsgSender = ...
-        for i, text in ipairs(self.db.tradeScan or {}) do
-            if chatMsgText:lower():find(text) then
-                local link = FindMatchingLink(chatMsgText, text)
-                if link then
-                    _LiteLiteWhisper:Open('I can craft ' .. link .. ', guaranteed 5* with 3* mats', chatMsgSender)
-                else
-                    _LiteLiteWhisper:Open('I can craft your item', chatMsgSender)
-                end
-                printf("%s : %s", chatMsgSender, chatMsgText)
-                PlaySound(11466)
-            end
-        end
-    end
-end
-
-function _LiteLite:TradeScanList()
-    printf("Scan for trade:")
-    if next(self.db.tradeScan or {}) then
-        for i, text in ipairs(self.db.tradeScan or {}) do
-            printf("%d. %s", i, text)
-        end
-    else
-        printf("   None.")
-    end
-end
-
-function _LiteLite:TradeScanClear()
-    self.db.tradeScan = table.wipe(self.db.tradeScan or {})
-    self:UpdateScanning()
-end
-
-function _LiteLite:TradeScanAdd(text)
-    if text:find('|') then
-        text = text:gsub('|A.-|a', ''):match('%[(.-) ?%]')
-    end
-    if text then
-        self.db.tradeScan = self.db.tradeScan or {}
-        table.insert(self.db.tradeScan, text:lower())
-        self:UpdateScanning()
-    end
-end
-
-function _LiteLite:TradeScanDel(text)
-    if self.db.tradeScan then
-        local n = tonumber(text)
-        if n then
-            table.remove(self.db.tradeScan, n)
-        else
-            tDeleteItem(self.db.tradeScan, text:lower())
-        end
-        self:UpdateScanning()
-    end
-end
-
 function _LiteLite:ScanMobList()
     printf("Scan for mobs:")
     if next(self.db.scanMobNames or {}) then
@@ -760,11 +684,6 @@ function _LiteLite:UpdateScanning()
             self:UnregisterEvent("VIGNETTES_UPDATED")
             self:UnregisterEvent("VIGNETTE_MINIMAP_UPDATED")
         end
-    end
-    if next(self.db.tradeScan or {}) then
-        self:RegisterEvent("CHAT_MSG_CHANNEL")
-    else
-        self:UnregisterEvent("CHAT_MSG_CHANNEL")
     end
 end
 
@@ -892,6 +811,10 @@ local function PrintReputationQuestRewards(info)
     end
 end
 
+local IgnoreMaps = {
+    [2256] = true,      -- Azj-kahet Lower
+}
+
 function _LiteLite:WorldQuestProcess(expansion, printFunc)
     local maps
     if not expansion or expansion == 'tww' then
@@ -910,7 +833,7 @@ function _LiteLite:WorldQuestProcess(expansion, printFunc)
     for _, parentMapID in ipairs(maps) do
         local childInfo = C_Map.GetMapChildrenInfo(parentMapID)
         for _,mapInfo in pairs(childInfo or {}) do
-            if mapInfo.mapType == Enum.UIMapType.Zone then
+            if mapInfo.mapType == Enum.UIMapType.Zone and not IgnoreMaps[mapInfo.mapID] then
                 for _, questInfo in ipairs(C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)) do
                     if C_QuestLog.IsWorldQuest(questInfo.questId) and questInfo.mapID == mapInfo.mapID then
                         table.insert(mapQuests, questInfo)
@@ -1714,30 +1637,6 @@ function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)
             EventUtil.RegisterOnceFrameEventAndCallback("GROUP_JOINED", sendmsg)
         end
     end
-end
-
---[[------------------------------------------------------------------------]]--
-
-_LiteLiteWhisperMixin = {}
-
-function _LiteLiteWhisperMixin:OnLoad()
-    self:SetTitle(WHISPER)
-end
-
-function _LiteLiteWhisperMixin:Open(message, recipient)
-    self.Message:SetText(message or "")
-    self.Recipient:SetText(recipient or "")
-    self:Show()
-end
-
-function _LiteLiteWhisperMixin:OnHide()
-    self.Message:SetText('')
-    self.Recipient:SetText('')
-end
-
-function _LiteLiteWhisperMixin:SendWhisper()
-    SendChatMessage(self.Message:GetText(), "WHISPER", nil, self.Recipient:GetText())
-    self:Hide()
 end
 
 
