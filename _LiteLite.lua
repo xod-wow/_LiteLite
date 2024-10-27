@@ -748,13 +748,13 @@ end
 local function PrintQuestRewards(info)
     local questContainer = ContinuableContainer:Create()
 
-    local numRewards = GetNumQuestLogRewards(info.questId)
+    local numRewards = GetNumQuestLogRewards(info.questID)
     if numRewards == 0 then
         return
     end
 
     for i = 1, numRewards do
-        local _, _, _, _, _, itemID = GetQuestLogRewardInfo(i, info.questId)
+        local _, _, _, _, _, itemID = GetQuestLogRewardInfo(i, info.questID)
         local item = Item:CreateFromItemID(itemID)
         questContainer:AddContinuable(item)
     end
@@ -763,15 +763,15 @@ local function PrintQuestRewards(info)
 
     ContinuableContainer:ContinueOnLoad(
         function ()
-            local name = C_TaskQuest.GetQuestInfoByQuestID(info.questId)
+            local name = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
             local qt = format("quest %s - %s", name, mapInfo.name)
-            local copper = GetQuestLogRewardMoney(info.questId)
+            local copper = GetQuestLogRewardMoney(info.questID)
             if copper > 0 then
                 printf("  %s %s", GetMoneyString(copper), qt)
             end
             for i = 1, numRewards do
-                local itemName, itemTexture, numItems, quality, _, itemID, itemLevel = GetQuestLogRewardInfo(i, info.questId)
-                ScanTooltip:SetQuestLogItem("reward", i, info.questId, true)
+                local itemName, itemTexture, numItems, quality, _, itemID, itemLevel = GetQuestLogRewardInfo(i, info.questID)
+                ScanTooltip:SetQuestLogItem("reward", i, info.questID, true)
                 local name, link = ScanTooltip:GetItem()
                 printf("  %sx%d %s", link, numItems, qt)
             end
@@ -779,16 +779,16 @@ local function PrintQuestRewards(info)
 end
 
 local function PrintEquipmentQuestRewards(info)
-    local i, rewardType = QuestUtils_GetBestQualityItemRewardIndex(info.questId)
+    local i, rewardType = QuestUtils_GetBestQualityItemRewardIndex(info.questID)
     if not i or i == 0 then return end
-    local itemID, itemLevel = select(6, GetQuestLogRewardInfo(i, info.questId))
+    local itemID, itemLevel = select(6, GetQuestLogRewardInfo(i, info.questID))
     if not itemID then return end
 
     local item = Item:CreateFromItemID(itemID)
     item:ContinueOnItemLoad(
         function ()
             local mapInfo = C_Map.GetMapInfo(info.mapID)
-            ScanTooltip:SetQuestLogItem(rewardType, i, info.questId, true)
+            ScanTooltip:SetQuestLogItem(rewardType, i, info.questID, true)
             local name, link = ScanTooltip:GetItem()
             local equipLoc = select(9, GetItemInfo(itemID))
             if equipLoc ~= "INVTYPE_NON_EQUIP_IGNORE" then
@@ -800,9 +800,9 @@ local function PrintEquipmentQuestRewards(info)
 end
 
 local function PrintReputationQuestRewards(info)
-    local name, faction, capped = C_TaskQuest.GetQuestInfoByQuestID(info.questId)
-    if faction and C_QuestLog.QuestContainsFirstTimeRepBonusForPlayer(info.questId) then
-        local secondsRemaining = C_TaskQuest.GetQuestTimeLeftSeconds(info.questId)
+    local name, faction, capped = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
+    if faction and C_QuestLog.QuestContainsFirstTimeRepBonusForPlayer(info.questID) then
+        local secondsRemaining = C_TaskQuest.GetQuestTimeLeftSeconds(info.questID)
         local color = QuestUtils_GetQuestTimeColor(secondsRemaining or 0)
         local formatterOutput = WorldQuestsSecondsFormatter:Format(secondsRemaining)
         local mapInfo = C_Map.GetMapInfo(info.mapID)
@@ -835,9 +835,9 @@ function _LiteLite:WorldQuestProcess(expansion, printFunc)
         for _,mapInfo in pairs(childInfo or {}) do
             if mapInfo.mapType == Enum.UIMapType.Zone and not IgnoreMaps[mapInfo.mapID] then
                 for _, questInfo in ipairs(C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)) do
-                    if C_QuestLog.IsWorldQuest(questInfo.questId) and questInfo.mapID == mapInfo.mapID then
+                    if C_QuestLog.IsWorldQuest(questInfo.questID) and questInfo.mapID == mapInfo.mapID then
                         table.insert(mapQuests, questInfo)
-                        C_TaskQuest.RequestPreloadRewardData(questInfo.questId)
+                        C_TaskQuest.RequestPreloadRewardData(questInfo.questID)
                     end
                 end
             end
@@ -848,7 +848,7 @@ function _LiteLite:WorldQuestProcess(expansion, printFunc)
         function (self)
             local allKnown = true
             for _, info in pairs(mapQuests) do
-                if not HaveQuestRewardData(info.questId) then allKnown = false break end
+                if not HaveQuestRewardData(info.questID) then allKnown = false break end
             end
             if allKnown then
                 printf("World quest rewards:")
