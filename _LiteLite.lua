@@ -1615,53 +1615,30 @@ function _LiteLiteLootMixin:GetData()
     return data
 end
 
-function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)
-    local searchResultInfo = C_LFGList.GetSearchResultInfo(id)
-    local activityInfo = C_LFGList.GetActivityInfoTable(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
-
-    DevTools_Dump(activityInfo)
-
-    if activityInfo.isMythicPlusActivity then
-        local _, status, _, _, role = C_LFGList.GetApplicationInfo(id)
-        printf(format('Joined %s "%s" as %s', activityInfo.fullName, kstringGroupName, _G[role]))
-
-        -- kstring is gone before the GROUP_JOINED so can't use it
-
-        local chatMsg = format('Joined %s as %s', activityInfo.fullName, _G[role])
-        local function sendmsg()
-            SendChatMessage(chatMsg, IsInRaid() and "RAID" or "PARTY")
-        end
-        if IsInGroup() then
-            sendmsg()
-        else
-            EventUtil.RegisterOnceFrameEventAndCallback("GROUP_JOINED", sendmsg)
-        end
-    end
-end
-
 
 --[[------------------------------------------------------------------------]]--
 
 function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)
     local searchResultInfo = C_LFGList.GetSearchResultInfo(id)
-    local activityInfo = C_LFGList.GetActivityInfoTable(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
+    for _,id in ipairs(searchResultInfo.activityIDs) do
+        local activityInfo = C_LFGList.GetActivityInfoTable(id, nil, searchResultInfo.isWarMode);
 
-    DevTools_Dump(activityInfo)
+        if activityInfo.isMythicPlusActivity then
+            local _, status, _, _, role = C_LFGList.GetApplicationInfo(id)
+            printf(format('Joined %s "%s" as %s', activityInfo.fullName, kstringGroupName, _G[role]))
 
-    if activityInfo.isMythicPlusActivity then
-        local _, status, _, _, role = C_LFGList.GetApplicationInfo(id)
-        printf(format('Joined %s "%s" as %s', activityInfo.fullName, kstringGroupName, _G[role]))
+            -- kstring is gone before the GROUP_JOINED so can't use it
 
-        -- kstring is gone before the GROUP_JOINED so can't use it
-
-        local chatMsg = format('Joined %s as %s', activityInfo.fullName, _G[role])
-        local function sendmsg()
-            SendChatMessage(chatMsg, IsInRaid() and "RAID" or "PARTY")
-        end
-        if IsInGroup() then
-            sendmsg()
-        else
-            EventUtil.RegisterOnceFrameEventAndCallback("GROUP_JOINED", sendmsg)
+            local chatMsg = format('Joined %s as %s', activityInfo.fullName, _G[role])
+            local function sendmsg()
+                SendChatMessage(chatMsg, IsInRaid() and "RAID" or "PARTY")
+            end
+            if IsInGroup() then
+                sendmsg()
+            else
+                EventUtil.RegisterOnceFrameEventAndCallback("GROUP_JOINED", sendmsg)
+            end
+            return
         end
     end
 end
