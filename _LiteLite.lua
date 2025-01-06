@@ -1782,8 +1782,9 @@ function HearthstoneToyButton:Advance()
     end
 end
 
-function _LiteLite:SetupHearthstoneButton()
+function HearthstoneToyButton:Update()
     HearthstoneToyButton.toys = {}
+    HearthstoneToyButton.n = nil
 
     local itemList = {}
 
@@ -1810,11 +1811,16 @@ function _LiteLite:SetupHearthstoneButton()
             end
             HearthstoneToyButton:Advance()
         end)
+end
 
+function _LiteLite:SetupHearthstoneButton()
     HearthstoneToyButton:SetAttribute('type', 'toy')
     HearthstoneToyButton:SetAttribute('typerelease', 'toy')
     HearthstoneToyButton:SetAttribute('pressAndHoldAction', true)
     HearthstoneToyButton:SetScript('PostClick', function (self) self:Advance() end)
+    HearthstoneToyButton:Update()
+    HearthstoneToyButton:RegisterEvent("TOYS_UPDATED")
+    HearthstoneToyButton:SetScript('OnEvent', HearthstoneToyButton.Update)
 end
 
 local delveMaps = { 2248, 2214, 2215, 2255 }
