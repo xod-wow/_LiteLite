@@ -36,9 +36,6 @@ local function maybescape(str)
     end
 end
 
-local SecureButton = CreateFrame('Button', '_LiteLiteSecureButton', nil, 'SecureActionButtonTemplate')
-SecureButton:RegisterForClicks('AnyDown', 'AnyUp')
-
 local ScanTooltip = CreateFrame("GameTooltip", "_LiteLiteScanTooltip", nil, "GameTooltipTemplate")
 do
     ScanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
@@ -415,6 +412,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:ClearTrackedPerksActivities()
     self:SetBindMacro()
     self:RemixFix()
+    self:SetupHearthstoneButton()
 end
 
 function _LiteLite:RemixFix()
@@ -1741,12 +1739,74 @@ function _LiteLite:ClearTrackedPerksActivities()
     end
 end
 
+local BindMacroButton = CreateFrame('Button', '_LiteLiteBindMacroButton', nil, 'SecureActionButtonTemplate')
+BindMacroButton:RegisterForClicks('AnyDown', 'AnyUp')
+
 function _LiteLite:SetBindMacro()
     if self.db.bindKey and self.db.bindMacro then
-        SecureButton:SetAttribute('type', 'macro')
-        SecureButton:SetAttribute('macrotext', self.db.bindMacro)
-        SetOverrideBindingClick(SecureButton, true, self.db.bindKey, SecureButton:GetName())
+        BindMacroButton:SetAttribute('type', 'macro')
+        BindMacroButton:SetAttribute('macrotext', self.db.bindMacro)
+        SetOverrideBindingClick(BindMacroButton, true, self.db.bindKey, BindMacroButton:GetName())
     end
+end
+
+local HearthstoneToyButton = CreateFrame('Button', '_LLHS', nil, 'SecureActionButtonTemplate')
+HearthstoneToyButton:RegisterForClicks('AnyDown', 'AnyUp')
+
+local notHearthstone = {
+    [110560] = true,
+    [118427] = true,
+    [119210] = true,
+    [119211] = true,
+    [140192] = true,
+    [211946] = true,
+}
+
+function HearthstoneToyButton:Shuffle()
+    for i = #self.toys, 2, -1 do
+        local r = math.random(i)
+        self.toys[i], self.toys[r] = self.toys[r], self.toys[i]
+    end
+end
+
+function HearthstoneToyButton:Advance()
+    if not InCombatLockdown() then
+        if self.n == nil or self.n == #self.toys then
+            self:Shuffle()
+            self.n = 1
+        else
+            self.n = self.n + 1
+        end
+        print(self:GetName(), 'PreClick', self.toys[self.n])
+        self:SetAttribute('toy', self.toys[self.n])
+    end
+end
+
+function _LiteLite:SetupHearthstoneButton()
+    HearthstoneToyButton.toys = {}
+
+    for i = 1, C_ToyBox.GetNumFilteredToys() do
+        local id = C_ToyBox.GetToyFromIndex(i)
+        if not notHearthstone[id] and PlayerHasToy(id) then
+            local item = Item:CreateFromItemID(id)
+            if not item:IsItemEmpty() then
+                item:ContinueOnItemLoad(
+                    function ()
+                        local _, name = C_ToyBox.GetToyInfo(id)
+                        if name:find('Hearthstone') then
+                            print(id, name)
+                            table.insert(HearthstoneToyButton.toys, name)
+                        end
+                    end)
+            end
+        end
+    end
+
+    HearthstoneToyButton:SetAttribute('type', 'toy')
+    HearthstoneToyButton:SetAttribute('typerelease', 'toy')
+    HearthstoneToyButton:SetAttribute('pressAndHoldAction', true)
+    HearthstoneToyButton:SetScript('PostClick', function (self) self:Advance() end)
+    HearthstoneToyButton:Advance()
 end
 
 local delveMaps = { 2248, 2214, 2215, 2255 }
