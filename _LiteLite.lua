@@ -1771,13 +1771,13 @@ end
 
 function HearthstoneToyButton:Advance()
     if not InCombatLockdown() then
-        if self.n == nil or self.n == #self.toys then
+        if self.n == nil or self.n >= #self.toys then
             self:Shuffle()
             self.n = 1
         else
             self.n = self.n + 1
         end
-        print(self:GetName(), 'PreClick', self.toys[self.n])
+        -- print(self:GetName(), 'Advance', self.toys[self.n])
         self:SetAttribute('toy', self.toys[self.n])
     end
 end
@@ -1785,28 +1785,36 @@ end
 function _LiteLite:SetupHearthstoneButton()
     HearthstoneToyButton.toys = {}
 
+    local itemList = {}
+
     for i = 1, C_ToyBox.GetNumFilteredToys() do
         local id = C_ToyBox.GetToyFromIndex(i)
         if not notHearthstone[id] and PlayerHasToy(id) then
             local item = Item:CreateFromItemID(id)
             if not item:IsItemEmpty() then
-                item:ContinueOnItemLoad(
-                    function ()
-                        local _, name = C_ToyBox.GetToyInfo(id)
-                        if name:find('Hearthstone') then
-                            print(id, name)
-                            table.insert(HearthstoneToyButton.toys, name)
-                        end
-                    end)
+                table.insert(itemList, item)
             end
         end
     end
+
+    local cc = ContinuableContainer:Create()
+    cc:AddContinuables(itemList)
+    cc:ContinueOnLoad(
+        function ()
+            for _, item in ipairs(itemList) do
+                local name = item:GetItemName()
+                if name:find('Hearthstone') then
+                    -- print(item:GetItemID(), name)
+                    table.insert(HearthstoneToyButton.toys, name)
+                end
+            end
+            HearthstoneToyButton:Advance()
+        end)
 
     HearthstoneToyButton:SetAttribute('type', 'toy')
     HearthstoneToyButton:SetAttribute('typerelease', 'toy')
     HearthstoneToyButton:SetAttribute('pressAndHoldAction', true)
     HearthstoneToyButton:SetScript('PostClick', function (self) self:Advance() end)
-    HearthstoneToyButton:Advance()
 end
 
 local delveMaps = { 2248, 2214, 2215, 2255 }
