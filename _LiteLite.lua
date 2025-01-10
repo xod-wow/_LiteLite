@@ -759,7 +759,7 @@ local function PrintQuestRewards(info)
 
     local mapInfo = C_Map.GetMapInfo(info.mapID)
 
-    ContinuableContainer:ContinueOnLoad(
+    questContainer:ContinueOnLoad(
         function ()
             local name = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
             local qt = format("quest %s - %s", name, mapInfo.name)
@@ -1770,7 +1770,7 @@ function HearthstoneToyButton:Shuffle()
 end
 
 function HearthstoneToyButton:Advance()
-    if not InCombatLockdown() then
+    if not InCombatLockdown() and self.toys ~= nil then
         if self.n == nil or self.n >= #self.toys then
             self:Shuffle()
             self.n = 1
@@ -1782,35 +1782,43 @@ function HearthstoneToyButton:Advance()
     end
 end
 
-function HearthstoneToyButton:Update()
-    HearthstoneToyButton.toys = {}
-    HearthstoneToyButton.n = nil
-
-    local itemList = {}
-
-    for i = 1, C_ToyBox.GetNumFilteredToys() do
-        local id = C_ToyBox.GetToyFromIndex(i)
-        if not notHearthstone[id] and PlayerHasToy(id) then
-            local item = Item:CreateFromItemID(id)
-            if not item:IsItemEmpty() then
-                table.insert(itemList, item)
-            end
-        end
+function HearthstoneToyButton:UpdateToy(item)
+    local name = item:GetItemName()
+    if name:find('Hearthstone') and not tContains(self.toys, name) then
+        -- print(time(), item:GetItemID(), name)
+        table.insert(self.toys, name)
     end
+end
 
-    local cc = ContinuableContainer:Create()
-    cc:AddContinuables(itemList)
-    cc:ContinueOnLoad(
-        function ()
-            for _, item in ipairs(itemList) do
-                local name = item:GetItemName()
-                if name:find('Hearthstone') then
-                    -- print(item:GetItemID(), name)
-                    table.insert(HearthstoneToyButton.toys, name)
+function HearthstoneToyButton:Update(event, itemID, isNew, hasFanfare)
+    if itemID == nil and self.toys == nil then
+        self.toys = {}
+        local itemList = {}
+
+        for i = 1, C_ToyBox.GetNumToys() do
+            local id = C_ToyBox.GetToyFromIndex(i)
+            if not notHearthstone[id] and PlayerHasToy(id) then
+                local item = Item:CreateFromItemID(id)
+                if not item:IsItemEmpty() then
+                    table.insert(itemList, item)
                 end
             end
-            HearthstoneToyButton:Advance()
-        end)
+        end
+
+        local cc = ContinuableContainer:Create()
+        cc:AddContinuables(itemList)
+        cc:ContinueOnLoad(
+            function ()
+                for _, item in ipairs(itemList) do
+                    self:UpdateToy(item)
+                end
+                self:Advance()
+            end)
+    elseif itemID ~= nil and isNew == true then
+        self.toys = self.toys or {}
+        local item = Item:CreateFromItemID(itemID)
+        item:ContinueOnItemLoad(function () self:UpdateToy(item) end)
+    end
 end
 
 function _LiteLite:SetupHearthstoneButton()
@@ -1818,7 +1826,6 @@ function _LiteLite:SetupHearthstoneButton()
     HearthstoneToyButton:SetAttribute('typerelease', 'toy')
     HearthstoneToyButton:SetAttribute('pressAndHoldAction', true)
     HearthstoneToyButton:SetScript('PostClick', function (self) self:Advance() end)
-    HearthstoneToyButton:Update()
     HearthstoneToyButton:RegisterEvent("TOYS_UPDATED")
     HearthstoneToyButton:SetScript('OnEvent', HearthstoneToyButton.Update)
 end
