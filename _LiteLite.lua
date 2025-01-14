@@ -1822,6 +1822,7 @@ function HearthstoneToyButton:Update(event, itemID, isNew, hasFanfare)
 end
 
 function _LiteLite:SetupHearthstoneButton()
+    if WOW_PROJECT_ID ~= 1 then return end
     HearthstoneToyButton:SetAttribute('type', 'toy')
     HearthstoneToyButton:SetAttribute('typerelease', 'toy')
     HearthstoneToyButton:SetAttribute('pressAndHoldAction', true)
