@@ -1283,41 +1283,79 @@ function _LiteLite:StopSpellAutoPush()
 end
 
 local ImportExportMixin = {
-    GetLoadoutExportString = function (self, currentSpecID, configID)
-        local exportStream = ExportUtil.MakeExportDataStream();
-        local configInfo = C_Traits.GetConfigInfo(configID)
-        local treeInfo = C_Traits.GetTreeInfo(configID, configInfo.treeIDs[1])
-        local treeHash = C_Traits.GetTreeHash(treeInfo.ID);
-        local serializationVersion = C_Traits.GetLoadoutSerializationVersion()
+    GetLoadoutExportString =
+        function (self, currentSpecID, configID)
+            local exportStream = ExportUtil.MakeExportDataStream()
+            local configInfo = C_Traits.GetConfigInfo(configID)
+            local treeInfo = C_Traits.GetTreeInfo(configID, configInfo.treeIDs[1])
+            local treeHash = C_Traits.GetTreeHash(treeInfo.ID)
+            local serializationVersion = C_Traits.GetLoadoutSerializationVersion()
 
-        self:WriteLoadoutHeader(exportStream, serializationVersion, currentSpecID, treeHash);
-        self:WriteLoadoutContent(exportStream, configID, treeInfo.ID);
+            self:WriteLoadoutHeader(exportStream, serializationVersion, currentSpecID, treeHash)
+            self:WriteLoadoutContent(exportStream, configID, treeInfo.ID)
 
-        return exportStream:GetExportString();
-    end,
-    ImportLoadout = function (self, importText, loadoutName)
-        printf('Importing loadout: ' .. loadoutName)
-        local importStream = ExportUtil.MakeImportDataStream(importText)
-        local headerValid, serializationVersion, specID, treeHash = self:ReadLoadoutHeader(importStream)
+            return exportStream:GetExportString()
+        end,
+    ImportLoadout =
+        function (self, importText, loadoutName)
+            printf('Importing loadout: ' .. loadoutName)
+            local importStream = ExportUtil.MakeImportDataStream(importText)
+            local headerValid, serializationVersion, specID, treeHash = self:ReadLoadoutHeader(importStream)
 
-        if not headerValid then printf('Bad header') return end
-        if specID ~= PlayerUtil.GetCurrentSpecID() then printf('Bad spec') return end
+            if not headerValid then printf('Bad header') return end
+            if specID ~= PlayerUtil.GetCurrentSpecID() then printf('Bad spec') return end
 
-        local configID = C_ClassTalents.GetActiveConfigID()
-        local configInfo = C_Traits.GetConfigInfo(configID)
-        local treeInfo = C_Traits.GetTreeInfo(configID, configInfo.treeIDs[1])
+            local configID = C_ClassTalents.GetActiveConfigID()
+            local configInfo = C_Traits.GetConfigInfo(configID)
+            local treeInfo = C_Traits.GetTreeInfo(configID, configInfo.treeIDs[1])
 
-        local loadoutContent = self:ReadLoadoutContent(importStream, treeInfo.ID)
-        local loadoutEntryInfo = self:ConvertToImportLoadoutEntryInfo(configID, treeInfo.ID, loadoutContent)
+            local loadoutContent = self:ReadLoadoutContent(importStream, treeInfo.ID)
+            if not loadoutContent then printf('Loadout did not convert') return end
+            local loadoutEntryInfo = self:ConvertToImportLoadoutEntryInfo(configID, treeInfo.ID, loadoutContent)
 
-        if not loadoutEntryInfo then printf('Loadout did not convert') return end
 
-        local ok, err = C_ClassTalents.ImportLoadout(configID, loadoutEntryInfo, loadoutName)
-        if not ok then
-            printf('Loadout import failed: %s: %s', loadoutName, err)
-            return
-        end
-    end,
+            if loadoutName == 'active' then
+                C_Traits.ResetTree(configID, configInfo.treeIDs[1])
+                local ok = self:PurchaseLoadout(configID, loadoutEntryInfo)
+                if ok then
+                    C_Traits.CommitConfig(configID) -- TTT says this doesn't work
+                end
+            else
+                local ok, err = C_ClassTalents.ImportLoadout(configID, loadoutEntryInfo, loadoutName)
+                if not ok then
+                    printf('Loadout import failed: %s: %s', loadoutName, err)
+                    return
+                end
+            end
+        end,
+    -- Two annoyances, solved with brute force. The nodes are not in dependency
+    -- order, and the loadoutEntryInfo doesn't contain whether this is a choice
+    -- node or not. The neat answer to the second and probably the first is to
+    -- go spelunking around in the trait tree, but associating the treeNodes
+    -- with the nodeEntry is annoying and this works.
+    PurchaseLoadout =
+        function (self, configID, loadoutEntryInfo)
+            local allSucceeded
+            while true do
+                local didSomething = false
+                allSuccedeed = true
+                for i, nodeEntry in pairs(loadoutEntryInfo) do
+                    local success = C_Traits.SetSelection(configID, nodeEntry.nodeID, nodeEntry.selectionEntryID)
+                    if not success then
+                        for rank = 1, nodeEntry.ranksPurchased do
+                            success = C_Traits.PurchaseRank(configID, nodeEntry.nodeID)
+                        end
+                    end
+                    if success then
+                        didSomething = true
+                    else
+                        allSucceeded = false
+                    end
+                end
+                if not didSomething then break end
+            end
+            return allSucceeded
+        end,
     GetConfigID = function (self) return C_ClassTalents.GetActiveConfigID() end,
 }
 
@@ -1357,6 +1395,16 @@ local function SpecConfigToString()
         map.loadouts[info.name] = exporter:GetLoadoutExportString(specID, configID)
     end
 
+    -- No named sets, export current talents instead
+    if next(map.loadouts) == nil then
+        local configID = C_ClassTalents.GetActiveConfigID()
+        map.loadouts['active'] = exporter:GetLoadoutExportString(specID, configID)
+    end
+
+    -- Clique bindings
+    if Clique and Clique.db then
+        map.clique = CopyTable(Clique.db.profile.bindings)
+    end
     return ser:Serialize(map)
 end
 
@@ -1437,6 +1485,12 @@ local function SpecConfigFromString(text)
             C_ClassTalents.DeleteConfig(currentConfigsByName[name])
         end
         importer:ImportLoadout(data, name)
+    end
+
+    if map.clique and Clique and Clique.db then
+        printf('Setting up Clique')
+        table.wipe(Clique.db.profile)
+        Mixin(Clique.db.profile, map.clique)
     end
 end
 
