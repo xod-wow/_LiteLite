@@ -1419,23 +1419,26 @@ local function PickupFlyout(id)
 end
 
 local function SetAction(i, action)
-   if not action or not action[1] then
-      PickupAction(i)
-   elseif action[1] == "spell" then
-      C_Spell.PickupSpell(action[2])
-      PlaceAction(i)
-   elseif action[1] == "macro" then
-      PickupMacro(action[3])
-      PlaceAction(i)
-   elseif action[1] == "item" then
-      PickupItem(action[2])
-      PlaceAction(i)
-   elseif action[1] == "flyout" then
-      PickupFlyout(action[2])
-      PlaceAction(i)
-   else
-      print('hmm', unpack(action))
-   end
+    if not action or not action[1] then
+        PickupAction(i)
+    elseif action[1] == "spell" then
+        C_Spell.PickupSpell(action[2])
+        PlaceAction(i)
+    elseif action[1] == "macro" then
+        PickupMacro(action[3])
+        PlaceAction(i)
+    elseif action[1] == "item" then
+        PickupItem(action[2])
+        PlaceAction(i)
+    elseif action[1] == "flyout" then
+        PickupFlyout(action[2])
+        PlaceAction(i)
+    elseif action[1] == "companion" then
+        PickupCompanion(action[3], action[2])
+        PlaceAction(i)
+    else
+        print("Don't know how to place action of type:", unpack(action))
+    end
    ClearCursor()
 end
 
@@ -1639,8 +1642,8 @@ function _LiteLiteLootMixin:OnLoad()
     ButtonFrameTemplate_HidePortrait(self)
     local view = CreateScrollBoxListLinearView()
     view:SetElementInitializer("_LiteLiteLootEntryTemplate", InitLootButton)
-    view:SetPadding(2,2,2,2,5);
-    ScrollUtil.InitScrollBoxListWithScrollBar(self.ScrollBox, self.ScrollBar, view);
+    view:SetPadding(2,2,2,2,5)
+    ScrollUtil.InitScrollBoxListWithScrollBar(self.ScrollBox, self.ScrollBar, view)
     table.insert(UISpecialFrames, self:GetName())
 
     self.guild = {}
@@ -1677,7 +1680,7 @@ function _LiteLiteLootMixin:GetData()
             local level = GetDetailedItemLevelInfo(info.whatText)
             local invType, subType, _, equipSlot = select(6, GetItemInfo(info.whatText))
             if equipSlot ~= '' and level and level >= ( self.minlevel or 0 ) then
-                local date = format(DATE_FMT, CALENDAR_WEEKDAY_NAMES[info.weekday + 1], info.day + 1, info.month + 1);
+                local date = format(DATE_FMT, CALENDAR_WEEKDAY_NAMES[info.weekday + 1], info.day + 1, info.month + 1)
                 local entry = {
                     date    = date,
                     player  = self.guild[info.whoText] or info.whoText,
@@ -1698,7 +1701,7 @@ end
 function _LiteLite:LFG_LIST_JOINED_GROUP(id, kstringGroupName)
     local searchResultInfo = C_LFGList.GetSearchResultInfo(id)
     for _,id in ipairs(searchResultInfo.activityIDs) do
-        local activityInfo = C_LFGList.GetActivityInfoTable(id, nil, searchResultInfo.isWarMode);
+        local activityInfo = C_LFGList.GetActivityInfoTable(id, nil, searchResultInfo.isWarMode)
 
         if activityInfo.isMythicPlusActivity then
             local _, status, _, _, role = C_LFGList.GetApplicationInfo(id)
