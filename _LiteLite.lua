@@ -362,7 +362,7 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll mouseover-macro [spellname]")
     printf("/ll player-macro [spellname]")
     printf("/ll trinket-macro [spellname]")
-    printf("/ll wq-items")
+    printf("/ll world-quest [expansion] [-i|-r|-l]")
     return true
 end
 
@@ -823,6 +823,15 @@ local function PrintReputationQuestRewards(info)
     end
 end
 
+local function PrintQuest(info)
+    local name, faction, capped = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
+    local secondsRemaining = C_TaskQuest.GetQuestTimeLeftSeconds(info.questID)
+    local color = QuestUtils_GetQuestTimeColor(secondsRemaining or 0)
+    local formatterOutput = WorldQuestsSecondsFormatter:Format(secondsRemaining)
+    local mapInfo = C_Map.GetMapInfo(info.mapID)
+    printf("  %s - %s - %s", mapInfo.name, name, color:WrapTextInColorCode(formatterOutput))
+end
+
 local IgnoreMaps = {
     [2256] = true,      -- Azj-kahet Lower
 }
@@ -888,6 +897,8 @@ function _LiteLite:WorldQuestList(...)
         self:WorldQuestProcess(expansion, PrintQuestRewards)
     elseif filter:sub(2,2) == 'i' then
         self:WorldQuestProcess(expansion, PrintEquipmentQuestRewards)
+    elseif filter:sub(2,2) == 'l' then
+        self:WorldQuestProcess(expansion, PrintQuest)
     elseif filter:sub(2,2) == 'r' then
         self:WorldQuestProcess(expansion, PrintReputationQuestRewards)
     end
