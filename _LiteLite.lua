@@ -1860,6 +1860,7 @@ function HearthstoneToyButton:Advance()
             self.n = self.n + 1
         end
         -- print(self:GetName(), 'Advance', self.toys[self.n])
+        self:SetScript('PreClick', function () printf(self.toys[self.n]) end)
         self:SetAttribute('toy', self.toys[self.n])
     end
 end
@@ -1867,25 +1868,66 @@ end
 function HearthstoneToyButton:UpdateToy(item)
     local name = item:GetItemName()
     if name:find('Hearthstone') and not tContains(self.toys, name) then
-        -- print(time(), item:GetItemID(), name)
-        table.insert(self.toys, name)
+        local id = item:GetItemID()
+        if notHearthstone[id] then
+            -- pass
+        elseif PlayerHasToy(id) then
+            table.insert(self.toys, name)
+            if self.n == nil then self:Advance() end
+        -- else
+        --     print('No toy', id, name)
+        end
     end
 end
 
+-- There's a few complicated cases on being able to scan toys, and I'm not
+-- entirely sure when C_ToyBox.GetToyFromIndex works. I also don't think
+-- there's any way to query toys outside the filter which is annoying, since
+-- the index arg is a filtered toys index.
+
 function HearthstoneToyButton:Update(event, itemID, isNew, hasFanfare)
-    if itemID == nil and self.toys == nil then
-        self.toys = {}
+    if itemID == nil then
+        -- I'm trying not to scan too much, as this fires semi-regularly, I think
+        -- every PLAYER_ENTERING_WORLD.
+        if self.initialFullScan ~= nil then return end
+
         local itemList = {}
 
-        for i = 1, C_ToyBox.GetNumToys() do
+        -- Sometimes on first login this is 2. though perhaps now I set the
+        -- default filters explicitly that isn't true any more.
+        C_ToyBox.SetAllSourceTypeFilters(true)
+        C_ToyBox.SetAllExpansionTypeFilters(true)
+        C_ToyBox.SetUncollectedShown(true)
+        C_ToyBox.SetFilterString('')
+        local numFilteredToys = C_ToyBox.GetNumFilteredToys()
+
+        printf('HearthstoneToyButton:Update: #%d', numFilteredToys)
+
+        -- I think C_ToyBox.GetToyFromIndex relies on a client cache, which
+        -- could just be the item cache. Calling C_ToyBox.GetToyFromIndex seems
+        -- to return -1 if the toy is not cached, and trigger a TOYS_UPDATED
+        -- event with the itemID when fetched. (It also returns -1 for indexes
+        -- that don't exist.) It's possible GetItemInfo definitely works if the
+        -- id is not -1 but I haven't tested it.
+
+        for i = 1, numFilteredToys do
             local id = C_ToyBox.GetToyFromIndex(i)
-            if not notHearthstone[id] and PlayerHasToy(id) then
-                local item = Item:CreateFromItemID(id)
-                if not item:IsItemEmpty() then
-                    table.insert(itemList, item)
-                end
+            local item = Item:CreateFromItemID(id)
+            if not item:IsItemEmpty() then
+                table.insert(itemList, item)
             end
         end
+
+        printf('initial item count: %d', #itemList)
+
+        -- Current toy count is 600+ so just bail out if it looks like things
+        -- aren't working and assume we will get a TOYS_UPDATED nil event later.
+
+        if #itemList < 500 then return end
+
+        self.initialFullScan = true
+
+        self.toys = self.toys or {}
 
         local cc = ContinuableContainer:Create()
         cc:AddContinuables(itemList)
@@ -1894,9 +1936,9 @@ function HearthstoneToyButton:Update(event, itemID, isNew, hasFanfare)
                 for _, item in ipairs(itemList) do
                     self:UpdateToy(item)
                 end
-                self:Advance()
             end)
-    elseif itemID ~= nil and isNew == true then
+    elseif itemID ~= nil then
+        -- printf('HearthstoneToyButton:Update: %d', itemID)
         self.toys = self.toys or {}
         local item = Item:CreateFromItemID(itemID)
         item:ContinueOnItemLoad(function () self:UpdateToy(item) end)
@@ -1909,8 +1951,12 @@ function _LiteLite:SetupHearthstoneButton()
     HearthstoneToyButton:SetAttribute('typerelease', 'toy')
     HearthstoneToyButton:SetAttribute('pressAndHoldAction', true)
     HearthstoneToyButton:SetScript('PostClick', function (self) self:Advance() end)
-    HearthstoneToyButton:RegisterEvent("TOYS_UPDATED")
-    HearthstoneToyButton:SetScript('OnEvent', HearthstoneToyButton.Update)
+    EventUtil.RegisterOnceFrameEventAndCallback('PLAYER_ENTERING_WORLD',
+        function ()
+            HearthstoneToyButton:RegisterEvent('TOYS_UPDATED')
+            HearthstoneToyButton:SetScript('OnEvent', HearthstoneToyButton.Update)
+            HearthstoneToyButton:Update()
+        end)
 end
 
 local delveMaps = { 2248, 2214, 2215, 2255 }
