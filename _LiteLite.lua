@@ -388,6 +388,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
     self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
     self:RegisterEvent('CHAT_MSG_MONSTER_EMOTE')
+    self:RegisterEvent('CHAT_MSG_LOOT')
     self:RegisterEvent('ENCOUNTER_START')
     self:RegisterEvent('ENCOUNTER_END')
     self:RegisterEvent('CHAT_MSG_COMBAT_XP_GAIN')
@@ -446,6 +447,19 @@ function _LiteLite:CHAT_MSG_MONSTER_EMOTE(msg, name)
     if C_Map.GetBestMapForUnit('player') == 1970 then -- Zereth Mortis
         msg = ORANGE_FONT_COLOR:WrapTextInColorCode(msg)
         UIErrorsFrame:AddMessage(string.format(msg, name))
+    end
+end
+
+function _LiteLite:CHAT_MSG_LOOT(...)
+    if select(8, GetInstanceInfo()) == 2657 then
+        local msg = ...
+        if msg and msg:find('Reins of the Sureki Skyrazor', nil, true) then
+            PlaySound(11466)
+            self:FlashScreen(10)
+            msg = ORANGE_FONT_COLOR:WrapTextInColorCode(msg)
+            UIErrorsFrame:AddMessage(msg)
+            printf(msg)
+        end
     end
 end
 
