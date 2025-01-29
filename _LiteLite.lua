@@ -1920,10 +1920,10 @@ function HearthstoneToyButton:Update(event, itemID, isNew, hasFanfare)
 
         printf('initial item count: %d', #itemList)
 
-        -- Current toy count is 600+ so just bail out if it looks like things
+        -- Current toy count is 900+ so just bail out if it looks like things
         -- aren't working and assume we will get a TOYS_UPDATED nil event later.
 
-        if #itemList < 500 then return end
+        if #itemList < 900 then return end
 
         self.initialFullScan = true
 
