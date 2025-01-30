@@ -1410,9 +1410,9 @@ end
 
 local function PickupFlyout(id)
    for i = 1, 1000 do
-      local t, infoID = GetSpellBookItemInfo(i, BOOKTYPE_SPELL)
+      local t, infoID = C_SpellBook.GetSpellBookItemInfo(i, Enum.SpellBookSpellBank.Player)
       if t == "FLYOUT" and infoID == id then
-         C_Spell.PickupSpellBookItem(i, BOOKTYPE_SPELL)
+         C_SpellBook.PickupSpellBookItem(i, Enum.SpellBookSpellBank.Player)
          return
       end
    end
