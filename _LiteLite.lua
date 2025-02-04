@@ -1319,6 +1319,9 @@ local ImportExportMixin = {
                 local ok = self:PurchaseLoadout(configID, loadoutEntryInfo)
                 if ok then
                     C_Traits.CommitConfig(configID) -- TTT says this doesn't work
+                else
+                    printf('Loadout purchase failed: %s', loadoutName)
+
                 end
             else
                 local ok, err = C_ClassTalents.ImportLoadout(configID, loadoutEntryInfo, loadoutName)
@@ -1408,14 +1411,14 @@ local function SpecConfigToString()
     return ser:Serialize(map)
 end
 
-local function PickupFlyout(id)
-   for i = 1, 1000 do
-      local t, infoID = C_SpellBook.GetSpellBookItemInfo(i, Enum.SpellBookSpellBank.Player)
-      if t == "FLYOUT" and infoID == id then
-         C_SpellBook.PickupSpellBookItem(i, Enum.SpellBookSpellBank.Player)
-         return
-      end
-   end
+local function PickupFlyoutByActionID(id)
+    for i = 1, 1000 do
+        local info = C_SpellBook.GetSpellBookItemInfo(i, Enum.SpellBookSpellBank.Player)
+        if info and info.itemType == Enum.SpellBookItemType.Flyout and info.actionID == id then
+             C_SpellBook.PickupSpellBookItem(i, Enum.SpellBookSpellBank.Player)
+            return
+        end
+    end
 end
 
 local function SetAction(i, action)
@@ -1431,7 +1434,7 @@ local function SetAction(i, action)
         PickupItem(action[2])
         PlaceAction(i)
     elseif action[1] == "flyout" then
-        PickupFlyout(action[2])
+        PickupFlyoutByActionID(action[2])
         PlaceAction(i)
     elseif action[1] == "companion" then
         PickupCompanion(action[3], action[2])
@@ -1439,7 +1442,7 @@ local function SetAction(i, action)
     else
         print("Don't know how to place action of type:", unpack(action))
     end
-   ClearCursor()
+    ClearCursor()
 end
 
 local function SetMacro(info)
@@ -1492,8 +1495,10 @@ local function SpecConfigFromString(text)
 
     if map.clique and Clique and Clique.db then
         printf('Setting up Clique')
-        table.wipe(Clique.db.profile)
-        Mixin(Clique.db.profile, map.clique)
+        local p = Clique.db.profile
+        p.bindings = p.bindings or {}
+        table.wipe(p.bindings)
+        Mixin(p.bindings, map.clique)
     end
 end
 
@@ -1901,7 +1906,7 @@ function HearthstoneToyButton:Update(event, itemID, isNew, hasFanfare)
         C_ToyBox.SetFilterString('')
         local numFilteredToys = C_ToyBox.GetNumFilteredToys()
 
-        printf('HearthstoneToyButton:Update: #%d', numFilteredToys)
+        -- printf('HearthstoneToyButton:Update: #%d', numFilteredToys)
 
         -- I think C_ToyBox.GetToyFromIndex relies on a client cache, which
         -- could just be the item cache. Calling C_ToyBox.GetToyFromIndex seems
@@ -1918,7 +1923,7 @@ function HearthstoneToyButton:Update(event, itemID, isNew, hasFanfare)
             end
         end
 
-        printf('initial item count: %d', #itemList)
+        -- printf('initial item count: %d', #itemList)
 
         -- Current toy count is 900+ so just bail out if it looks like things
         -- aren't working and assume we will get a TOYS_UPDATED nil event later.
