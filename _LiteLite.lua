@@ -398,6 +398,8 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('LFG_LIST_JOINED_GROUP')
     self:RegisterEvent('PLAYER_INTERACTION_MANAGER_FRAME_SHOW')
 
+    self:PageMultiBarBottomRight()
+
     self:BiggerFrames()
     self:OtherAddonProfiles()
     self:MuteDragonridingMounts()
@@ -1316,13 +1318,8 @@ local ImportExportMixin = {
 
             if loadoutName == 'active' then
                 C_Traits.ResetTree(configID, configInfo.treeIDs[1])
-                local ok = self:PurchaseLoadout(configID, loadoutEntryInfo)
-                if ok then
-                    C_Traits.CommitConfig(configID) -- TTT says this doesn't work
-                else
-                    printf('Loadout purchase failed: %s', loadoutName)
-
-                end
+                self:PurchaseLoadout(configID, loadoutEntryInfo)
+                C_Traits.CommitConfig(configID) -- TTT says this doesn't work
             else
                 local ok, err = C_ClassTalents.ImportLoadout(configID, loadoutEntryInfo, loadoutName)
                 if not ok then
@@ -2039,3 +2036,51 @@ function _LiteLite:ListDelves(bountifulOnly)
     end
     printf("Max level delves completed: %d/%d", progress, activities[3].threshold)
 end
+
+--[[
+    Not sure how to make ActionBarController_UpdateAll without taint. Or how to
+    make actionpage change without taint before UPDATE_BONUS_ACTIONBAR which
+    causes it to be called.
+
+    Things that don't work:
+    1. RegisterAttributeDriver(MultiBarBottomRight, "actionpage", "[stealth] 14; 5")
+        because the individual bars don't control their own updating
+    2. SecureHandlerSetFrameRef/WrapScript
+        becuse ActionBarController is not a secure frame.
+]]
+
+
+function _LiteLite:PageMultiBarBottomRight()
+--[=[
+    local ap = CreateFrame("Frame", "_LiteLiteActionPager", nil, "SecureGroupHeaderTemplate")
+    SecureHandlerSetFrameRef(ap, "bar", MultiBarBottomRight)
+    SecureHandlerWrapScript(MainMenuBar, "OnAttributeChanged", ap,
+        [[
+            print('x')
+            print(name)
+            print(value)
+            if name == 'actionpage' then
+                local bar = self:GetFrameRef('bar')
+                if HasBonusActionBar() then
+                    bar:SetAttribute("actionpage", 14)
+                else
+                    bar:SetAttribute("actionpage", 5)
+                end
+            end
+       ]])
+
+    local function Update()
+        if HasBonusActionBar() then
+            MultiBarBottomRight:SetAttribute("actionpage", 14)
+        else
+            MultiBarBottomRight:SetAttribute("actionpage", 5)
+        end
+    end
+]=]
+    -- Hooking because it's called in ActionBarController_UpdateAll before
+    -- all of the bar buttons are updated for their state. Not because we care
+    -- at all about the stance bar.
+    -- hooksecurefunc(StanceBar, 'Update', Update)
+    -- Update()
+end
+
