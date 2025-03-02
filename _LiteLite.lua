@@ -311,6 +311,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'delves' then
         self:ListDelves(arg2)
         return true
+    elseif arg1 == 'auto-waypoint' or arg1 == 'aw' then
+        self.db.autoScanWaypoint = StringToBoolean(arg2) or nil
+        return true
     end
 
     -- Two argument options
@@ -329,6 +332,8 @@ function _LiteLite:SlashCommand(arg)
             self:ScanMobDel(arg3)
         elseif arg2 == 'clear' then
             self:ScanMobClear()
+        elseif arg2 == 'way' then
+            self:ShowScanWaypoint()
         end
         self:ScanMobList()
         return true
@@ -339,8 +344,8 @@ function _LiteLite:SlashCommand(arg)
         return true
     end
 
-    printf("/ll adventure-upgrade | au")
     printf("/ll announce-mob | am")
+    printf("/ll auto-waypoint | aw")
     printf("/ll button-macro [|bm] <key> <macrotext>")
     printf("/ll chatframe-settings")
     printf("/ll delves")
@@ -724,13 +729,22 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
     end
 end
 
+local badAtlasNames = {
+    ["VignetteLoot"]        = true,
+    ["racing"]              = true,
+    ["poi-scrapper"]        = true,
+    ["dragon-rostrum"]      = true,
+}
+
 function _LiteLite:VignetteMatches(scanMobName, info)
     scanMobName = maybescape(scanMobName):lower()
     local guidType = strsplit('-', info.objectGUID)
-    if scanMobName == 'vignette' then
+    if info.atlasName:lower():find(scanMobName) then
         return true
+    elseif scanMobName == 'vignette' then
+        return not badAtlasNames[info.atlasName]
     elseif guidType and guidType:lower() == scanMobName then
-        return true
+        return not badAtlasNames[info.atlasName]
     elseif info.name and info.name:lower():find(scanMobName) then
         return true
     else
@@ -739,16 +753,65 @@ function _LiteLite:VignetteMatches(scanMobName, info)
 
 end
 
+function _LiteLite:ShowScanWaypoint()
+    local wp = self.scanWaypoints and self.scanWaypoints[1]
+    if wp and TomTom then
+        wp.uid = TomTom:AddWaypoint(
+                    wp.uiMapID,
+                    wp.pos.x,
+                    wp.pos.y,
+                    {
+                        title = wp.info.name,
+                        persistent = nil,
+                        minimap = true,
+                        world = true
+                    })
+    end
+end
+
+function _LiteLite:ClearScanWaypoints()
+    if not self.scanWaypoints then return end
+
+    local objectGUIDs = {}
+    for _, vignetteGUID in ipairs(C_VignetteInfo.GetVignettes()) do
+        local info = C_VignetteInfo.GetVignetteInfo(vignetteGUID)
+        table.insert(objectGUIDs, info.objectGUID)
+    end
+    for i = #self.scanWaypoints, 1, -1 do
+        local wp = self.scanWaypoints[i]
+        if not tContains(objectGUIDs, wp.info.objectGUID) then
+            if wp.uid then
+                TomTom:ClearWaypoint(wp.uid)
+            end
+            table.remove(self.scanWaypoints, i)
+        end
+    end
+end
+
+function _LiteLite:AddScanWaypoint(info, pos, uiMapID)
+    self.scanWaypoints = self.scanWaypoints or {}
+    table.insert(self.scanWaypoints, 1, { info = info, pos = pos, uiMapID = uiMapID })
+    if self.db.autoScanWaypoint then
+        self:ShowScanWaypoint()
+    end
+end
+
 function _LiteLite:VIGNETTE_MINIMAP_UPDATED(id)
     local info = C_VignetteInfo.GetVignetteInfo(id)
     if not info or self.announcedMobGUID[info.objectGUID] then return end
 
+    local uiMapID = C_Map.GetBestMapForUnit('player')
+    if not uiMapID then return end
+
     for _, n in ipairs(self.db.scanMobNames) do
         if self:VignetteMatches(n, info) then
             self.announcedMobGUID[info.objectGUID] = info.name
-            local msg = format("Vignette %s found guid %s", info.name, info.objectGUID)
-            printf(msg)
+            local pos = C_VignetteInfo.GetVignettePosition(info.vignetteGUID, uiMapID)
+            printf(format("Vignette %s at (%.2f, %.2f)", info.name, pos.x*100, pos.y*100))
+            printf(format("  guid %s", info.objectGUID))
+            printf(format("  atlas %s", info.atlasName))
             PlaySound(11466)
+            self:AddScanWaypoint(info, pos, uiMapID)
         end
     end
 end
@@ -757,6 +820,7 @@ function _LiteLite:VIGNETTES_UPDATED()
     for _, id in ipairs(C_VignetteInfo.GetVignettes()) do
         self:VIGNETTE_MINIMAP_UPDATED(id)
     end
+    self:ClearScanWaypoints()
 end
 
 local function PrintQuestRewards(info)
