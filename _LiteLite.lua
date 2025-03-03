@@ -265,6 +265,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'panda-gems' or arg == 'pg' then
         PandaGem:Show()
         return true
+    elseif arg == 'scan-vignettes' or arg == 'sv' then
+        self:VIGNETTES_UPDATED()
+        return true
     end
 
     -- One argument options
@@ -756,6 +759,7 @@ end
 function _LiteLite:ShowScanWaypoint()
     local wp = self.scanWaypoints and self.scanWaypoints[1]
     if wp and TomTom then
+        -- printf('Adding waypoint: %s %s', wp.info.name, wp.info.objectGUID)
         wp.uid = TomTom:AddWaypoint(
                     wp.uiMapID,
                     wp.pos.x,
@@ -775,11 +779,13 @@ function _LiteLite:ClearScanWaypoints()
     local objectGUIDs = {}
     for _, vignetteGUID in ipairs(C_VignetteInfo.GetVignettes()) do
         local info = C_VignetteInfo.GetVignetteInfo(vignetteGUID)
-        table.insert(objectGUIDs, info.objectGUID)
+        objectGUIDs[info.objectGUID] = info
     end
     for i = #self.scanWaypoints, 1, -1 do
         local wp = self.scanWaypoints[i]
-        if not tContains(objectGUIDs, wp.info.objectGUID) then
+        if objectGUIDs[wp.info.objectGUID] == nil then
+            -- DevTools_Dump({ objectGUIDs })
+            -- printf('Removing waypoint: %s %s', wp.info.name, wp.info.objectGUID)
             if wp.uid then
                 TomTom:ClearWaypoint(wp.uid)
             end
@@ -820,7 +826,10 @@ function _LiteLite:VIGNETTES_UPDATED()
     for _, id in ipairs(C_VignetteInfo.GetVignettes()) do
         self:VIGNETTE_MINIMAP_UPDATED(id)
     end
-    self:ClearScanWaypoints()
+    -- Sometimes (like with S.C.R.A.P. Heap) a vignette is removed then
+    -- replaced with another with the same objectGUID (to change icon).
+    -- Delay the delete to give the new one a chance to spawn.
+    C_Timer.After(0.5, function () self:ClearScanWaypoints() end)
 end
 
 local function PrintQuestRewards(info)
