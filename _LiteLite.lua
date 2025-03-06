@@ -99,6 +99,28 @@ function _LiteLite:FlashScreen(seconds)
     C_Timer.After(seconds or 5, function () f.pulseAnim:Stop() f:Hide() end)
 end
 
+function _LiteLite:SetEditModeLayout(layout)
+    if tonumber(layout) then
+        C_EditMode.SetActiveLayout(tonumber(layout))
+        return
+    end
+
+    if layout == nil then
+        local w, h = GetPhysicalScreenSize()
+        layout = tostring(w) .. 'x' .. tostring(h)
+    end
+
+    local layoutData = C_EditMode.GetLayouts()
+
+    for i, layoutInfo in ipairs(layoutData.layouts) do
+        if layoutInfo.layoutName == layout then
+            C_EditMode.SetActiveLayout(i+2)
+            return
+        end
+    end
+end
+
+
 function _LiteLite:SpellCastAnnounce(spellID, spellName)
     if UnitIsPVP('player') or IsActiveBattlefieldArena() then
         return
@@ -316,6 +338,9 @@ function _LiteLite:SlashCommand(arg)
         return true
     elseif arg1 == 'auto-waypoint' or arg1 == 'aw' then
         self.db.autoScanWaypoint = StringToBoolean(arg2) or nil
+        return true
+    elseif arg1 == 'layout' then
+        self:SetEditModeLayout(arg2)
         return true
     end
 
