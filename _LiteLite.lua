@@ -958,6 +958,30 @@ local IgnoreMaps = {
     [2256] = true,      -- Azj-kahet Lower
 }
 
+local function FindChildZoneMaps(...)
+    local maps, todo = {}, { ... }
+
+    while #todo > 0 do
+        local mapID = table.remove(todo, 1)
+        local mapInfo = C_Map.GetMapInfo(mapID)
+        maps[mapID] = C_Map.GetMapInfo(mapID)
+        for _, info in ipairs(C_Map.GetMapChildrenInfo(mapID)) do
+            if maps[info.mapID] == nil then
+                table.insert(todo, info.mapID)
+            end
+        end
+    end
+
+    local wanted = {}
+    for _,info in pairs(maps) do
+        if info.mapType == Enum.UIMapType.Zone and not IgnoreMaps[info.mapID] then
+            table.insert(wanted, info.mapID)
+        end
+    end
+    table.sort(wanted)
+    return wanted
+end
+
 function _LiteLite:WorldQuestProcess(expansion, printFunc)
     local maps
     if not expansion or expansion == 'tww' then
@@ -973,16 +997,11 @@ function _LiteLite:WorldQuestProcess(expansion, printFunc)
     end
 
     local mapQuests = { }
-    for _, parentMapID in ipairs(maps) do
-        local childInfo = C_Map.GetMapChildrenInfo(parentMapID)
-        for _,mapInfo in pairs(childInfo or {}) do
-            if mapInfo.mapType == Enum.UIMapType.Zone and not IgnoreMaps[mapInfo.mapID] then
-                for _, questInfo in ipairs(C_TaskQuest.GetQuestsForPlayerByMapID(mapInfo.mapID)) do
-                    if C_QuestLog.IsWorldQuest(questInfo.questID) and questInfo.mapID == mapInfo.mapID then
-                        table.insert(mapQuests, questInfo)
-                        C_TaskQuest.RequestPreloadRewardData(questInfo.questID)
-                    end
-                end
+    for _, mapID in ipairs(FindChildZoneMaps(unpack(maps))) do
+        for _, questInfo in ipairs(C_TaskQuest.GetQuestsForPlayerByMapID(mapID)) do
+            if C_QuestLog.IsWorldQuest(questInfo.questID) and questInfo.mapID == mapID then
+                table.insert(mapQuests, questInfo)
+                C_TaskQuest.RequestPreloadRewardData(questInfo.questID)
             end
         end
     end
