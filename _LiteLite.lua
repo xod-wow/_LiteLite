@@ -430,6 +430,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('PLAYER_REGEN_ENABLED')
     self:RegisterEvent('LFG_LIST_JOINED_GROUP')
     self:RegisterEvent('PLAYER_INTERACTION_MANAGER_FRAME_SHOW')
+    self:RegisterEvent('PLAYER_LOGOUT')
 
     self:PageMultiBarBottomRight()
 
@@ -723,6 +724,7 @@ function _LiteLite:UpdateScanning()
         if WOW_PROJECT_ID == 1 then
             self:RegisterEvent("VIGNETTES_UPDATED")
             self:RegisterEvent("VIGNETTE_MINIMAP_UPDATED")
+            self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
         end
     else
         self.announcedMobGUID = table.wipe(self.announcedMobGUID or {})
@@ -730,6 +732,7 @@ function _LiteLite:UpdateScanning()
         if WOW_PROJECT_ID == 1 then
             self:UnregisterEvent("VIGNETTES_UPDATED")
             self:UnregisterEvent("VIGNETTE_MINIMAP_UPDATED")
+            self:UnregisterEvent("ZONE_CHANGED_NEW_AREA")
         end
     end
 end
@@ -798,13 +801,24 @@ function _LiteLite:ShowScanWaypoint()
     end
 end
 
+function _LiteLite:RemoveAllScanWaypoints()
+    while #self.scanWaypoints > 0 do
+        local wp = table.remove(self.scanWaypoints)
+        if wp.uid then
+            TomTom:ClearWaypoint(wp.uid)
+        end
+    end
+end
+
 function _LiteLite:ClearScanWaypoints()
     if not self.scanWaypoints then return end
 
     local objectGUIDs = {}
     for _, vignetteGUID in ipairs(C_VignetteInfo.GetVignettes()) do
         local info = C_VignetteInfo.GetVignetteInfo(vignetteGUID)
-        objectGUIDs[info.objectGUID] = info
+        if info then
+            objectGUIDs[info.objectGUID] = info
+        end
     end
     for i = #self.scanWaypoints, 1, -1 do
         local wp = self.scanWaypoints[i]
@@ -854,7 +868,15 @@ function _LiteLite:VIGNETTES_UPDATED()
     -- Sometimes (like with S.C.R.A.P. Heap) a vignette is removed then
     -- replaced with another with the same objectGUID (to change icon).
     -- Delay the delete to give the new one a chance to spawn.
-    C_Timer.After(0.5, function () self:ClearScanWaypoints() end)
+    C_Timer.After(1, function () self:ClearScanWaypoints() end)
+end
+
+function _LiteLite:ZONE_CHANGED_NEW_AREA()
+    self:VIGNETTES_UPDATED()
+end
+
+function _LiteLite:PLAYER_LOGOUT()
+    self:RemoveAllScanWaypoints()
 end
 
 local function PrintQuestRewards(info)
