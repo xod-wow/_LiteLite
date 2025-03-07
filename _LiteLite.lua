@@ -290,6 +290,12 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'scan-vignettes' or arg == 'sv' then
         self:VIGNETTES_UPDATED()
         return true
+    elseif arg == 'gallagio-garbage' or arg == 'gg' then
+        printf('Gallagio Garbage completed: %s', tostring(C_QuestLog.IsQuestFlaggedCompleted(87007)))
+        return true
+    elseif arg == 'drive' then
+        self:ShowDRIVE()
+        return true
     end
 
     -- One argument options
@@ -2221,5 +2227,16 @@ function _LiteLite:PageMultiBarBottomRight()
     -- at all about the stance bar.
     -- hooksecurefunc(StanceBar, 'Update', Update)
     -- Update()
+end
+
+local DRIVE_TREE = 1056
+
+function _LiteLite:ShowDRIVE()
+    C_AddOns.LoadAddOn("Blizzard_GenericTraitUI")
+    GenericTraitFrame:SetTreeID(DRIVE_TREE)
+    GenericTraitFrame:Show()
+    GenericTraitFrame:SetParent(UIParent)
+    GenericTraitFrame:ClearAllPoints()
+    GenericTraitFrame:SetPoint("CENTER")
 end
 
