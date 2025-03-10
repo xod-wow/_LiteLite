@@ -964,8 +964,23 @@ local IgnoreMaps = {
     [2256] = true,      -- Azj-kahet Lower
 }
 
-local function FindChildZoneMaps(...)
-    local maps, todo = {}, { ... }
+function _LiteLite:FindChildZoneMaps(expansion)
+    local todo
+    if not expansion or expansion == 'tww' then
+        todo = { 2274 }
+    elseif expansion == 'df' then
+        todo = { 1978 }
+    elseif expansion == 'sl' then
+        todo = { 1550 }
+    elseif expansion == 'bfa' then
+        todo = { 875, 876 }
+    elseif tonumber(expansion) then
+        todo = { tonumber(expansion) }
+    else
+        return {}
+    end
+
+    local maps = {}
 
     while #todo > 0 do
         local mapID = table.remove(todo, 1)
@@ -989,21 +1004,8 @@ local function FindChildZoneMaps(...)
 end
 
 function _LiteLite:WorldQuestProcess(expansion, printFunc)
-    local maps
-    if not expansion or expansion == 'tww' then
-        maps = { 2274 }
-    elseif expansion == 'df' then
-        maps = { 1978 }
-    elseif expansion == 'sl' then
-        maps = { 1550 }
-    elseif expansion == 'bfa' then
-        maps = { 875, 876 }
-    else
-        return
-    end
-
     local mapQuests = { }
-    for _, mapID in ipairs(FindChildZoneMaps(unpack(maps))) do
+    for _, mapID in ipairs(self:FindChildZoneMaps(expansion)) do
         for _, questInfo in ipairs(C_TaskQuest.GetQuestsForPlayerByMapID(mapID)) do
             if C_QuestLog.IsWorldQuest(questInfo.questID) and questInfo.mapID == mapID then
                 table.insert(mapQuests, questInfo)
@@ -2106,8 +2108,6 @@ function _LiteLite:SetupHearthstoneButton()
         end)
 end
 
-local delveMaps = { 2248, 2214, 2215, 2255 }
-
 -- {
 --  atlasName="delves-regular",
 --  description="Delve",
@@ -2143,12 +2143,12 @@ local delveMaps = { 2248, 2214, 2215, 2255 }
 -- }
 
 function _LiteLite:ListDelves(bountifulOnly)
-    for _, mapID in ipairs(delveMaps) do
+    for _, mapID in ipairs(self:FindChildZoneMaps('tww')) do
         local mapInfo = C_Map.GetMapInfo(mapID)
         local delveList = C_AreaPoiInfo.GetDelvesForMap(mapID)
         for _, poiID in ipairs(delveList) do
             local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
-            if poiInfo.isPrimaryMapForPOI then
+            if poiInfo.isPrimaryMapForPOI or mapID == 2346 then
                 local name = poiInfo.name
                 if poiInfo.atlasName == 'delves-bountiful' then
                     name = GOLD_FONT_COLOR:WrapTextInColorCode(name)
