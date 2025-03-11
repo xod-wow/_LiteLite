@@ -961,6 +961,7 @@ local function PrintQuest(info)
 end
 
 local IgnoreMaps = {
+    [2213] = true,      -- City of Threads
     [2256] = true,      -- Azj-kahet Lower
 }
 
