@@ -962,6 +962,7 @@ end
 
 local IgnoreMaps = {
     [2213] = true,      -- City of Threads
+    [2216] = true,      -- City of Threads - Lower
     [2256] = true,      -- Azj-kahet Lower
 }
 
