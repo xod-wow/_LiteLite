@@ -75,6 +75,10 @@ local function Embiggen(f)
     f:SetScale(1.25)
 end
 
+function _LiteLite:SmallerPetHitText()
+    PetHitIndicator:SetScale(0.5)
+end
+
 function _LiteLite:BiggerFrames()
     QuestFrame:HookScript('OnShow', Embiggen)
     GossipFrame:HookScript('OnShow', Embiggen)
@@ -437,10 +441,12 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('LFG_LIST_JOINED_GROUP')
     self:RegisterEvent('PLAYER_INTERACTION_MANAGER_FRAME_SHOW')
     self:RegisterEvent('PLAYER_LOGOUT')
+    self:RegisterEvent('PLAYER_SPECIALIZATION_CHANGED')
 
     self:PageMultiBarBottomRight()
 
     self:BiggerFrames()
+    self:SmallerPetHitText()
     self:OtherAddonProfiles()
     self:MuteDragonridingMounts()
     self:SellJunkButton()
@@ -456,6 +462,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:SetBindMacro()
     self:RemixFix()
     self:SetupHearthstoneButton()
+    self:CheckCitrines()
 end
 
 function _LiteLite:RemixFix()
@@ -1827,7 +1834,7 @@ function _LiteLiteLootMixin:GetData()
     local data = {}
     for i = 1, GetNumGuildNews() do
         local info = C_GuildInfo.GetGuildNewsInfo(i)
-        if info and info.newsType == NEWS_ITEM_LOOTED then
+        if info and info.newsType == NEWS_ITEM_LOOTED and info.whatText then
             local level = GetDetailedItemLevelInfo(info.whatText)
             local invType, subType, _, equipSlot = select(6, GetItemInfo(info.whatText))
             if equipSlot ~= '' and level and level >= ( self.minlevel or 0 ) then
@@ -2242,3 +2249,45 @@ function _LiteLite:ShowDRIVE()
     GenericTraitFrame:SetPoint("CENTER")
 end
 
+local HealerCitrines = { 228643, 228644 }
+
+function _LiteLite:CheckCitrines()
+    if select(2, UnitClass('player')) ~= 'MONK' then return end
+    if GetSpecialization() == 2 then return end
+
+    local link
+
+    for _, inventorySlot in ipairs({ 11, 12 }) do
+        if GetInventoryItemID('player', inventorySlot) == 228411 then
+            link = GetInventoryItemLink('player', inventorySlot)
+            break
+        end
+    end
+
+    if not link then return end
+
+    local gemID1, gemID2, gemID3 = link:match('item:%d+:%d*:(%d*):(%d*):(%d*)')
+
+
+    if tContains(HealerCitrines, tonumber(gemID1))
+    or tContains(HealerCitrines, tonumber(gemID2))
+    or tContains(HealerCitrines, tonumber(gemID3)) then
+        local cc = ContinuableContainer:Create()
+        local gem1 = Item:CreateFromItemID(tonumber(gemID1))
+        local gem2 = Item:CreateFromItemID(tonumber(gemID2))
+        local gem3 = Item:CreateFromItemID(tonumber(gemID3))
+        cc:AddContinuables({ gem1, gem2, gem3 })
+        cc:ContinueOnLoad(
+            function ()
+                printf('FIX YOUR GEMS NUBBIN')
+                printf('1. %s', gem1:GetItemLink())
+                printf('2. %s', gem2:GetItemLink())
+                printf('3. %s', gem3:GetItemLink())
+            self:FlashScreen(10)
+            end)
+    end
+end
+
+function _LiteLite:PLAYER_SPECIALIZATION_CHANGED()
+    self:CheckCitrines()
+end
