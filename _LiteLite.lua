@@ -347,7 +347,7 @@ function _LiteLite:SlashCommand(arg)
         self:ListDelves(arg2)
         return true
     elseif arg1 == 'auto-waypoint' or arg1 == 'aw' then
-        self.db.autoScanWaypoint = StringToBoolean(arg2) or nil
+        self.db.autoScanWaypoint = StringToBoolean(arg2 or 0) or nil
         return true
     elseif arg1 == 'layout' then
         self:SetEditModeLayout(arg2)
@@ -815,9 +815,9 @@ function _LiteLite:ShowScanWaypoint()
 end
 
 function _LiteLite:RemoveAllScanWaypoints()
-    while #self.scanWaypoints > 0 do
+    while self.scanWaypoints and #self.scanWaypoints > 0 do
         local wp = table.remove(self.scanWaypoints)
-        if wp.uid then
+        if wp.uid and TomTom then
             TomTom:ClearWaypoint(wp.uid)
         end
     end
