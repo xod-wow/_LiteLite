@@ -27,15 +27,6 @@ local PlayerMacroTemplate =
 /cast [mod:alt][@player] {1}
 ]]
 
-local function maybescape(str)
-    if str:sub(1,1) == '^' or str:sub(-1) == '$' then
-        return str
-    else
-        -- cut-and-paste I have no idea how this works
-        return str:gsub('[%-%.%+%[%]%(%)%$%^%%%?%*]', '%%%1')
-    end
-end
-
 local ScanTooltip = CreateFrame("GameTooltip", "_LiteLiteScanTooltip", nil, "GameTooltipTemplate")
 do
     ScanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
@@ -352,6 +343,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'layout' then
         self:SetEditModeLayout(arg2)
         return true
+    elseif arg1 == 'tinspect' then
+        self:TableInspect(arg2)
+        return true
     end
 
     -- Two argument options
@@ -500,9 +494,9 @@ function _LiteLite:CHAT_MSG_MONSTER_EMOTE(msg, name)
 end
 
 function _LiteLite:CHAT_MSG_LOOT(...)
-    if select(8, GetInstanceInfo()) == 2657 then
+    if select(8, GetInstanceInfo()) == 2769 then
         local msg = ...
-        if msg and msg:find('Reins of the Sureki Skyrazor', nil, true) then
+        if msg and msg:find('Prototype A.S.M.R.', nil, true) then
             PlaySound(11466)
             self:FlashScreen(10)
             msg = ORANGE_FONT_COLOR:WrapTextInColorCode(msg)
@@ -600,14 +594,17 @@ end
 function _LiteLite:SearchGlobalKeys(text)
     if not text then return end
 
-    text = maybescape(text:lower())
+    text = text:lower()
 
     printf("Searching global keys for %s", tostring(text))
 
     local lines = {}
     for k, v in pairs(_G) do
-        if type(k) == 'string' and k:lower():find(text) then
-            table.insert(lines, string.format("%s = %s", k, tostring(v)))
+        if type(k) == 'string' then
+            local allowPattern = text:sub(1,1) == '^' or text:sub(-1) == '$'
+            if k:lower():find(text, nil, not allowPattern) then
+                table.insert(lines, string.format("%s = %s", k, tostring(v)))
+            end
         end
     end
 
@@ -619,19 +616,33 @@ end
 function _LiteLite:SearchGlobalValues(text)
     if not text then return end
 
-    text = maybescape(text:lower())
+    text = text:lower()
 
     printf("Searching global values for %s", tostring(text))
 
     local lines = {}
     for k, v in pairs(_G) do
-        if type(k) == 'string' and type(v) == 'string' and v:lower():find(text) then
-            table.insert(lines, string.format("%s = %s", k, tostring(v)))
+        if type(k) == 'string' and type(v) == 'string' then
+            local allowPattern = text:sub(1,1) == '^' or text:sub(-1) == '$'
+            if v:lower():find(text, nil, not allowPattern) then
+                table.insert(lines, string.format("%s = %s", k, tostring(v)))
+            end
         end
     end
     table.sort(lines)
     _LiteLiteText.EditBox:SetText(table.concat(lines, "\n"))
     _LiteLiteText:Show()
+end
+
+function _LiteLite:TableInspect(cmd)
+    if not LM then return end
+    local f = loadstring('return ' .. cmd)
+    if f then
+        local data = f()
+        local text = LM.TableToString(data)
+        _LiteLiteText.EditBox:SetText(text)
+        _LiteLiteText:Show()
+    end
 end
 
 function _LiteLite:CopyChat(sourceFrame)
@@ -757,8 +768,7 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
     local npcID = select(6, strsplit('-', UnitGUID(unit)))
 
     for _, n in ipairs(self.db.scanMobNames) do
-        n = maybescape(n)
-        if ( name and name:find(n) ) or
+        if ( name and name:find(n, nil, true) ) or
            ( npcID and tonumber(n) == tonumber(npcID) ) then
             if not self.announcedMobGUID[guid] then
                 self.announcedMobGUID[guid] = name
@@ -781,15 +791,15 @@ local badAtlasNames = {
 }
 
 function _LiteLite:VignetteMatches(scanMobName, info)
-    scanMobName = maybescape(scanMobName):lower()
+    scanMobName = scanMobName:lower()
     local guidType = strsplit('-', info.objectGUID)
-    if info.atlasName:lower():find(scanMobName) then
+    if info.atlasName:lower():find(scanMobName, nil, true) then
         return true
     elseif scanMobName == 'vignette' then
         return not badAtlasNames[info.atlasName]
     elseif guidType and guidType:lower() == scanMobName then
         return not badAtlasNames[info.atlasName]
-    elseif info.name and info.name:lower():find(scanMobName) then
+    elseif info.name and info.name:lower():find(scanMobName, nil, true) then
         return true
     else
         return false
@@ -2279,6 +2289,7 @@ function _LiteLite:CheckCitrines()
         cc:AddContinuables({ gem1, gem2, gem3 })
         cc:ContinueOnLoad(
             function ()
+                UIErrorsFrame:AddMessage('FIX YOUR GEMS NUBBIN')
                 printf('FIX YOUR GEMS NUBBIN')
                 printf('1. %s', gem1:GetItemLink())
                 printf('2. %s', gem2:GetItemLink())
