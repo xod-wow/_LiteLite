@@ -1534,18 +1534,22 @@ local function GetActionMacroInfo(actionID)
     return GetMacroInfo(macroName)
 end
 
+-- JSON strictly can't have gaps in an array, and Blizzard's serializer isn't
+-- smart enough to turn it into a hash without string-ifying the keys
 local function SpecConfigToString()
-    local ser = LibStub('AceSerializer-3.0', true)
-    if not ser then return "" end
     local map = {}
+
+    map.actions = {}
+
     for i = 1, 180 do
         if GetActionInfo(i) then
-            map[i] = { GetActionInfo(i) }
-            if map[i][1] == "macro" then
+            local index = tostring(i)
+            map.actions[index] = { GetActionInfo(i) }
+            if map.actions[index][1] == "macro" then
                 local name, icon, text = GetActionMacroInfo(i)
                 if name then
                     if text:find('#showtooltip') then icon = 134400 end
-                    map[i][3] = name
+                    map.actions[index][3] = name
                     map.macros = map.macros or {}
                     map.macros[name] = { name, icon, text }
                 end
@@ -1575,7 +1579,8 @@ local function SpecConfigToString()
     if Clique and Clique.db then
         map.clique = CopyTable(Clique.db.profile.bindings)
     end
-    return ser:Serialize(map)
+
+    return C_EncodingUtil.SerializeJSON(map)
 end
 
 local function PickupFlyoutByActionID(id)
@@ -1624,11 +1629,8 @@ local function SetMacro(info)
 end
 
 local function SpecConfigFromString(text)
-    local ser = LibStub('AceSerializer-3.0', true)
-    if not ser then return end
-
-    local isValid, map = ser:Deserialize(text)
-    if not isValid then return end
+    local map = C_EncodingUtil.DeserializeJSON(text)
+    if not map then return end
 
     printf('Loading macros')
     if map.macros then
@@ -1640,7 +1642,8 @@ local function SpecConfigFromString(text)
 
     printf('Setting action bar actions')
     for i = 1, 180 do
-        SetAction(i, map[i])
+        local index = tostring(i)
+        SetAction(i, map.actions[index])
     end
 
     printf('Setting up loadouts')
