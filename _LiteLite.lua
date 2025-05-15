@@ -200,7 +200,7 @@ function _LiteLite:AutoEquipsetIcons()
 end
 
 function _LiteLite:SetEquipsetIcon(n, arg1)
-    n = tonumber(n or PaperDollEquipmentManagerPane.selectedSetID)
+    n = tonumber(n or PaperDollFrame.EquipmentManagerPane.selectedSetID)
 
     if n == nil then
         return
