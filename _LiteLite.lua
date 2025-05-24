@@ -2270,6 +2270,8 @@ end
 local HealerCitrines = { 228643, 228644 }
 
 function _LiteLite:CheckCitrines()
+    if WOW_PROJECT_ID ~= 1 then return end
+
     if select(2, UnitClass('player')) ~= 'MONK' then return end
     if GetSpecialization() == 2 then return end
 
