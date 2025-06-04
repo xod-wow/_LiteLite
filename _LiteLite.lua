@@ -285,11 +285,11 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'scan-vignettes' or arg == 'sv' then
         self:VIGNETTES_UPDATED()
         return true
-    elseif arg == 'gallagio-garbage' or arg == 'gg' then
-        printf('Gallagio Garbage completed: %s', tostring(C_QuestLog.IsQuestFlaggedCompleted(87007)))
-        return true
     elseif arg == 'drive' then
         self:ShowDRIVE()
+        return true
+    elseif arg == 'cagepets' or arg == 'cp' then
+        self:CageTriplicatePets()
         return true
     end
 
@@ -2311,4 +2311,21 @@ end
 
 function _LiteLite:PLAYER_SPECIALIZATION_CHANGED()
     self:CheckCitrines()
+end
+
+-- Cage any battle pets we have 3 of
+function _LiteLite:CageTriplicatePets()
+    local counts = {}
+
+    -- Assumption is that the pet indexes are ordered by level
+    -- with the highest first, so we will always cage the lowest
+    -- level one.
+
+    for i = 1, C_PetJournal.GetNumPets() do
+       local info = { C_PetJournal.GetPetInfoByIndex(i) }
+       counts[info[2]] = ( counts[info[2]] or 0 ) + 1
+       if counts[info[2]] > 2 and info[16] and info[1] then
+          C_PetJournal.CagePetByID(info[1])
+       end
+    end
 end
