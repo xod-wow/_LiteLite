@@ -1789,7 +1789,7 @@ function _LiteLite:HideActionButtonEffects()
     hooksecurefunc(ActionButtonSpellAlertManager, 'ShowAlert',
         function (_, b)
             -- Bad attempt to restrict to ActionBarActionButtonMixin
-            if b.HasAction then
+            if b.HasAction and b.SpellActivationAlert then
                 b.SpellActivationAlert.ProcStartAnim:Stop()
                 b.SpellActivationAlert.ProcStartFlipbook:SetAlpha(0)
                 b.SpellActivationAlert.ProcLoop:Play()
