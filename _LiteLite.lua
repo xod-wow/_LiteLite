@@ -430,6 +430,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('ENCOUNTER_START')
     self:RegisterEvent('ENCOUNTER_END')
     self:RegisterEvent('CHAT_MSG_COMBAT_XP_GAIN')
+    self:RegisterEvent('CHAT_MSG_COMBAT_FACTION_CHANGE')
     self:RegisterEvent('TRAIT_CONFIG_UPDATED')
     self:RegisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
     self:RegisterEvent('PLAYER_REGEN_ENABLED')
@@ -1200,6 +1201,32 @@ function _LiteLite:CHAT_MSG_COMBAT_XP_GAIN()
         local f = Chat_GetChatFrame(i)
         if tContains(f.messageTypeList, 'COMBAT_XP_GAIN') then
             f:AddMessage(printTag .. msg, r, g, b)
+        end
+    end
+end
+
+local function GetFactionNumbersByName(name)
+    for i = 1, C_Reputation.GetNumFactions() do
+        local data = C_Reputation.GetFactionDataByIndex(i)
+        if data.isHeader == false and data.name == name then
+            if C_Reputation.IsFactionParagon(data.factionID) then
+                local currentValue, threshold = C_Reputation.GetFactionParagonInfo(data.factionID)
+                return currentValue % threshold, threshold
+            else
+                return data.currentStanding, data.currentReactionThreshold
+            end
+        end
+    end
+end
+
+function _LiteLite:CHAT_MSG_COMBAT_FACTION_CHANGE(msg)
+    local factionName, amount = msg:match('with (.-) increased by (%d+)')
+    if factionName and amount then
+        amount = tonumber(amount)
+        local cur, max = GetFactionNumbersByName(factionName)
+        if cur then
+            local txt = string.format('%s +%d -> %d/%d', factionName, amount,  cur, max)
+            printf(BLUE_FONT_COLOR:WrapTextInColorCode(txt))
         end
     end
 end
