@@ -892,13 +892,14 @@ function _LiteLite:ScanMobAddFromVignette(id)
             printf(format("  atlas %s", info.atlasName))
             printf(format("  autoClear %s", tostring(autoClear)))
             PlaySound(11466)
-            self.scannedGUID[info.objectGUID] = {
+            local data = {
                 name = info.name,
                 uiMapID = uiMapID,
                 info = info,
                 pos = pos,
                 autoClear = autoClear,
             }
+            self.scannedGUID[info.objectGUID] = data
             if self.db.autoScanWaypoint then
                 self:AddWaypoint(data)
                 TomTom:SetClosestWaypoint()
