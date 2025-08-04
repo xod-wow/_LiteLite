@@ -365,7 +365,8 @@ function _LiteLite:SlashCommand(arg)
         elseif arg2 == 'clear' then
             self:ScanMobClear()
         elseif arg2 == 'way' then
-            self:ShowScanWaypoint()
+            self:ShowScanWaypoints()
+            TomTom:SetClosestWaypoint()
         end
         self:ScanMobList()
         return true
@@ -747,7 +748,7 @@ end
 
 function _LiteLite:UpdateScanning()
     if next(self.db.scanMobNames or {}) then
-        self.announcedMobGUID = self.announcedMobGUID or {}
+        self.scannedGUID = self.scannedGUID or {}
         self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
         if WOW_PROJECT_ID == 1 then
             self:RegisterEvent("VIGNETTES_UPDATED")
@@ -755,7 +756,8 @@ function _LiteLite:UpdateScanning()
             self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
         end
     else
-        self.announcedMobGUID = table.wipe(self.announcedMobGUID or {})
+        self:RemoveAllScanWaypoints()
+        self.scannedGUID = table.wipe(self.scannedGUID or {})
         self:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
         if WOW_PROJECT_ID == 1 then
             self:UnregisterEvent("VIGNETTES_UPDATED")
@@ -774,8 +776,8 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
     for _, n in ipairs(self.db.scanMobNames) do
         if ( name and name:find(n, nil, true) ) or
            ( npcID and tonumber(n) == tonumber(npcID) ) then
-            if not self.announcedMobGUID[guid] then
-                self.announcedMobGUID[guid] = name
+            if not self.scannedGUID[guid] then
+                self.scannedGUID[guid] = { name = name }
                 local msg = format("Nameplate %s found", name)
                 printf(msg)
                 PlaySound(11466)
@@ -811,34 +813,43 @@ function _LiteLite:VignetteMatches(scanMobName, info)
 
 end
 
-function _LiteLite:ShowScanWaypoint()
-    local wp = self.scanWaypoints and self.scanWaypoints[1]
-    if wp and TomTom then
-        -- printf('Adding waypoint: %s %s', wp.info.name, wp.info.objectGUID)
-        wp.uid = TomTom:AddWaypoint(
-                    wp.uiMapID,
-                    wp.pos.x,
-                    wp.pos.y,
-                    {
-                        title = wp.info.name,
-                        persistent = nil,
-                        minimap = true,
-                        world = true
-                    })
-    end
+function _LiteLite:AddWaypoint(data)
+    data.tomTomWaypoint =
+        TomTom:AddWaypoint(
+            data.uiMapID,
+            data.pos.x,
+            data.pos.y,
+            {
+                title = data.name,
+                persistent = nil,
+                minimap = true,
+                world = true
+            })
 end
 
-function _LiteLite:RemoveAllScanWaypoints()
-    while self.scanWaypoints and #self.scanWaypoints > 0 do
-        local wp = table.remove(self.scanWaypoints)
-        if wp.uid and TomTom then
-            TomTom:ClearWaypoint(wp.uid)
+function _LiteLite:ShowScanWaypoints()
+    if not TomTom then return end
+
+    for _, data in pairs(self.scannedGUID) do
+        if data.pos and not data.tomTomWaypoint then
+            self:AddWaypoint(data)
         end
     end
 end
 
-function _LiteLite:ClearScanWaypoints()
-    if not self.scanWaypoints then return end
+function _LiteLite:RemoveAllScanWaypoints()
+    if TomTom then
+        for objectGUID, data in pairs(self.scannedGUID) do
+            print(format("Clearing %s (%s)", objectGUID, data.name))
+            TomTom:ClearWaypoint(data.tomTomWaypoint)
+        end
+    end
+end
+
+function _LiteLite:PruneScanWaypoints()
+    if not self.scannedGUID or not TomTom then
+        return
+    end
 
     local objectGUIDs = {}
     for _, vignetteGUID in ipairs(C_VignetteInfo.GetVignettes()) do
@@ -847,55 +858,70 @@ function _LiteLite:ClearScanWaypoints()
             objectGUIDs[info.objectGUID] = info
         end
     end
-    for i = #self.scanWaypoints, 1, -1 do
-        local wp = self.scanWaypoints[i]
-        if objectGUIDs[wp.info.objectGUID] == nil then
-            -- DevTools_Dump({ objectGUIDs })
-            -- printf('Removing waypoint: %s %s', wp.info.name, wp.info.objectGUID)
-            if wp.uid then
-                TomTom:ClearWaypoint(wp.uid)
+    for objectGUID, data in pairs(self.scannedGUID) do
+        if objectGUIDs[objectGUID] == nil then
+            if data.autoClear and data.tomTomWaypoint then
+                print(format("Clearing %s (%s)", objectGUID, data.name))
+                TomTom:ClearWaypoint(data.tomTomWaypoint)
+                data.tomTomWaypoint = nil
             end
-            table.remove(self.scanWaypoints, i)
         end
     end
 end
 
-function _LiteLite:AddScanWaypoint(info, pos, uiMapID)
-    self.scanWaypoints = self.scanWaypoints or {}
-    table.insert(self.scanWaypoints, 1, { info = info, pos = pos, uiMapID = uiMapID })
-    if self.db.autoScanWaypoint then
-        self:ShowScanWaypoint()
-    end
-end
-
-function _LiteLite:VIGNETTE_MINIMAP_UPDATED(id)
+function _LiteLite:ScanMobAddFromVignette(id)
     local info = C_VignetteInfo.GetVignetteInfo(id)
-    if not info or self.announcedMobGUID[info.objectGUID] then return end
+    if not info then
+        return
+    end
+    if self.scannedGUID[info.objectGUID] then
+        return
+    end
 
     local uiMapID = C_Map.GetBestMapForUnit('player')
     if not uiMapID then return end
 
+    local updateWaypoint
     for _, n in ipairs(self.db.scanMobNames) do
         if self:VignetteMatches(n, info) then
-            self.announcedMobGUID[info.objectGUID] = info.name
             local pos = C_VignetteInfo.GetVignettePosition(info.vignetteGUID, uiMapID)
+            local autoClear = ( info.objectGUID:sub(1, 10) ~= 'GameObject' )
             printf(format("Vignette %s at (%.2f, %.2f)", info.name, pos.x*100, pos.y*100))
             printf(format("  guid %s", info.objectGUID))
             printf(format("  atlas %s", info.atlasName))
+            printf(format("  autoClear %s", tostring(autoClear)))
             PlaySound(11466)
-            self:AddScanWaypoint(info, pos, uiMapID)
+            self.scannedGUID[info.objectGUID] = {
+                name = info.name,
+                uiMapID = uiMapID,
+                info = info,
+                pos = pos,
+                autoClear = autoClear,
+            }
+            if self.db.autoScanWaypoint then
+                self:AddWaypoint(data)
+                TomTom:SetClosestWaypoint()
+            end
         end
     end
 end
 
+function _LiteLite:VIGNETTE_MINIMAP_UPDATED(id)
+    self:ScanMobAddFromVignette(id)
+end
+
 function _LiteLite:VIGNETTES_UPDATED()
     for _, id in ipairs(C_VignetteInfo.GetVignettes()) do
-        self:VIGNETTE_MINIMAP_UPDATED(id)
+        self:ScanMobAddFromVignette(id)
     end
     -- Sometimes (like with S.C.R.A.P. Heap) a vignette is removed then
     -- replaced with another with the same objectGUID (to change icon).
     -- Delay the delete to give the new one a chance to spawn.
-    C_Timer.After(1, function () self:ClearScanWaypoints() end)
+    C_Timer.After(1,
+        function ()
+            self:PruneScanWaypoints()
+            TomTom:SetClosestWaypoint()
+        end)
 end
 
 function _LiteLite:ZONE_CHANGED_NEW_AREA()
