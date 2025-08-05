@@ -829,8 +829,9 @@ function _LiteLite:AddWaypoint(data)
 end
 
 function _LiteLite:ShowScanWaypoints()
-    if not TomTom then return end
-
+    if not self.scannedGUID or not TomTom then
+        return
+    end
     for _, data in pairs(self.scannedGUID) do
         if data.pos and not data.tomTomWaypoint then
             self:AddWaypoint(data)
@@ -839,11 +840,12 @@ function _LiteLite:ShowScanWaypoints()
 end
 
 function _LiteLite:RemoveAllScanWaypoints()
-    if TomTom then
-        for objectGUID, data in pairs(self.scannedGUID) do
-            print(format("Clearing %s (%s)", objectGUID, data.name))
-            TomTom:ClearWaypoint(data.tomTomWaypoint)
-        end
+    if not self.scannedGUID or not TomTom then
+        return
+    end
+    for objectGUID, data in pairs(self.scannedGUID) do
+        print(format("Clearing %s (%s)", objectGUID, data.name))
+        TomTom:ClearWaypoint(data.tomTomWaypoint)
     end
 end
 
