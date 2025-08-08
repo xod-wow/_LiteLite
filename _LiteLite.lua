@@ -1215,9 +1215,12 @@ local function GetFactionNumbersByName(name)
             if C_Reputation.IsFactionParagon(data.factionID) then
                 local currentValue, threshold = C_Reputation.GetFactionParagonInfo(data.factionID)
                 return currentValue % threshold, threshold
-            else
-                return data.currentStanding, data.currentReactionThreshold
             end
+            local majorFactionData = C_MajorFactions.GetMajorFactionData(data.factionID)
+            if majorFactionData then
+                return majorFactionData.renownReputationEarned, majorFactionData.renownLevelThreshold
+            end
+            return data.currentStanding, data.nextReactionThreshold
         end
     end
 end
