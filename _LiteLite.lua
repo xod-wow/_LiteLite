@@ -849,6 +849,36 @@ function _LiteLite:RemoveAllScanWaypoints()
     end
 end
 
+function _LiteLite:IsCloseWaypoint(data)
+    if not data.tomTomWaypoint then
+        return false
+    end
+
+    -- I don't know how big the minimap is, pretty big?
+    local dist = TomTom:GetDistanceToWaypoint(data.tomTomWaypoint)
+    if dist and dist < 250 then
+        return true
+    end
+
+    return false
+end
+
+function _LiteLite:ShouldClear(data)
+    if not data.tomTomWaypoint then
+        return false
+    elseif not TomTom:IsValidWaypoint(data.tomTomWaypoint) then
+        return true
+    elseif data.autoClear == true then
+        return true
+    elseif type(data.autoClear) == 'number' then
+        return GetTime() >= data.autoClear
+    elseif self:IsCloseWaypoint(data) then
+        return true
+    else
+        return false
+    end
+end
+
 function _LiteLite:PruneScanWaypoints()
     if not self.scannedGUID or not TomTom then
         return
@@ -863,10 +893,11 @@ function _LiteLite:PruneScanWaypoints()
     end
     for objectGUID, data in pairs(self.scannedGUID) do
         if objectGUIDs[objectGUID] == nil then
-            if data.autoClear and data.tomTomWaypoint then
+            if self:ShouldClear(data) then
                 print(format("Clearing %s (%s)", objectGUID, data.name))
-                TomTom:ClearWaypoint(data.tomTomWaypoint)
+                local wp = data.tomTomWaypoint
                 data.tomTomWaypoint = nil
+                TomTom:ClearWaypoint(wp)
             end
         end
     end
@@ -884,24 +915,27 @@ function _LiteLite:ScanMobAddFromVignette(id)
     local uiMapID = C_Map.GetBestMapForUnit('player')
     if not uiMapID then return end
 
-    local updateWaypoint
     for _, n in ipairs(self.db.scanMobNames) do
         if self:VignetteMatches(n, info) then
             local pos = C_VignetteInfo.GetVignettePosition(info.vignetteGUID, uiMapID)
-            local autoClear = ( info.objectGUID:sub(1, 10) ~= 'GameObject' )
-            printf(format("Vignette %s at (%.2f, %.2f)", info.name, pos.x*100, pos.y*100))
-            printf(format("  guid %s", info.objectGUID))
-            printf(format("  atlas %s", info.atlasName))
-            printf(format("  autoClear %s", tostring(autoClear)))
+            local data = CopyTable(info)
+            data.uiMapID = uiMapID
+            data.pos = pos
+            if data.onWorldMap and not data.onMinimap then
+                data.autoClear = true
+            elseif info.atlasName == 'VignetteKillElite' then
+                data.autoClear = true
+            elseif info.objectGUID:sub(1, 10) == 'GameObject' then
+                data.autoClear = GetTime() + 300
+            else
+                data.autoClear = false
+            end
+            printf(format("Vignette %s at (%.2f, %.2f)", data.name, pos.x*100, pos.y*100))
+            printf(format("  guid %s", data.objectGUID))
+            printf(format("  atlas %s", data.atlasName))
+            printf(format("  autoClear %s", tostring(data.autoClear)))
             PlaySound(11466)
-            local data = {
-                name = info.name,
-                uiMapID = uiMapID,
-                info = info,
-                pos = pos,
-                autoClear = autoClear,
-            }
-            self.scannedGUID[info.objectGUID] = data
+            self.scannedGUID[data.objectGUID] = data
             if self.db.autoScanWaypoint then
                 self:AddWaypoint(data)
                 TomTom:SetClosestWaypoint()
@@ -2231,13 +2265,18 @@ end
 --  highlightWorldQuestsOnHover=false
 -- }
 
+local DelvePrimaryOnlyMaps = {
+    [2346]  = true,     -- Undermine
+    [2371]  = true,     -- K'aresh
+}
+
 function _LiteLite:ListDelves(bountifulOnly)
     for _, mapID in ipairs(self:FindChildZoneMaps('tww')) do
         local mapInfo = C_Map.GetMapInfo(mapID)
         local delveList = C_AreaPoiInfo.GetDelvesForMap(mapID)
         for _, poiID in ipairs(delveList) do
             local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
-            if poiInfo.isPrimaryMapForPOI or mapID == 2346 then
+            if poiInfo.isPrimaryMapForPOI or DelvePrimaryOnlyMaps[mapID] then
                 local name = poiInfo.name
                 if poiInfo.atlasName == 'delves-bountiful' then
                     name = GOLD_FONT_COLOR:WrapTextInColorCode(name)
