@@ -1279,13 +1279,19 @@ local function GetFactionNumbersByName(name)
         if data and data.isHeader == false and data.name == name then
             if C_Reputation.IsFactionParagon(data.factionID) then
                 local currentValue, threshold = C_Reputation.GetFactionParagonInfo(data.factionID)
-                return currentValue % threshold, threshold
+                return 'P x' .. math.floor(currentValue / threshold),
+                       currentValue % threshold,
+                       threshold
             end
             local majorFactionData = C_MajorFactions.GetMajorFactionData(data.factionID)
             if majorFactionData then
-                return majorFactionData.renownReputationEarned, majorFactionData.renownLevelThreshold
+                return RENOWN_LEVEL_LABEL:format(majorFactionData.renownLevel),
+                       majorFactionData.renownReputationEarned,
+                       majorFactionData.renownLevelThreshold
             end
-            return data.currentStanding, data.nextReactionThreshold
+            return _G['FACTION_STANDING_LABEL'..data.reaction],
+                   data.currentStanding,
+                   data.nextReactionThreshold
         end
     end
 end
@@ -1294,9 +1300,9 @@ function _LiteLite:CHAT_MSG_COMBAT_FACTION_CHANGE(msg)
     local factionName, amount = msg:match('with (.-) increased by (%d+)')
     if factionName and amount then
         amount = tonumber(amount)
-        local cur, max = GetFactionNumbersByName(factionName)
-        if cur then
-            local txt = string.format('%s +%d -> %d/%d', factionName, amount,  cur, max)
+        local name, cur, max = GetFactionNumbersByName(factionName)
+        if name then
+            local txt = string.format('%s +%d -> %s: %d/%d', factionName, amount, name, cur, max)
             printf(BLUE_FONT_COLOR:WrapTextInColorCode(txt))
         end
     end
