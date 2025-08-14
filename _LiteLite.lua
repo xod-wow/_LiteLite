@@ -288,6 +288,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'drive' then
         self:ShowDRIVE()
         return true
+    elseif arg == 'reshii' then
+        self:ShowRESHII()
+        return true
     elseif arg == 'cagepets' or arg == 'cp' then
         self:CageTriplicatePets()
         return true
@@ -2366,6 +2369,13 @@ function _LiteLite:ShowDRIVE()
     GenericTraitFrame:SetParent(UIParent)
     GenericTraitFrame:ClearAllPoints()
     GenericTraitFrame:SetPoint("CENTER")
+end
+
+function _LiteLite:ShowRESHII()
+    C_AddOns.LoadAddOn("Blizzard_GenericTraitUI")
+    GenericTraitFrame:SetSystemID(29)
+    GenericTraitFrame:SetTreeID(1115)
+    ToggleFrame(GenericTraitFrame)
 end
 
 local HealerCitrines = { 228643, 228644 }
