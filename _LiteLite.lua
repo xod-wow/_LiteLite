@@ -835,6 +835,7 @@ function _LiteLite:VignetteMatches(scanMobName, info)
 end
 
 function _LiteLite:AddWaypoint(data)
+    print(format("Addin %s (%s)", data.objectGUID, data.name))
     data.tomTomWaypoint =
         TomTom:AddWaypoint(
             data.uiMapID,
@@ -850,6 +851,7 @@ end
 
 function _LiteLite:RemoveWaypoint(data)
     if data.tomTomWaypoint then
+        print(format("Clearing %s (%s)", data.objectGUID, data.name))
         TomTom:ClearWaypoint(data.tomTomWaypoint)
         data.tomTomWaypoint = nil
     end
@@ -872,7 +874,6 @@ function _LiteLite:RemoveAllScanWaypoints()
         return
     end
     for objectGUID, data in pairs(self.scannedGUID) do
-        print(format("Clearing %s (%s)", objectGUID, data.name))
         self:RemoveWaypoint(data)
     end
 end
