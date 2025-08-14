@@ -683,6 +683,23 @@ function _LiteLite:CopyPaste()
     _LiteLiteText:Show()
 end
 
+local function ApplyDecode()
+    local encoded = _LiteLiteText.EditBox:GetText()
+    local compressed = C_EncodingUtil.DecodeBase64(encoded)
+    if not compressed then return end
+    local serialized = C_EncodingUtil.DecompressString(compressed)
+    if not serialized then return end
+    local data = C_EncodingUtil.DeserializeCBOR(serialized)
+    if not data then return end
+    _LiteLiteText.EditBox:SetText(LM.TableToString(data))
+end
+
+function _LiteLite:Decode()
+    _LiteLiteText.ApplyFunc = ApplyDecode
+    _LiteLiteText.EditBox:SetText('')
+    _LiteLiteText:Show()
+end
+
 function _LiteLite:HookTooltip()
     TooltipDataProcessor.AddTooltipPostCall(
         Enum.TooltipDataType.Item,

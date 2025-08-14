@@ -50,8 +50,6 @@
             <Scripts>
                 <OnClick inherit="prepend">
                   self:GetParent():ApplyFunc()
-                  self:GetParent().ApplyFunc = nil
-                  self:GetParent():Hide()
                 </OnClick>
             </Scripts>
           </Button>
