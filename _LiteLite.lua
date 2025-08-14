@@ -848,6 +848,14 @@ function _LiteLite:AddWaypoint(data)
             })
 end
 
+function _LiteLite:RemoveWaypoint(data)
+    if data.tomTomWaypoint then
+        TomTom:ClearWaypoint(data.tomTomWaypoint)
+        data.tomTomWaypoint = nil
+    end
+end
+
+
 function _LiteLite:ShowScanWaypoints()
     if not self.scannedGUID or not TomTom then
         return
@@ -865,7 +873,7 @@ function _LiteLite:RemoveAllScanWaypoints()
     end
     for objectGUID, data in pairs(self.scannedGUID) do
         print(format("Clearing %s (%s)", objectGUID, data.name))
-        TomTom:ClearWaypoint(data.tomTomWaypoint)
+        self:RemoveWaypoint(data)
     end
 end
 
@@ -886,8 +894,6 @@ end
 function _LiteLite:ShouldClear(data)
     if not data.tomTomWaypoint then
         return false
-    elseif not TomTom:IsValidWaypoint(data.tomTomWaypoint) then
-        return true
     elseif data.autoClear == true then
         return true
     elseif type(data.autoClear) == 'number' then
@@ -912,8 +918,10 @@ function _LiteLite:PruneScanWaypoints()
         end
     end
     for objectGUID, data in pairs(self.scannedGUID) do
-        if objectGUIDs[objectGUID] == nil then
-            if self:ShouldClear(data) then
+        if objectGUIDs[objectGUID] == nil and data.tomTomWaypoint then
+            if not TomTom:IsValidWaypoint(data.tomTomWaypoint) then
+                data.tomTomWaypoint = nil
+            elseif self:ShouldClear(data) then
                 print(format("Clearing %s (%s)", objectGUID, data.name))
                 local wp = data.tomTomWaypoint
                 data.tomTomWaypoint = nil
@@ -938,27 +946,29 @@ function _LiteLite:ScanMobAddFromVignette(id)
     for _, n in ipairs(self.db.scanMobNames) do
         if self:VignetteMatches(n, info) then
             local pos = C_VignetteInfo.GetVignettePosition(info.vignetteGUID, uiMapID)
-            local data = CopyTable(info)
-            data.uiMapID = uiMapID
-            data.pos = pos
-            if data.onWorldMap and not data.onMinimap then
-                data.autoClear = true
-            elseif info.atlasName == 'VignetteKillElite' then
-                data.autoClear = true
-            elseif info.objectGUID:sub(1, 10) == 'GameObject' then
-                data.autoClear = GetTime() + 300
-            else
-                data.autoClear = false
-            end
-            printf(format("Vignette %s at (%.2f, %.2f)", data.name, pos.x*100, pos.y*100))
-            printf(format("  guid %s", data.objectGUID))
-            printf(format("  atlas %s", data.atlasName))
-            printf(format("  autoClear %s", tostring(data.autoClear)))
-            PlaySound(11466)
-            self.scannedGUID[data.objectGUID] = data
-            if self.db.autoScanWaypoint then
-                self:AddWaypoint(data)
-                TomTom:SetClosestWaypoint()
+            if pos then
+                local data = CopyTable(info)
+                data.uiMapID = uiMapID
+                data.pos = pos
+                if data.onWorldMap and not data.onMinimap then
+                    data.autoClear = true
+                elseif info.atlasName == 'VignetteKillElite' then
+                    data.autoClear = true
+                elseif info.objectGUID:sub(1, 10) == 'GameObject' then
+                    data.autoClear = GetTime() + 300
+                else
+                    data.autoClear = false
+                end
+                printf(format("Vignette %s at (%.2f, %.2f)", data.name, pos.x*100, pos.y*100))
+                printf(format("  guid %s", data.objectGUID))
+                printf(format("  atlas %s", data.atlasName))
+                printf(format("  autoClear %s", tostring(data.autoClear)))
+                PlaySound(11466)
+                self.scannedGUID[data.objectGUID] = data
+                if self.db.autoScanWaypoint then
+                    self:AddWaypoint(data)
+                    TomTom:SetClosestWaypoint()
+                end
             end
         end
     end
