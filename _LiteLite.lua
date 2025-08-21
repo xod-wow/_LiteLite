@@ -1298,8 +1298,8 @@ end
 
 function _LiteLite:CHAT_MSG_COMBAT_FACTION_CHANGE(msg)
     local factionName, amount = msg:match('with (.-) increased by (%d+)')
-    if factionName and amount then
-        amount = tonumber(amount)
+    amount = tonumber(amount)
+    if factionName and amount and amount > 50 then
         local name, cur, max = GetFactionNumbersByName(factionName)
         if name then
             local txt = string.format('%s +%d -> %s: %d/%d', factionName, amount, name, cur, max)
