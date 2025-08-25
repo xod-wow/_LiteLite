@@ -14,6 +14,12 @@ function _LiteTableCellMixin:OnLeave()
     GameTooltip_Hide()
 end
 
+function _LiteTableCellMixin:OnClick()
+    if self.link and IsModifiedClick("CHATLINK") then
+        ChatEdit_LinkItem(self.link)
+    end
+end
+
 
 --[[------------------------------------------------------------------------]]--
 
@@ -29,13 +35,16 @@ function _LiteLiteTableRowMixin:Init(fieldWidths, rowData)
     local offset = 0
     for i = 1, #fieldWidths do
         local width, text = fieldWidths[i], rowData[i]
-        local cell = self.cells:Acquire()
-        cell:SetSize(width, self:GetHeight())
-        cell:SetPoint("LEFT", self, "LEFT", offset, 0)
-        cell.Text:SetFormattedText(text)
-        local _, _, link = ExtractHyperlinkString(tostring(text))
-        cell.link = link
-        cell:Show()
+        if text then
+            local cell = self.cells:Acquire()
+            cell:SetSize(width, self:GetHeight())
+            cell:SetPoint("LEFT", self, "LEFT", offset, 0)
+            text = tostring(text)
+            cell.Text:SetFormattedText(text)
+            local _, _, link = ExtractHyperlinkString(text)
+            cell.link = link
+            cell:Show()
+        end
         offset = offset + width + 20
     end
 end
@@ -104,7 +113,7 @@ function _LiteTableMixin:Layout()
     self.fieldWidths = {}
     for _, rowData in ipairs(self.data) do
         for i = 1, #rowData do
-            local text = rowData[i]
+            local text = rowData[i] or ""
             self.Sizer:SetText(text)
             local width = math.ceil(self.Sizer:GetUnboundedStringWidth())
             self.Sizer:SetText(self.columnNames[i])
@@ -117,7 +126,7 @@ function _LiteTableMixin:Layout()
     for i, name in ipairs(self.columnNames) do
         local fs = self.headerFontStrings:Acquire()
         fs:SetPoint("BOTTOMLEFT", self.ScrollBox, "TOPLEFT", offset, 8)
-        fs:SetTextToFit(self.columnNames[i])
+        fs:SetTextToFit(self.columnNames[i] or "")
         fs:Show()
         offset = offset + self.fieldWidths[i] + 20
     end

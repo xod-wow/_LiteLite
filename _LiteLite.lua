@@ -333,12 +333,7 @@ function _LiteLite:SlashCommand(arg)
         end
         return true
     elseif arg1 == 'guild-news' or arg1 == 'gn' then
-        _LiteLiteLoot.minlevel = tonumber(arg2)
-        if _LiteLiteLoot:IsShown() then
-            _LiteLiteLoot:Update()
-        else
-            _LiteLiteLoot:Show()
-        end
+        self:GuildNews()
         return true
     elseif arg1 == 'delves' then
         self:ListDelves(arg2)
@@ -1934,34 +1929,9 @@ function _LiteLite:HideActionButtonEffects()
         end)
 end
 
---[[------------------------------------------------------------------------]]--
+local guildNameColors = {}
 
-_LiteLiteLootMixin = {}
-
-local function InitLootButton(button, data)
-    button.data = data
-    button.Date:SetText(data.date)
-    button.Player:SetText(data.player)
-    button.Level:SetText(data.level)
-    button.Type:SetText(data.type)
-    button.Item:SetText(data.item)
-end
-
-function _LiteLiteLootMixin:Update()
-    local dataProvider = CreateDataProvider(self:GetData())
-    self.ScrollBox:SetDataProvider(dataProvider, ScrollBoxConstants.RetainScrollPosition)
-end
-
-function _LiteLiteLootMixin:OnLoad()
-    self:SetTitle(GUILD_NEWS)
-    ButtonFrameTemplate_HidePortrait(self)
-    local view = CreateScrollBoxListLinearView()
-    view:SetElementInitializer("_LiteLiteLootEntryTemplate", InitLootButton)
-    view:SetPadding(2,2,2,2,5)
-    ScrollUtil.InitScrollBoxListWithScrollBar(self.ScrollBox, self.ScrollBar, view)
-    table.insert(UISpecialFrames, self:GetName())
-
-    self.guild = {}
+local function UpdateGuildNameColors()
     local realm = GetRealmName()
     C_GuildInfo.GuildRoster()
     for i = 1, GetNumGuildMembers() do
@@ -1969,45 +1939,48 @@ function _LiteLiteLootMixin:OnLoad()
         name = name:gsub("-"..realm, '')
         self.guild[name] = C_ClassColor.GetClassColor(class):WrapTextInColorCode(name)
     end
-
-end
-
-function _LiteLiteLootMixin:OnShow()
-    self:RegisterEvent("GUILD_NEWS_UPDATE")
-    QueryGuildNews()
-end
-
-function _LiteLiteLootMixin:OnHide()
-    self:UnregisterAllEvents()
-end
-
-function _LiteLiteLootMixin:OnEvent()
-    self:Update()
 end
 
 local DATE_FMT = "%.3s %d/%d"
 
-function _LiteLiteLootMixin:GetData()
+local function UpdateGuildNews(minItemLevel)
     local data = {}
     for i = 1, GetNumGuildNews() do
         local info = C_GuildInfo.GetGuildNewsInfo(i)
         if info and info.newsType == NEWS_ITEM_LOOTED and info.whatText then
             local level = GetDetailedItemLevelInfo(info.whatText)
             local invType, subType, _, equipSlot = select(6, GetItemInfo(info.whatText))
-            if equipSlot ~= '' and level and level >= ( self.minlevel or 0 ) then
+            if equipSlot ~= '' and level and level >= ( minItemLevel or 0 ) then
                 local date = format(DATE_FMT, CALENDAR_WEEKDAY_NAMES[info.weekday + 1], info.day + 1, info.month + 1)
                 local entry = {
-                    date    = date,
-                    player  = self.guild[info.whoText] or info.whoText,
-                    level   = level,
-                    type    = _G[equipSlot],
-                    item    = info.whatText
+                    date,
+                    guildNameColors[info.whoText] or info.whoText,
+                    level,
+                    _G[equipSlot],
+                    info.whatText
                 }
                 table.insert(data, entry)
             end
         end
     end
-    return data
+    _LiteLiteTable:SetRows(data)
+end
+
+function _LiteLite:GuildNews(minItemLevel)
+    self.newsScanner = self.newsScanner or CreateFrame("Frame")
+    self.newsScanner:RegisterEvent("GUILD_NEWS_UPDATE")
+    self.newsScanner:RegisterEvent("GUILD_ROSTER_UPDATE")
+    self.newsScanner:SetScript("OnEvent",
+        function (self, event, ...)
+            if event == "GUILD_ROSTER_UPDATE" then
+                UpdateGuildNameColors()
+            elseif event == "GUILD_NEWS_UPDATE" then
+                UpdateGuildNews(minItemLevel)
+            end
+        end)
+    QueryGuildNews()
+    _LiteLiteTable:Setup(GUILD_NEWS, { "Date", "Player", "iLvl", "Slot", "Item" })
+    _LiteLiteTable:Show()
 end
 
 
@@ -2314,7 +2287,8 @@ local DelvePrimaryOnlyMaps = {
     [2371]  = true,     -- K'aresh
 }
 
-function _LiteLite:ListDelves(bountifulOnly)
+function _LiteLite:ListDelves()
+    local delveData = {}
     for _, mapID in ipairs(self:FindChildZoneMaps('tww')) do
         local mapInfo = C_Map.GetMapInfo(mapID)
         local delveList = C_AreaPoiInfo.GetDelvesForMap(mapID)
@@ -2322,12 +2296,8 @@ function _LiteLite:ListDelves(bountifulOnly)
             local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
             if poiInfo.isPrimaryMapForPOI or DelvePrimaryOnlyMaps[mapID] then
                 local name = poiInfo.name
-                if poiInfo.atlasName == 'delves-bountiful' then
-                    name = GOLD_FONT_COLOR:WrapTextInColorCode(name)
-                    printf("%s: %s", mapInfo.name, name)
-                elseif not bountifulOnly then
-                    printf("%s: %s", mapInfo.name, name)
-                end
+                local isBountiful = ( poiInfo.atlasName == 'delves-bountiful' )
+                table.insert(delveData, { mapInfo.name, name, isBountiful and "true" or nil })
             end
         end
     end
@@ -2351,7 +2321,11 @@ function _LiteLite:ListDelves(bountifulOnly)
         local itemLevel = itemLink and C_Item.GetDetailedItemLevelInfo(itemLink)
         if itemLevel == maxItemLevel then progress = info.progress end
     end
-    printf("Max level delves completed: %d/%d", progress, activities[3].threshold)
+
+    local title = string.format("Max level delves completed: %d/%d", progress, activities[3].threshold)
+    _LiteLiteTable:Setup(title, { "Map", "Delve", "Bountiful?" })
+    _LiteLiteTable:SetRows(delveData)
+    _LiteLiteTable:Show()
 end
 
 --[[

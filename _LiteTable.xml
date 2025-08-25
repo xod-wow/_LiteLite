@@ -6,6 +6,7 @@
     <Scripts>
       <OnEnter method="OnEnter" />
       <OnLeave method="OnLeave" />
+      <OnClick method="OnClick" />
     </Scripts>
     <Layers>
       <Layer level="OVERLAY">
