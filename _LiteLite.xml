@@ -114,7 +114,7 @@
   </Button>
 
   <Frame name="_LiteLiteLoot" parent="UIParent" topLevel="true" frameStrata="FULLSCREEN_DIALOG" inherits="ButtonFrameTemplate" hidden="true" movable="true" dontSavePosition="true" registerForDrag="LeftButton" mixin="_LiteLiteLootMixin">
-    <size x="800" y="478" />
+    <Size x="800" y="478" />
     <Anchors><Anchor point="CENTER" y="24" /></Anchors>
     <Frames>
       <Frame parentKey="ScrollBox" inherits="WoWScrollBoxList">
@@ -144,4 +144,8 @@
     </Scripts>
   </Frame>
 
+  <Frame name="_LiteLiteTable" parent="UIParent" topLevel="true" frameStrata="FULLSCREEN_DIALOG" inherits="_LiteTableTemplate" hidden="true">
+    <Size x="800" y="478" />
+    <Anchors><Anchor point="CENTER" y="24" /></Anchors>
+  </Frame>
 </Ui>

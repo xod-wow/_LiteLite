@@ -1,0 +1,58 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+
+  <Script file="_LiteTable.lua"/>
+
+  <Button name="_LiteTableCellTemplate" mixin="_LiteTableCellMixin" virtual="true">
+    <Scripts>
+      <OnEnter method="OnEnter" />
+      <OnLeave method="OnLeave" />
+    </Scripts>
+    <Layers>
+      <Layer level="OVERLAY">
+        <FontString parentKey="Text" justifyH="LEFT" inherits="GameFontWhite">
+          <Anchors>
+            <Anchor point="LEFT" />
+            <Anchor point="RIGHT" />
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+  </Button>
+
+  <Frame name="_LiteTableRowTemplate" mixin="_LiteLiteTableRowMixin" virtual="true">
+    <Size y="22" />
+    <Scripts>
+      <OnLoad method="OnLoad" />
+    </Scripts>
+    <Layers>
+      <Layer level="ARTWORK">
+        <Texture parentKey="Stripe" setAllPoints="true">
+          <Color r="1" g="1" b="1" a="0.1" />
+        </Texture>
+      </Layer>
+    </Layers>
+  </Frame>
+
+  <Frame name="_LiteTableTemplate" inherits="ButtonFrameTemplate" movable="true" dontSavePosition="true" registerForDrag="LeftButton" mixin="_LiteTableMixin" virtual="true">
+    <Frames>
+      <Frame parentKey="ScrollBox" inherits="WoWScrollBoxList">
+        <Anchors>
+          <Anchor point="TOPLEFT" x="16" y="-64" />
+          <Anchor point="BOTTOMRIGHT" x="-34" y="36" />
+        </Anchors>
+      </Frame>
+      <EventFrame parentKey="ScrollBar" inherits="MinimalScrollBar">
+        <Anchors>
+        <Anchor point="TOPLEFT" relativeKey="$parent.ScrollBox" relativePoint="TOPRIGHT" x="4" y="-3"/>
+        <Anchor point="BOTTOMLEFT" relativeKey="$parent.ScrollBox" relativePoint="BOTTOMRIGHT" x="4" y="2"/>
+        </Anchors>
+      </EventFrame>
+    </Frames>
+    <Scripts>
+      <OnLoad method="OnLoad" />
+      <OnDragStart method="StartMoving" />
+      <OnDragStop method="StopMovingOrSizing" />
+    </Scripts>
+  </Frame>
+
+</Ui>

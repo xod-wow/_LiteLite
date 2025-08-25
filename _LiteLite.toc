@@ -5,6 +5,7 @@
 ## Email: mib@post.com
 ## SavedVariables: _LiteLiteDB
 
+_LiteTable.xml
 _LiteLite.xml
 
 KeybindingStrings.lua

@@ -294,6 +294,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'cagepets' or arg == 'cp' then
         self:CageTriplicatePets()
         return true
+    elseif arg == 'restored-coffer-keys' or arg == 'rck' then
+        self:RestoredCofferKeys()
+        return true
     end
 
     -- One argument options
@@ -1001,7 +1004,7 @@ function _LiteLite:PLAYER_LOGOUT()
     self:RemoveAllScanWaypoints()
 end
 
-local function PrintQuestRewards(info)
+local function GetQuestRewards(destTable, info)
     local questContainer = ContinuableContainer:Create()
 
     local numRewards = GetNumQuestLogRewards(info.questID)
@@ -1017,24 +1020,27 @@ local function PrintQuestRewards(info)
 
     local mapInfo = C_Map.GetMapInfo(info.mapID)
 
+    local data = {}
+
     questContainer:ContinueOnLoad(
         function ()
             local name = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
-            local qt = format("quest %s - %s", name, mapInfo.name)
             local copper = GetQuestLogRewardMoney(info.questID)
             if copper > 0 then
-                printf("  %s %s", GetMoneyString(copper), qt)
+                destTable:AddRow({ GetMoneyString(copper), name, mapInfo.name })
             end
             for i = 1, numRewards do
                 local itemName, itemTexture, numItems, quality, _, itemID, itemLevel = GetQuestLogRewardInfo(i, info.questID)
                 ScanTooltip:SetQuestLogItem("reward", i, info.questID, true)
-                local name, link = ScanTooltip:GetItem()
-                printf("  %sx%d %s", link, numItems, qt)
+                local _, link = ScanTooltip:GetItem()
+                destTable:AddRow({ mapInfo.name, name, format("%s x%d", link, numItems) })
             end
         end)
+    return data
 end
 
-local function PrintEquipmentQuestRewards(info)
+local function GetEquipmentQuestRewards(destTable, info)
+    local name = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
     local i, rewardType = QuestUtils_GetBestQualityItemRewardIndex(info.questID)
     if not i or i == 0 then return end
     local itemID, itemLevel = select(6, GetQuestLogRewardInfo(i, info.questID))
@@ -1045,17 +1051,17 @@ local function PrintEquipmentQuestRewards(info)
         function ()
             local mapInfo = C_Map.GetMapInfo(info.mapID)
             ScanTooltip:SetQuestLogItem(rewardType, i, info.questID, true)
-            local name, link = ScanTooltip:GetItem()
+            local _, link = ScanTooltip:GetItem()
             local equipLoc = select(9, GetItemInfo(itemID))
             if equipLoc ~= "INVTYPE_NON_EQUIP_IGNORE" then
-                printf('  [%s] %s (%d) - %s ', _G[equipLoc], link, itemLevel, mapInfo.name)
+                destTable:AddRow({ mapInfo.name, name, _G[equipLoc], link, itemLevel })
             elseif C_Soulbinds.IsItemConduitByItemInfo(link) then
-                printf('  [CONDUIT] %s - %s ', link, mapInfo.name)
+                destTable:AddRow({ mapInfo.name, name, "CONDUIT", link, "" })
             end
         end)
 end
 
-local function PrintReputationQuestRewards(info)
+local function GetReputationQuestRewards(destTable, info)
     local name, faction, capped = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
     if faction and C_QuestLog.QuestContainsFirstTimeRepBonusForPlayer(info.questID) then
         local secondsRemaining = C_TaskQuest.GetQuestTimeLeftSeconds(info.questID)
@@ -1063,17 +1069,17 @@ local function PrintReputationQuestRewards(info)
         local formatterOutput = WorldQuestsSecondsFormatter:Format(secondsRemaining)
         local mapInfo = C_Map.GetMapInfo(info.mapID)
         local factionData = C_MajorFactions.GetMajorFactionData(faction)
-        printf("  %s - %s - %s", mapInfo.name, name, color:WrapTextInColorCode(formatterOutput))
+        destTable:AddRow({ mapInfo.name, name, color:WrapTextInColorCode(formatterOutput) })
     end
 end
 
-local function PrintQuest(info)
+local function GetQuest(destTable, info)
     local name, faction, capped = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
     local secondsRemaining = C_TaskQuest.GetQuestTimeLeftSeconds(info.questID)
     local color = QuestUtils_GetQuestTimeColor(secondsRemaining or 0)
     local formatterOutput = WorldQuestsSecondsFormatter:Format(secondsRemaining)
     local mapInfo = C_Map.GetMapInfo(info.mapID)
-    printf("  %s - %s - %s", mapInfo.name, name, color:WrapTextInColorCode(formatterOutput))
+    destTable:AddRow({ mapInfo.name, name, color:WrapTextInColorCode(formatterOutput) })
 end
 
 local IgnoreMaps = {
@@ -1121,7 +1127,7 @@ function _LiteLite:FindChildZoneMaps(expansion)
     return wanted
 end
 
-function _LiteLite:WorldQuestProcess(expansion, printFunc)
+function _LiteLite:WorldQuestProcess(expansion, addRowsFunc)
     local mapQuests = { }
     for _, mapID in ipairs(self:FindChildZoneMaps(expansion)) do
         for _, questInfo in ipairs(C_TaskQuest.GetQuestsForPlayerByMapID(mapID)) do
@@ -1139,10 +1145,11 @@ function _LiteLite:WorldQuestProcess(expansion, printFunc)
                 if not HaveQuestRewardData(info.questID) then allKnown = false break end
             end
             if allKnown then
-                printf("World quest rewards:")
+                _LiteLiteTable:Setup("World Quest Rewards", { "Zone", "Quest" })
                 for _, info in pairs(mapQuests) do
-                    printFunc(info)
+                    addRowsFunc(_LiteLiteTable, info)
                 end
+                _LiteLiteTable:Show()
                 self:Cancel()
             end
         end, 10)
@@ -1161,13 +1168,13 @@ function _LiteLite:WorldQuestList(...)
     end
 
     if filter == nil then
-        self:WorldQuestProcess(expansion, PrintQuestRewards)
+        self:WorldQuestProcess(expansion, GetQuestRewards)
     elseif filter:sub(2,2) == 'i' then
-        self:WorldQuestProcess(expansion, PrintEquipmentQuestRewards)
+        self:WorldQuestProcess(expansion, GetEquipmentQuestRewards)
     elseif filter:sub(2,2) == 'l' then
-        self:WorldQuestProcess(expansion, PrintQuest)
+        self:WorldQuestProcess(expansion, GetQuest)
     elseif filter:sub(2,2) == 'r' then
-        self:WorldQuestProcess(expansion, PrintReputationQuestRewards)
+        self:WorldQuestProcess(expansion, GetReputationQuestRewards)
     end
 end
 
@@ -2474,3 +2481,44 @@ function _LiteLite:CageTriplicatePets()
        end
     end
 end
+
+function _LiteLite:RestoredCofferKeys()
+    local pinnacleCompleted = 0
+    for _, questID in ipairs({ 82449, 82706, 82679, 85460 }) do
+        if C_QuestLog.IsQuestFlaggedCompleted(questID)then
+            pinnacleCompleted = pinnacleCompleted + 1
+            break
+        end
+    end
+
+    local ecoSuccess = C_QuestLog.IsQuestFlaggedCompleted(85460)
+
+    local specialCompleted =  false
+    for _, questID in ipairs({ 89294, 89293 }) do
+        if C_QuestLog.IsQuestFlaggedCompleted(questID) then
+            specialCompleted = true
+            break
+        end
+    end
+
+    local shardsCompleted = 0
+    for _, questID in ipairs({ 84736, 84737, 84738, 84739 }) do
+        if C_QuestLog.IsQuestFlaggedCompleted(questID) then
+            shardsCompleted = shardsCompleted + 1
+        end
+    end
+
+    local keysCompleted = 0
+    for _, questID in ipairs({ 91175, 91176, 91177, 91178 }) do
+        if C_QuestLog.IsQuestFlaggedCompleted(questID) then
+            keysCompleted = keysCompleted + 1
+        end
+    end
+
+    printf("Full keys completed: %d/4", keysCompleted)
+    printf("  Pinnacle cache: %d", pinnacleCompleted)
+    printf("  Ecological succession: %s", tostring(ecoSuccess))
+    printf("  K'aresh special assignment: %s", tostring(specialCompleted))
+    printf("Shards completed: %d/200", shardsCompleted*50)
+end
+
