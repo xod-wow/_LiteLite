@@ -333,7 +333,8 @@ function _LiteLite:SlashCommand(arg)
         end
         return true
     elseif arg1 == 'guild-news' or arg1 == 'gn' then
-        self:GuildNews()
+        local iLevel = tonumber(arg2)
+        self:GuildNews(iLevel)
         return true
     elseif arg1 == 'delves' then
         self:ListDelves(arg2)
@@ -1933,18 +1934,19 @@ local guildNameColors = {}
 
 local function UpdateGuildNameColors()
     local realm = GetRealmName()
-    C_GuildInfo.GuildRoster()
     for i = 1, GetNumGuildMembers() do
         local name, _, _, _, _, _, _, _, _, _, class = GetGuildRosterInfo(i)
         name = name:gsub("-"..realm, '')
-        self.guild[name] = C_ClassColor.GetClassColor(class):WrapTextInColorCode(name)
+        guildNameColors[name] = C_ClassColor.GetClassColor(class):WrapTextInColorCode(name)
     end
 end
+
+local guildNews = {}
 
 local DATE_FMT = "%.3s %d/%d"
 
 local function UpdateGuildNews(minItemLevel)
-    local data = {}
+    guildNews = {}
     for i = 1, GetNumGuildNews() do
         local info = C_GuildInfo.GetGuildNewsInfo(i)
         if info and info.newsType == NEWS_ITEM_LOOTED and info.whatText then
@@ -1959,11 +1961,10 @@ local function UpdateGuildNews(minItemLevel)
                     _G[equipSlot],
                     info.whatText
                 }
-                table.insert(data, entry)
+                table.insert(guildNews, entry)
             end
         end
     end
-    _LiteLiteTable:SetRows(data)
 end
 
 function _LiteLite:GuildNews(minItemLevel)
@@ -1972,14 +1973,21 @@ function _LiteLite:GuildNews(minItemLevel)
     self.newsScanner:RegisterEvent("GUILD_ROSTER_UPDATE")
     self.newsScanner:SetScript("OnEvent",
         function (self, event, ...)
-            if event == "GUILD_ROSTER_UPDATE" then
+            if not _LiteLiteTable:IsShown() then
+                self:UnregisterAllEvents()
+            elseif event == "GUILD_ROSTER_UPDATE" then
                 UpdateGuildNameColors()
+                UpdateGuildNews(minItemLevel)
             elseif event == "GUILD_NEWS_UPDATE" then
                 UpdateGuildNews(minItemLevel)
+                _LiteLiteTable:SetRows(guildNews)
             end
         end)
     QueryGuildNews()
+    C_GuildInfo.GuildRoster()
     _LiteLiteTable:Setup(GUILD_NEWS, { "Date", "Player", "iLvl", "Slot", "Item" })
+    UpdateGuildNews(minItemLevel)
+    _LiteLiteTable:SetRows(guildNews)
     _LiteLiteTable:Show()
 end
 
