@@ -297,6 +297,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'restored-coffer-keys' or arg == 'rck' then
         self:RestoredCofferKeys()
         return true
+    elseif arg == 'auto-invite-myself' or arg == 'aim' then
+        self:AutoInviteMyself()
+        return true
     end
 
     -- One argument options
@@ -461,6 +464,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RemixFix()
     self:SetupHearthstoneButton()
     self:CheckCitrines()
+    self:AcceptMyInvites()
 end
 
 function _LiteLite:RemixFix()
@@ -2504,3 +2508,42 @@ function _LiteLite:RestoredCofferKeys()
     printf("Shards completed: %d/200", shardsCompleted*50)
 end
 
+function _LiteLite:AutoInviteMyself()
+    self.invited = {}
+    self:RegisterEvent("GUILD_ROSTER_UPDATE")
+end
+
+function _LiteLite:GUILD_ROSTER_UPDATE()
+    local myName = string.join('-', UnitFullName('player'))
+    local myBattleTag = C_BattleNet.GetAccountInfoByGUID(UnitGUID('player')).battleTag
+
+    C_GuildInfo.GuildRoster()
+    local _, n = GetNumGuildMembers()
+    for i = 1, n do
+        local name = GetGuildRosterInfo(i)
+        if name ~= myName then
+            local guid = GetPlayerGuid(name)
+            local info = C_BattleNet.GetAccountInfoByGUID(guid)
+            if info.battleTag == myBattleTag and not self.invited[name] then
+                C_Timer.After(1, function () C_PartyInfo.InviteUnit(name) end)
+                self.invited[name] = true
+            end
+        end
+    end
+end
+
+function _LiteLite:AcceptMyInvites()
+    self:RegisterEvent("PARTY_INVITE_REQUEST")
+end
+
+function _LiteLite:PARTY_INVITE_REQUEST(sender)
+    local myBattleTag = C_BattleNet.GetAccountInfoByGUID(UnitGUID('player')).battleTag
+    local guid = GetPlayerGuid(sender)
+    if guid then
+        local info = C_BattleNet.GetAccountInfoByGUID(guid)
+        if info.battleTag == myBattleTag then
+            AcceptGroup()
+            StaticPopup_Hide("PARTY_INVITE")
+        end
+    end
+end
