@@ -2549,12 +2549,13 @@ function _LiteLite:AcceptMyInvites()
     self:RegisterEvent("PARTY_INVITE_REQUEST")
 end
 
-function _LiteLite:PARTY_INVITE_REQUEST(sender)
-    local myBattleTag = C_BattleNet.GetAccountInfoByGUID(UnitGUID('player')).battleTag
-    local guid = GetPlayerGuid(sender)
-    if guid then
-        local info = C_BattleNet.GetAccountInfoByGUID(guid)
-        if info.battleTag == myBattleTag then
+function _LiteLite:PARTY_INVITE_REQUEST(...)
+    local name, _, _, _, _, _, inviterGUID = ...
+    if inviterGUID then
+        local myInfo = C_BattleNet.GetAccountInfoByGUID(GetPlayerGuid())
+        local inviterInfo = C_BattleNet.GetAccountInfoByGUID(inviterGUID)
+        if inviterInfo and inviterInfo.battleTag == myInfo.battleTag then
+            print('AutoInvite OK', name, inviterInfo.battleTag, myInfo.battleTag)
             AcceptGroup()
             StaticPopup_Hide("PARTY_INVITE")
         end
