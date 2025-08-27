@@ -34,7 +34,8 @@ end
 function _LiteLiteTableRowMixin:Init(columnWidths, rowData)
     self.cells:ReleaseAll()
 
-    local offset = 0
+    local color = rowData.color or WHITE_FONT_COLOR
+    local offset = 8
     for i = 1, #columnWidths do
         local width, text = columnWidths[i], rowData[i]
         if text then
@@ -42,7 +43,8 @@ function _LiteLiteTableRowMixin:Init(columnWidths, rowData)
             cell:SetSize(width, self:GetHeight())
             cell:SetPoint("LEFT", self, "LEFT", offset, 0)
             text = tostring(text)
-            cell.Text:SetFormattedText(text)
+            cell.Text:SetText(text)
+            cell.Text:SetTextColor(color:GetRGBA())
             local _, _, link = ExtractHyperlinkString(text)
             cell.link = link
             cell:Show()
@@ -91,7 +93,7 @@ end
 
 function _LiteTableMixin:SetupColumnHeaders()
     self.headerFontStrings:ReleaseAll()
-    local offset = 0
+    local offset = 8
     for i, name in ipairs(self.columnNames) do
         local fs = self.headerFontStrings:Acquire()
         fs:SetPoint("BOTTOMLEFT", self.ScrollBox, "TOPLEFT", offset, 8)
@@ -133,7 +135,7 @@ function _LiteTableMixin:OnLoad()
         function (f, rowData)
             f:Init(self.columnWidths, rowData)
         end)
-    view:SetPadding(2,2,2,2,5)
+    -- view:SetPadding(2,2,2,2,5)
     ScrollUtil.InitScrollBoxListWithScrollBar(self.ScrollBox, self.ScrollBar, view)
     ScrollUtil.RegisterAlternateRowBehavior(self.ScrollBox,
         function (button, isAlternate)

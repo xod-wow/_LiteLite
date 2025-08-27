@@ -2309,10 +2309,23 @@ function _LiteLite:ListDelves()
             if poiInfo.isPrimaryMapForPOI or DelvePrimaryOnlyMaps[mapID] then
                 local name = poiInfo.name
                 local isBountiful = ( poiInfo.atlasName == 'delves-bountiful' )
-                table.insert(delveData, { mapInfo.name, name, isBountiful and "true" or nil })
+                if isBountiful then
+                    table.insert(delveData, { mapInfo.name, name, "true", color=ORANGE_FONT_COLOR })
+                else
+                    table.insert(delveData, { mapInfo.name, name, "true" })
+                end
             end
         end
     end
+
+    table.sort(delveData,
+        function (a, b)
+            if a[1] ~= b[1] then
+                return a[1] < b[1]
+            else
+                return a[2] < b[2]
+            end
+        end)
 
     -- Seems to be no way to get a list of delve runs the way you can with M+
     -- Figure out what the highest ilevel reward is and see how many we've done
