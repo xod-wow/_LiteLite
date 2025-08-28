@@ -855,7 +855,7 @@ end
 function _LiteLite:RemoveWaypoint(data)
     if data.tomTomWaypoint then
         print(format("Clearing %s (%s)", data.objectGUID, data.name))
-        TomTom:ClearWaypoint(data.tomTomWaypoint)
+        TomTom:RemoveWaypoint(data.tomTomWaypoint)
         data.tomTomWaypoint = nil
     end
 end
@@ -929,7 +929,7 @@ function _LiteLite:PruneScanWaypoints()
                 print(format("Clearing %s (%s)", objectGUID, data.name))
                 local wp = data.tomTomWaypoint
                 data.tomTomWaypoint = nil
-                TomTom:ClearWaypoint(wp)
+                TomTom:RemoveWaypoint(wp)
             end
         end
     end
