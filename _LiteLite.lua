@@ -2264,6 +2264,19 @@ local DelvePrimaryOnlyMaps = {
     [2371]  = true,     -- K'aresh
 }
 
+local function GetDelveStory(poiInfo)
+    if poiInfo.tooltipWidgetSet then
+        local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(poiInfo.tooltipWidgetSet)
+        for _, w in ipairs(widgets) do
+            local info = C_UIWidgetManager.GetTextWithStateWidgetVisualizationInfo(w.widgetID)
+            if info.orderIndex == 0 then
+                local text = string.match(info.text, ': (.*)$'):gsub('|cn.-:', '')
+                return text
+            end
+        end
+    end
+end
+
 function _LiteLite:ListDelves()
     local delveData = {}
     for _, mapID in ipairs(self:FindChildZoneMaps('tww')) do
@@ -2274,10 +2287,11 @@ function _LiteLite:ListDelves()
             if poiInfo.isPrimaryMapForPOI or DelvePrimaryOnlyMaps[mapID] then
                 local name = poiInfo.name
                 local isBountiful = ( poiInfo.atlasName == 'delves-bountiful' )
+                local story = GetDelveStory(poiInfo)
                 if isBountiful then
-                    table.insert(delveData, { mapInfo.name, name, "true", color=ORANGE_FONT_COLOR })
+                    table.insert(delveData, { mapInfo.name, name, story, isBountiful, color=ORANGE_FONT_COLOR })
                 else
-                    table.insert(delveData, { mapInfo.name, name, "true" })
+                    table.insert(delveData, { mapInfo.name, name, story, isBountiful })
                 end
             end
         end
@@ -2313,8 +2327,9 @@ function _LiteLite:ListDelves()
     end
 
     local title = string.format("Max level delves completed: %d/%d", progress, activities[3].threshold)
-    _LiteLiteTable:Setup(title, { "Map", "Delve", "Bountiful?" })
+    _LiteLiteTable:Setup(title, { "Map", "Delve", "Story", "Bountiful?" })
     _LiteLiteTable:SetRows(delveData)
+    _LiteLiteTable:SetEnableSort(true)
     _LiteLiteTable:Show()
 end
 
