@@ -300,6 +300,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'auto-invite-myself' or arg == 'aim' then
         self:AutoInviteMyself()
         return true
+    elseif arg == 'decode' then
+        self:Decode()
+        return true
     end
 
     -- One argument options
