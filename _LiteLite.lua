@@ -469,6 +469,8 @@ function _LiteLite:PLAYER_LOGIN()
     self:SetupHearthstoneButton()
     self:CheckCitrines()
     self:AcceptMyInvites()
+
+    _LiteLiteTable:SetAutoWidth(true)
 end
 
 function _LiteLite:RemixFix()
@@ -1008,13 +1010,13 @@ function _LiteLite:PLAYER_LOGOUT()
     self:RemoveAllScanWaypoints()
 end
 
-local function GetQuestRewards(destTable, info)
-    local questContainer = ContinuableContainer:Create()
-
+local function UpdateQuestRewards(tableWidget, rowData, info)
     local numRewards = GetNumQuestLogRewards(info.questID)
     if numRewards == 0 then
         return
     end
+
+    local questContainer = ContinuableContainer:Create()
 
     for i = 1, numRewards do
         local _, _, _, _, _, itemID = GetQuestLogRewardInfo(i, info.questID)
@@ -1022,68 +1024,32 @@ local function GetQuestRewards(destTable, info)
         questContainer:AddContinuable(item)
     end
 
-    local mapInfo = C_Map.GetMapInfo(info.mapID)
-
-    local data = {}
-
     questContainer:ContinueOnLoad(
         function ()
-            local name = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
-            local copper = GetQuestLogRewardMoney(info.questID)
-            if copper > 0 then
-                destTable:AddRow({ GetMoneyString(copper), name, mapInfo.name })
-            end
             for i = 1, numRewards do
                 local itemName, itemTexture, numItems, quality, _, itemID, itemLevel = GetQuestLogRewardInfo(i, info.questID)
                 ScanTooltip:SetQuestLogItem("reward", i, info.questID, true)
                 local _, link = ScanTooltip:GetItem()
-                destTable:AddRow({ mapInfo.name, name, format("%s x%d", link, numItems) })
+                rowData[4] = format("%s x%d", link, numItems)
             end
+            tableWidget:MarkDirty()
         end)
     return data
 end
 
-local function GetEquipmentQuestRewards(destTable, info)
-    local name = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
-    local i, rewardType = QuestUtils_GetBestQualityItemRewardIndex(info.questID)
-    if not i or i == 0 then return end
-    local itemID, itemLevel = select(6, GetQuestLogRewardInfo(i, info.questID))
-    if not itemID then return end
-
-    local item = Item:CreateFromItemID(itemID)
-    item:ContinueOnItemLoad(
-        function ()
-            local mapInfo = C_Map.GetMapInfo(info.mapID)
-            ScanTooltip:SetQuestLogItem(rewardType, i, info.questID, true)
-            local _, link = ScanTooltip:GetItem()
-            local equipLoc = select(9, GetItemInfo(itemID))
-            if equipLoc ~= "INVTYPE_NON_EQUIP_IGNORE" then
-                destTable:AddRow({ mapInfo.name, name, _G[equipLoc], link, itemLevel })
-            elseif C_Soulbinds.IsItemConduitByItemInfo(link) then
-                destTable:AddRow({ mapInfo.name, name, "CONDUIT", link, "" })
-            end
-        end)
-end
-
-local function GetReputationQuestRewards(destTable, info)
-    local name, faction, capped = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
-    if faction and C_QuestLog.QuestContainsFirstTimeRepBonusForPlayer(info.questID) then
-        local secondsRemaining = C_TaskQuest.GetQuestTimeLeftSeconds(info.questID)
-        local color = QuestUtils_GetQuestTimeColor(secondsRemaining or 0)
-        local formatterOutput = WorldQuestsSecondsFormatter:Format(secondsRemaining)
-        local mapInfo = C_Map.GetMapInfo(info.mapID)
-        local factionData = C_MajorFactions.GetMajorFactionData(faction)
-        destTable:AddRow({ mapInfo.name, name, color:WrapTextInColorCode(formatterOutput) })
-    end
-end
-
-local function GetQuest(destTable, info)
+local function GetQuest(tableWidget, info)
     local name, faction, capped = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
     local secondsRemaining = C_TaskQuest.GetQuestTimeLeftSeconds(info.questID)
     local color = QuestUtils_GetQuestTimeColor(secondsRemaining or 0)
     local formatterOutput = WorldQuestsSecondsFormatter:Format(secondsRemaining)
     local mapInfo = C_Map.GetMapInfo(info.mapID)
-    destTable:AddRow({ mapInfo.name, name, color:WrapTextInColorCode(formatterOutput) })
+    local rowData = { mapInfo.name, name, nil, nil, color:WrapTextInColorCode(formatterOutput) }
+    if faction and C_QuestLog.QuestContainsFirstTimeRepBonusForPlayer(info.questID) then
+        local factionData = C_MajorFactions.GetMajorFactionData(faction)
+        rowData[3] = factionData.name
+    end
+    UpdateQuestRewards(tableWidget, rowData, info)
+    tableWidget:AddRow(rowData)
 end
 
 local IgnoreMaps = {
@@ -1131,7 +1097,7 @@ function _LiteLite:FindChildZoneMaps(expansion)
     return wanted
 end
 
-function _LiteLite:WorldQuestProcess(expansion, addRowsFunc)
+function _LiteLite:WorldQuestProcess(expansion)
     local mapQuests = { }
     for _, mapID in ipairs(self:FindChildZoneMaps(expansion)) do
         for _, questInfo in ipairs(C_TaskQuest.GetQuestsForPlayerByMapID(mapID)) do
@@ -1149,10 +1115,12 @@ function _LiteLite:WorldQuestProcess(expansion, addRowsFunc)
                 if not HaveQuestRewardData(info.questID) then allKnown = false break end
             end
             if allKnown then
-                _LiteLiteTable:Setup("World Quest Rewards", { "Zone", "Quest" })
+                _LiteLiteTable:Setup("World Quests", { "Zone", "Quest", "Reputation", "Reward", "Time left" })
                 for _, info in pairs(mapQuests) do
-                    addRowsFunc(_LiteLiteTable, info)
+                    GetQuest(_LiteLiteTable, info)
                 end
+                _LiteLiteTable:SetEnableSort(true)
+                _LiteLiteTable:SetSortColumn(1)
                 _LiteLiteTable:Show()
                 self:Cancel()
             end
@@ -1171,15 +1139,7 @@ function _LiteLite:WorldQuestList(...)
         end
     end
 
-    if filter == nil then
-        self:WorldQuestProcess(expansion, GetQuestRewards)
-    elseif filter:sub(2,2) == 'i' then
-        self:WorldQuestProcess(expansion, GetEquipmentQuestRewards)
-    elseif filter:sub(2,2) == 'l' then
-        self:WorldQuestProcess(expansion, GetQuest)
-    elseif filter:sub(2,2) == 'r' then
-        self:WorldQuestProcess(expansion, GetReputationQuestRewards)
-    end
+    self:WorldQuestProcess(expansion)
 end
 
 function _LiteLite:KickOfflineRaidMembers()
@@ -1996,6 +1956,7 @@ function _LiteLite:GuildNews(minItemLevel)
     _LiteLiteTable:Setup(GUILD_NEWS, { "Date", "Player", "iLvl", "Slot", "Item" })
     UpdateGuildNews(minItemLevel)
     _LiteLiteTable:SetRows(guildNews)
+    _LiteLiteTable:SetEnableSort(false)
     _LiteLiteTable:Show()
 end
 
