@@ -2471,6 +2471,7 @@ function _LiteLite:RestoredCofferKeys()
     end
 
     local ecoSuccess = C_QuestLog.IsQuestFlaggedCompleted(85460)
+    local phaseDiving = C_QuestLog.IsQuestFlaggedCompleted(91093)
 
     local specialCompleted =  false
     for _, questID in ipairs({ 89294, 89293 }) do
@@ -2497,6 +2498,7 @@ function _LiteLite:RestoredCofferKeys()
     printf("Full keys completed: %d/4", keysCompleted)
     printf("  Pinnacle cache: %d", pinnacleCompleted)
     printf("  Ecological succession: %s", tostring(ecoSuccess))
+    printf("  Phase diving: %s", tostring(ecoSuccess))
     printf("  K'aresh special assignment: %s", tostring(specialCompleted))
     printf("Shards completed: %d/200", shardsCompleted*50)
 end
