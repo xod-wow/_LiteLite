@@ -18,8 +18,13 @@ end
 _LiteTableHeaderMixin = {}
 
 function _LiteTableHeaderMixin:OnClick()
+    local tableWidget = self:GetParent()
     local columnNumber = self:GetID()
-    self:GetParent():SetSortColumn(columnNumber)
+    if tableWidget:GetSortColumn() == columnNumber then
+        tableWidget:SetSortColumn(-columnNumber)
+    else
+        tableWidget:SetSortColumn(columnNumber)
+    end
 end
 
 
@@ -155,12 +160,12 @@ function _LiteTableMixin:Layout()
     self:UpdateWidth()
 end
 
+function _LiteTableMixin:GetSortColumn()
+    return self.sortColumn
+end
+
 function _LiteTableMixin:SetSortColumn(n)
-    if self.sortColumn and math.abs(self.sortColumn) == n then
-        self.sortColumn = -self.sortColumn
-    else
-        self.sortColumn = n
-    end
+    self.sortColumn = n
     if self:IsShown() then
         self:UpdateCells()
     end
