@@ -1,5 +1,30 @@
 --[[------------------------------------------------------------------------]]--
 
+local function GetCellDisplayText(val)
+    if val == nil then
+        return ""
+    elseif type(val) == 'boolean' then
+        if val then return YES else return NO end
+    elseif type(val) == 'string' then
+        return val
+    elseif type(val) == 'number' then
+        return tostring(val)
+    end
+end
+
+
+--[[------------------------------------------------------------------------]]--
+
+_LiteTableHeaderMixin = {}
+
+function _LiteTableHeaderMixin:OnClick()
+    local columnNumber = self:GetID()
+    self:GetParent():SetSortColumn(columnNumber)
+end
+
+
+--[[------------------------------------------------------------------------]]--
+
 _LiteTableCellMixin = {}
 
 function _LiteTableCellMixin:OnEnter()
@@ -37,12 +62,12 @@ function _LiteLiteTableRowMixin:Init(columnWidths, rowData)
     local color = rowData.color or WHITE_FONT_COLOR
     local offset = 8
     for i = 1, #columnWidths do
-        local width, text = columnWidths[i], rowData[i]
-        if text then
+        local width, val = columnWidths[i], rowData[i]
+        if val ~= nil then
             local cell = self.cells:Acquire()
             cell:SetSize(width, self:GetHeight())
             cell:SetPoint("LEFT", self, "LEFT", offset, 0)
-            text = tostring(text)
+            local text = GetCellDisplayText(val)
             cell.Text:SetText(text)
             cell.Text:SetTextColor(color:GetRGBA())
             local _, _, link = ExtractHyperlinkString(text)
@@ -78,7 +103,7 @@ function _LiteTableMixin:CalculateColumnWidths()
     self.columnWidths = {}
     for _, rowData in ipairs(self.data) do
         for i = 1, #rowData do
-            local text = rowData[i] or ""
+            local text = GetCellDisplayText(rowData[i])
             self.Sizer:SetText(text)
             local width = math.ceil(self.Sizer:GetUnboundedStringWidth())
             self.columnWidths[i] = math.max(self.columnWidths[i] or 0, width)
@@ -91,14 +116,35 @@ function _LiteTableMixin:CalculateColumnWidths()
     end
 end
 
+function _LiteTableMixin:UpdateWidth()
+    if self.autoWidth then
+        local w = 16 + 34 + 8 + 8 + 20*(#self.columnWidths-1)
+        for _, n in ipairs(self.columnWidths) do
+            w = w + n
+        end
+        self:SetWidth(w)
+    end
+end
+
+function _LiteTableMixin:SetAutoWidth(v)
+    self.autoWidth = v and true or nil
+end
+
+function _LiteTableMixin:SetEnableSort(v)
+    self.enableSort = v and true or nil
+end
+
 function _LiteTableMixin:SetupColumnHeaders()
-    self.headerFontStrings:ReleaseAll()
+    self.headerCells:ReleaseAll()
     local offset = 8
     for i, name in ipairs(self.columnNames) do
-        local fs = self.headerFontStrings:Acquire()
-        fs:SetPoint("BOTTOMLEFT", self.ScrollBox, "TOPLEFT", offset, 8)
-        fs:SetTextToFit(self.columnNames[i] or "")
-        fs:Show()
+        local cell = self.headerCells:Acquire()
+        cell:SetID(i)
+        cell:ClearAllPoints()
+        cell:SetPoint("BOTTOMLEFT", self.ScrollBox, "TOPLEFT", offset, 2)
+        cell:SetWidth(self.columnWidths[i])
+        cell.Text:SetTextToFit(self.columnNames[i] or "")
+        cell:Show()
         offset = offset + self.columnWidths[i] + 20
     end
 end
@@ -106,11 +152,36 @@ end
 function _LiteTableMixin:Layout()
     self:CalculateColumnWidths()
     self:SetupColumnHeaders()
+    self:UpdateWidth()
+end
+
+function _LiteTableMixin:SetSortColumn(n)
+    if self.sortColumn and math.abs(self.sortColumn) == n then
+        self.sortColumn = -self.sortColumn
+    else
+        self.sortColumn = n
+    end
+    if self:IsShown() then
+        self:UpdateCells()
+    end
 end
 
 function _LiteTableMixin:UpdateCells()
     self:SetTitle(self.title)
     local dataProvider = CreateDataProvider(self.data)
+    if self.enableSort and self.sortColumn then
+        local n = math.abs(self.sortColumn)
+        local function colComp(a, b)
+            local aVal = GetCellDisplayText(a[n])
+            local bVal = GetCellDisplayText(b[n])
+            if self.sortColumn >= 0 then
+                return aVal < bVal
+            else
+                return aVal > bVal
+            end
+        end
+        dataProvider:SetSortComparator(colComp)
+    end
     self.ScrollBox:SetDataProvider(dataProvider, ScrollBoxConstants.RetainScrollPosition)
 end
 
@@ -144,6 +215,6 @@ function _LiteTableMixin:OnLoad()
 
     table.insert(UISpecialFrames, self:GetName())
     self.Sizer = self:CreateFontString(nil, nil, "GameFontNormal")
-    self.headerFontStrings = CreateFontStringPool(self, "ARTWORK", 0, "GameFontNormalMed1")
+    self.headerCells = CreateFramePool("Button", self, "_LiteTableHeaderTemplate")
 end
 

@@ -2,6 +2,22 @@
 
   <Script file="_LiteTable.lua"/>
 
+  <Button name="_LiteTableHeaderTemplate" mixin="_LiteTableHeaderMixin" virtual="true">
+    <Size y="28" />
+    <Scripts>
+      <OnClick method="OnClick" />
+    </Scripts>
+    <Layers>
+      <Layer level="ARTWORK">
+        <FontString parentKey="Text" justifyH="LEFT" inherits="GameFontNormalMed1">
+          <Anchors>
+            <Anchor point="LEFT" />
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+  </Button>
+
   <Button name="_LiteTableCellTemplate" mixin="_LiteTableCellMixin" virtual="true">
     <Scripts>
       <OnEnter method="OnEnter" />
