@@ -426,6 +426,7 @@ function _LiteLite:PLAYER_LOGIN()
     self.db = _LiteLiteDB
 
     self.playerName = format("%s-%s", UnitFullName('player'))
+    self.playerGUID = UnitGUID('player')
 
     self.questsCompleted = {}
     self:ScanQuestsCompleted()
@@ -2531,14 +2532,14 @@ end
 
 function _LiteLite:GUILD_ROSTER_UPDATE()
     local myName = string.join('-', UnitFullName('player'))
-    local myBattleTag = C_BattleNet.GetAccountInfoByGUID(UnitGUID('player')).battleTag
+    local myBattleTag = C_BattleNet.GetAccountInfoByGUID(self.playerGUID).battleTag
 
     C_GuildInfo.GuildRoster()
     local _, n = GetNumGuildMembers()
     for i = 1, n do
         local name = GetGuildRosterInfo(i)
         if name ~= myName then
-            local guid = GetPlayerGuid(name)
+            local guid = select(17, GetGuildRosterInfo(i))
             local info = C_BattleNet.GetAccountInfoByGUID(guid)
             if info.battleTag == myBattleTag and not self.invited[name] then
                 C_Timer.After(1, function () C_PartyInfo.InviteUnit(name) end)
@@ -2552,15 +2553,25 @@ function _LiteLite:AcceptMyInvites()
     self:RegisterEvent("PARTY_INVITE_REQUEST")
 end
 
-function _LiteLite:PARTY_INVITE_REQUEST(...)
-    local name, _, _, _, _, _, inviterGUID = ...
-    if inviterGUID then
-        local myInfo = C_BattleNet.GetAccountInfoByGUID(GetPlayerGuid())
-        local inviterInfo = C_BattleNet.GetAccountInfoByGUID(inviterGUID)
+function _LiteLite:AutoAcceptInvite(name, guid)
+    if guid then
+        local myInfo = C_BattleNet.GetAccountInfoByGUID(self.playerGUID)
+        local inviterInfo = C_BattleNet.GetAccountInfoByGUID(guid)
         if inviterInfo and inviterInfo.battleTag == myInfo.battleTag then
             print('AutoInvite OK', name, inviterInfo.battleTag, myInfo.battleTag)
             AcceptGroup()
             StaticPopup_Hide("PARTY_INVITE")
         end
+    end
+end
+
+function _LiteLite:PARTY_INVITE_REQUEST(...)
+    local inviterName, _, _, _, _, _, inviterGUID = ...
+
+    -- This can fail on login for a while, and maybe if bnet is down
+    if not C_BattleNet.GetAccountInfoByGUID(self.playerGUID) then
+        C_Timer.After(0.5, function () self:AutoAcceptInvite(inviterName, inviterGUID) end)
+    else
+        self:AutoAcceptInvite(name, inviterGUID)
     end
 end
