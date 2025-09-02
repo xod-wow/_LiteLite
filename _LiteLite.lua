@@ -2520,7 +2520,7 @@ function _LiteLite:GUILD_ROSTER_UPDATE()
         if name ~= myName then
             local guid = select(17, GetGuildRosterInfo(i))
             local info = C_BattleNet.GetAccountInfoByGUID(guid)
-            if info.battleTag == myBattleTag and not self.invited[name] then
+            if info and info.battleTag == myBattleTag and not self.invited[name] then
                 C_Timer.After(1, function () C_PartyInfo.InviteUnit(name) end)
                 self.invited[name] = true
             end
