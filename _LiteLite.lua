@@ -1038,12 +1038,13 @@ local function UpdateQuestRewards(tableWidget, rowData, info)
 end
 
 local function GetQuest(tableWidget, info)
+    local link = GetQuestLink(info.questID)
     local name, faction, capped = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
     local secondsRemaining = C_TaskQuest.GetQuestTimeLeftSeconds(info.questID)
     local color = QuestUtils_GetQuestTimeColor(secondsRemaining or 0)
     local formatterOutput = WorldQuestsSecondsFormatter:Format(secondsRemaining)
     local mapInfo = C_Map.GetMapInfo(info.mapID)
-    local rowData = { mapInfo.name, name, nil, nil, color:WrapTextInColorCode(formatterOutput) }
+    local rowData = { mapInfo.name, link or name, nil, nil, color:WrapTextInColorCode(formatterOutput) }
     if faction and C_QuestLog.QuestContainsFirstTimeRepBonusForPlayer(info.questID) then
         local factionData = C_MajorFactions.GetMajorFactionData(faction)
         rowData[3] = factionData.name
