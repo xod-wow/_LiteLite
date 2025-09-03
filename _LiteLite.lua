@@ -190,35 +190,37 @@ function _LiteLite:CreateSpellMacro(template, spell)
 end
 
 function _LiteLite:AutoEquipsetIcons()
-    for _, n in ipairs(C_EquipmentSet.GetEquipmentSetIDs()) do
+    for _, setID in ipairs(C_EquipmentSet.GetEquipmentSetIDs()) do
         local specIndex = C_EquipmentSet.GetEquipmentSetAssignedSpec(n)
         if specIndex then
-            local arg1 = select(4, GetSpecializationInfo(specIndex))
-            self:SetEquipsetIcon(n, arg1)
+            local textureID = select(4, GetSpecializationInfo(specIndex))
+            self:SetEquipsetIcon(setID, textureID)
         end
     end
 end
 
-function _LiteLite:SetEquipsetIcon(n, arg1)
-    n = tonumber(n or PaperDollFrame.EquipmentManagerPane.selectedSetID)
+function _LiteLite:SetEquipsetIcon(n, textureID)
+    local setID = tonumber(n)
+                    or C_EquipmentSet.GetEquipmentSetID(n)
+                    or PaperDollFrame.EquipmentManagerPane.selectedSetID
 
-    if n == nil then
+    if setID == nil then
         return
     end
 
-    local name = C_EquipmentSet.GetEquipmentSetInfo(n)
+    local name = C_EquipmentSet.GetEquipmentSetInfo(setID)
     if name == nil then
         return
     end
 
-    arg1 = tonumber(arg1) or GetGameTooltipIcon()
+    textureID = tonumber(textureID) or GetGameTooltipIcon()
 
-    if arg1 == nil then
+    if textureID == nil then
         return
     end
 
-    printf('Setting equipset icon for %s (%d) to %d', name, n, arg1)
-    C_EquipmentSet.ModifyEquipmentSet(n, name, arg1)
+    printf('Setting equipset icon for %s (%d) to %d', name, setID, textureID)
+    C_EquipmentSet.ModifyEquipmentSet(n, name, textureID)
 end
 
 function _LiteLite:SlashCommand(arg)
@@ -2551,6 +2553,6 @@ function _LiteLite:PARTY_INVITE_REQUEST(...)
     if not C_BattleNet.GetAccountInfoByGUID(self.playerGUID) then
         C_Timer.After(0.5, function () self:AutoAcceptInvite(inviterName, inviterGUID) end)
     else
-        self:AutoAcceptInvite(name, inviterGUID)
+        self:AutoAcceptInvite(inviterName, inviterGUID)
     end
 end
