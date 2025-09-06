@@ -65,6 +65,15 @@
         </Anchors>
       </EventFrame>
     </Frames>
+    <Layers>
+      <Layer level="ARTWORK">
+        <FontString parentKey="Footer" inherits="GameFontNormal" hidden="true">
+          <Anchors>
+            <Anchor point="BOTTOM" y="8" />
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
     <Scripts>
       <OnLoad method="OnLoad" />
       <OnDragStart method="StartMoving" />

@@ -139,6 +139,10 @@ function _LiteTableMixin:SetEnableSort(v)
     self.enableSort = v and true or nil
 end
 
+function _LiteTableMixin:SetFooter(text)
+    self.footer = text
+end
+
 function _LiteTableMixin:SetupColumnHeaders()
     self.headerCells:ReleaseAll()
     local offset = 8
@@ -188,6 +192,12 @@ function _LiteTableMixin:UpdateCells()
         dataProvider:SetSortComparator(colComp)
     end
     self.ScrollBox:SetDataProvider(dataProvider, ScrollBoxConstants.RetainScrollPosition)
+    if self.footer then
+        self.Footer:SetText(self.footer)
+        self.Footer:Show()
+    else
+        self.Footer:Hide()
+    end
 end
 
 function _LiteTableMixin:MarkDirty()
