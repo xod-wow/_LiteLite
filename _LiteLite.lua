@@ -2329,8 +2329,11 @@ function _LiteLite:ListDelves()
         if itemLevel == maxItemLevel then progress = info.progress end
     end
 
-    local title = string.format("Max level delves completed: %d/%d", progress, activities[3].threshold)
-    _LiteLiteTable:Setup(title, { "Map", "Delve", "Story", "Bountiful?" })
+    local completedJourney = C_QuestLog.IsQuestFlaggedCompleted(86371)
+    local footer = string.format("Max level delves: %d/%d. Journey: %s", progress, activities[3].threshold, tostring(completedJourney))
+    _LiteLiteTable:SetFooter(string.format("Delver's Journey completed? %s", tostring(completedJourney)))
+    _LiteLiteTable:Setup(DELVES_LABEL, { "Map", "Delve", "Story", "Bountiful?" })
+    _LiteLiteTable:SetFooter(footer)
     _LiteLiteTable:SetRows(delveData)
     _LiteLiteTable:SetEnableSort(true)
     _LiteLiteTable:Show()
