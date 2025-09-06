@@ -1036,7 +1036,6 @@ local function UpdateQuestRewards(tableWidget, rowData, info)
             end
             tableWidget:MarkDirty()
         end)
-    return data
 end
 
 local function GetQuest(tableWidget, info)
@@ -1049,7 +1048,8 @@ local function GetQuest(tableWidget, info)
     local rowData = { mapInfo.name, link or name, nil, nil, color:WrapTextInColorCode(formatterOutput) }
     if faction and C_QuestLog.QuestContainsFirstTimeRepBonusForPlayer(info.questID) then
         local factionData = C_MajorFactions.GetMajorFactionData(faction)
-        rowData[3] = factionData.name
+                            or C_Reputation.GetFactionDataByID(faction)
+        rowData[3] = factionData and factionData.name
     end
     UpdateQuestRewards(tableWidget, rowData, info)
     tableWidget:AddRow(rowData)
