@@ -2330,7 +2330,10 @@ function _LiteLite:ListDelves()
     end
 
     local completedJourney = C_QuestLog.IsQuestFlaggedCompleted(86371)
-    local footer = string.format("Max level delves: %d/%d. Journey: %s", progress, activities[3].threshold, tostring(completedJourney))
+    local progText = WHITE_FONT_COLOR:WrapTextInColorCode(string.format("%d/%d", progress, activities[3].threshold))
+    local journeyColor = completedJourney and GREEN_FONT_COLOR or RED_FONT_COLOR
+    local journeyText = journeyColor:WrapTextInColorCode(tostring(completedJourney))
+    local footer = string.format("Max level delves: %s. Journey: %s", progText, journeyText)
     _LiteLiteTable:SetFooter(string.format("Delver's Journey completed? %s", tostring(completedJourney)))
     _LiteLiteTable:Setup(DELVES_LABEL, { "Map", "Delve", "Story", "Bountiful?" })
     _LiteLiteTable:SetFooter(footer)
