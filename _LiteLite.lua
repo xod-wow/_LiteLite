@@ -2512,26 +2512,63 @@ function _LiteLite:RestoredCofferKeys()
     printf("Shards completed: %d/200", shardsCompleted*50)
 end
 
+-- All of the ticker weirdness with the auto-inviting is because (a) battle.net
+-- does not always answer, and takes a while to answer after login and (b) as
+-- far as I can tell there is no way to tell the difference between "can't look
+-- this GUID up right now" and "can never look this GUID up because it is not
+-- part of our battle.net friends".
+
+function _LiteLite:OnBattleNetInfoAvailable(guid, func)
+    local attempts = 0
+    local ticker
+
+    local function TickerFunc()
+        attempts = attempts + 1
+        if attempts > 30 then
+            ticker:Cancel()
+            func(nil)   -- Call with nil info if attempts expired
+        end
+        local info = C_BattleNet.GetAccountInfoByGUID(guid)
+        if info then
+            ticker:Cancel()
+            func(info)
+        end
+    end
+
+    ticker = C_Timer.NewTimer(0.1, TickerFunc)
+end
+
 function _LiteLite:AutoInviteMyself()
     self.invited = {}
     self:RegisterEvent("GUILD_ROSTER_UPDATE")
+end
+
+function _LiteLite:AutoInvite(name, info, myBattleTag)
+    if info and info.battleTag == myBattleTag then
+        printf("   - One of my toons, inviting %s", name)
+        C_Timer.After(1, function () C_PartyInfo.InviteUnit(name) end)
+        return true
+    else
+        return false
+    end
 end
 
 function _LiteLite:GUILD_ROSTER_UPDATE()
     local myName = string.join('-', UnitFullName('player'))
     local myBattleTag = C_BattleNet.GetAccountInfoByGUID(self.playerGUID).battleTag
 
-    C_GuildInfo.GuildRoster()
+    -- printf("AutoInviteMyself check due to GUILD_ROSTER_UPDATE")
+
     local _, n = GetNumGuildMembers()
     for i = 1, n do
         local name = GetGuildRosterInfo(i)
-        if name ~= myName then
+        if name ~= myName and self.invited[name] == nil then
+            printf(" - Checking %d. %s", i, name)
             local guid = select(17, GetGuildRosterInfo(i))
-            local info = C_BattleNet.GetAccountInfoByGUID(guid)
-            if info and info.battleTag == myBattleTag and not self.invited[name] then
-                C_Timer.After(1, function () C_PartyInfo.InviteUnit(name) end)
-                self.invited[name] = true
-            end
+            self:OnBattleNetInfoAvailable(guid,
+                function (info)
+                    self.invited[name] = self:AutoInvite(name, info, myBattleTag)
+                end)
         end
     end
 end
@@ -2540,11 +2577,10 @@ function _LiteLite:AcceptMyInvites()
     self:RegisterEvent("PARTY_INVITE_REQUEST")
 end
 
-function _LiteLite:AutoAcceptInvite(name, guid)
-    if guid then
+function _LiteLite:AutoAcceptInvite(name, inviterInfo)
+    if inviterInfo then
         local myInfo = C_BattleNet.GetAccountInfoByGUID(self.playerGUID)
-        local inviterInfo = C_BattleNet.GetAccountInfoByGUID(guid)
-        if inviterInfo and inviterInfo.battleTag == myInfo.battleTag then
+        if inviterInfo.battleTag == myInfo.battleTag then
             print('AutoInvite OK', name, inviterInfo.battleTag, myInfo.battleTag)
             AcceptGroup()
             StaticPopup_Hide("PARTY_INVITE")
@@ -2555,10 +2591,10 @@ end
 function _LiteLite:PARTY_INVITE_REQUEST(...)
     local inviterName, _, _, _, _, _, inviterGUID = ...
 
-    -- This can fail on login for a while, and maybe if bnet is down
-    if not C_BattleNet.GetAccountInfoByGUID(self.playerGUID) then
-        C_Timer.After(0.5, function () self:AutoAcceptInvite(inviterName, inviterGUID) end)
-    else
-        self:AutoAcceptInvite(inviterName, inviterGUID)
+    if inviterName and inviterGUID then
+    self:OnBattleNetInfoAvailable(inviterGUID,
+        function (inviterInfo)
+            self:AutoAcceptInvite(inviterName, inviterInfo)
+        end)
     end
 end
