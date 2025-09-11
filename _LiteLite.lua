@@ -2524,13 +2524,13 @@ end
 
 function _LiteLite:OnBattleNetInfoAvailable(guid, func)
     local attempts = 0
-    local ticker
 
-    local function TickerFunc()
+    local function TickerFunc(ticker)
         attempts = attempts + 1
         if attempts > 30 then
             ticker:Cancel()
             func(nil)   -- Call with nil info if attempts expired
+            return
         end
         local info = C_BattleNet.GetAccountInfoByGUID(guid)
         if info then
@@ -2539,7 +2539,7 @@ function _LiteLite:OnBattleNetInfoAvailable(guid, func)
         end
     end
 
-    ticker = C_Timer.NewTimer(0.1, TickerFunc)
+    C_Timer.NewTicker(0.1, TickerFunc)
 end
 
 function _LiteLite:AutoInviteMyself()
