@@ -1270,15 +1270,19 @@ local function GetFactionNumbersByName(name)
     end
 end
 
+local function PrintFactionIncrease(factionName, amount)
+    local name, cur, max = GetFactionNumbersByName(factionName)
+    if name then
+        local txt = string.format('%s +%d -> %s: %d/%d', factionName, amount, name, cur, max)
+        printf(BLUE_FONT_COLOR:WrapTextInColorCode(txt))
+    end
+end
+
 function _LiteLite:CHAT_MSG_COMBAT_FACTION_CHANGE(msg)
     local factionName, amount = msg:match('with (.-) increased by (%d+)')
     amount = tonumber(amount)
     if factionName and amount and amount > 50 then
-        local name, cur, max = GetFactionNumbersByName(factionName)
-        if name then
-            local txt = string.format('%s +%d -> %s: %d/%d', factionName, amount, name, cur, max)
-            printf(BLUE_FONT_COLOR:WrapTextInColorCode(txt))
-        end
+        C_Timer.After(0, function () PrintFactionIncrease(factionName, amount) end)
     end
 end
 
@@ -2541,6 +2545,7 @@ end
 function _LiteLite:AutoInviteMyself()
     self.invited = {}
     self:RegisterEvent("GUILD_ROSTER_UPDATE")
+    C_GuildInfo.GuildRoster()
 end
 
 function _LiteLite:AutoInvite(name, info, myBattleTag)
