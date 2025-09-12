@@ -233,3 +233,21 @@ function _LiteTableMixin:OnLoad()
     self.headerCells = CreateFramePool("Button", self, "_LiteTableHeaderTemplate")
 end
 
+function _LiteTableMixin:Reset()
+    self:Hide()
+    self.data = {}
+    self.footer = nil
+    self.sortColumn = nil
+    self.columnNames = nil
+    self.columnWidths = {}
+    self.autoWidth = nil
+    self.enableSort = nil
+    self.isDirty = nil
+    self:SetScript('OnUpdate', nil)
+    if self.cells then
+        self.cells:ReleaseAll()
+    end
+    if self.headerCells then
+        self.headerCells:ReleaseAll()
+    end
+end
