@@ -2545,12 +2545,16 @@ end
 
 function _LiteLite:AutoInviteMyself()
     self.invited = {}
+    self:OnBattleNetInfoAvailable(GetPlayerGuid(),
+        function (info)
+            self.myBattleTag = info.battleTag
+        end)
     self:RegisterEvent("GUILD_ROSTER_UPDATE")
     C_GuildInfo.GuildRoster()
 end
 
-function _LiteLite:AutoInvite(name, info, myBattleTag)
-    if info and info.battleTag == myBattleTag then
+function _LiteLite:AutoInvite(name, info)
+    if info and info.battleTag == self.myBattleTag then
         printf("   - One of my toons, inviting %s", name)
         C_Timer.After(1, function () C_PartyInfo.InviteUnit(name) end)
         return true
@@ -2561,7 +2565,6 @@ end
 
 function _LiteLite:GUILD_ROSTER_UPDATE()
     local myName = string.join('-', UnitFullName('player'))
-    local myBattleTag = C_BattleNet.GetAccountInfoByGUID(self.playerGUID).battleTag
 
     -- printf("AutoInviteMyself check due to GUILD_ROSTER_UPDATE")
 
@@ -2569,11 +2572,12 @@ function _LiteLite:GUILD_ROSTER_UPDATE()
     for i = 1, n do
         local name = GetGuildRosterInfo(i)
         if name ~= myName and self.invited[name] == nil then
+            self.invited[name] = 'pending'
             printf(" - Checking %d. %s", i, name)
             local guid = select(17, GetGuildRosterInfo(i))
             self:OnBattleNetInfoAvailable(guid,
                 function (info)
-                    self.invited[name] = self:AutoInvite(name, info, myBattleTag)
+                    self.invited[name] = self:AutoInvite(name, info)
                 end)
         end
     end
