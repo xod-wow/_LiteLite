@@ -121,6 +121,9 @@ function _LiteLite:SpellCastAnnounce(spellID, spellName)
         return
     end
 
+    if spellID == 1231411 then  -- Recuperate
+        SendChatMessage('Re-cu-per-ate.', 'SAY')
+    end
 --[[
     if spellID == 115310 then
         -- Revival (Mistweaver Monk)
@@ -305,6 +308,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'decode' then
         self:Decode()
         return true
+    elseif arg == 'world-quest' or arg == 'wq' then
+        self:WorldQuestList()
+        return true
     end
 
     -- One argument options
@@ -332,13 +338,6 @@ function _LiteLite:SlashCommand(arg)
         return true
     elseif arg1 == 'catalyst' or arg1 == 'cat' then
         self:CatalystCharges()
-        return true
-    elseif arg1 == 'world-quest' or arg1 == 'wq' then
-        if arg2 then
-            self:WorldQuestList(string.split(' ', arg2))
-        else
-            self:WorldQuestList()
-        end
         return true
     elseif arg1 == 'guild-news' or arg1 == 'gn' then
         local iLevel = tonumber(arg2)
@@ -431,7 +430,7 @@ function _LiteLite:PLAYER_LOGIN()
     self.playerGUID = UnitGUID('player')
 
     self.questsCompleted = {}
-    self:ScanQuestsCompleted()
+    -- self:ScanQuestsCompleted()
 
     self:SetupSlashCommand()
     self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
@@ -1015,6 +1014,11 @@ end
 local function UpdateQuestRewards(tableWidget, rowData, info)
     local numRewards = GetNumQuestLogRewards(info.questID)
     if numRewards == 0 then
+        local copper = GetQuestLogRewardMoney(info.questID)
+        if copper > 0 then
+            rowData[4] = GetMoneyString(copper)
+            tableWidget:MarkDirty()
+        end
         return
     end
 
