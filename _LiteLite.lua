@@ -374,8 +374,10 @@ function _LiteLite:SlashCommand(arg)
         elseif arg2 == 'clear' then
             self:ScanMobClear()
         elseif arg2 == 'way' then
-            self:ShowScanWaypoints()
-            TomTom:SetClosestWaypoint()
+            if TomTom then
+                self:ShowScanWaypoints()
+                TomTom:SetClosestWaypoint()
+            end
         end
         self:ScanMobList()
         return true
@@ -889,7 +891,7 @@ function _LiteLite:RemoveAllScanWaypoints()
 end
 
 function _LiteLite:IsCloseWaypoint(data)
-    if not data.tomTomWaypoint then
+    if not TomTom or not data.tomTomWaypoint then
         return false
     end
 
@@ -976,7 +978,7 @@ function _LiteLite:ScanMobAddFromVignette(id)
                 printf(format("  autoClear %s", tostring(data.autoClear)))
                 PlaySound(11466)
                 self.scannedGUID[data.objectGUID] = data
-                if self.db.autoScanWaypoint then
+                if TomTom and self.db.autoScanWaypoint then
                     self:AddWaypoint(data)
                     TomTom:SetClosestWaypoint()
                 end
@@ -993,6 +995,9 @@ function _LiteLite:VIGNETTES_UPDATED()
     for _, id in ipairs(C_VignetteInfo.GetVignettes()) do
         self:ScanMobAddFromVignette(id)
     end
+
+    if not TomTom then return end
+
     -- Sometimes (like with S.C.R.A.P. Heap) a vignette is removed then
     -- replaced with another with the same objectGUID (to change icon).
     -- Delay the delete to give the new one a chance to spawn.
