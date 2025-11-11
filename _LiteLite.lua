@@ -472,8 +472,15 @@ function _LiteLite:PLAYER_LOGIN()
     self:SetupHearthstoneButton()
     self:CheckCitrines()
     self:AcceptMyInvites()
+    self:CheckVaultRewards()
 
     _LiteLiteTable:SetAutoWidth(true)
+end
+
+function _LiteLite:CheckVaultRewards()
+    if C_WeeklyRewards.HasAvailableRewards() then
+        printf("Check your vault!")
+    end
 end
 
 function _LiteLite:RemixFix()
