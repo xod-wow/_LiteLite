@@ -2537,29 +2537,33 @@ function _LiteLite:OnBattleNetInfoAvailable(guid, func)
 
     local function TickerFunc(ticker)
         attempts = attempts + 1
-        if attempts > 30 then
+        if attempts > 50 then
+            print('Ticker timed out after 25 attempts')
             ticker:Cancel()
             func(nil)   -- Call with nil info if attempts expired
             return
         end
         local info = C_BattleNet.GetAccountInfoByGUID(guid)
         if info then
+            print(string.format('Ticker succeeded after %d attempts', attempts))
             ticker:Cancel()
             func(info)
         end
     end
 
-    C_Timer.NewTicker(0.1, TickerFunc)
+    C_Timer.NewTicker(0.2, TickerFunc)
 end
 
 function _LiteLite:AutoInviteMyself()
     self.invited = {}
     self:OnBattleNetInfoAvailable(GetPlayerGuid(),
         function (info)
-            self.myBattleTag = info.battleTag
+            if info then
+                self.myBattleTag = info.battleTag
+                self:RegisterEvent("GUILD_ROSTER_UPDATE")
+                C_GuildInfo.GuildRoster()
+            end
         end)
-    self:RegisterEvent("GUILD_ROSTER_UPDATE")
-    C_GuildInfo.GuildRoster()
 end
 
 function _LiteLite:AutoInvite(name, info)
