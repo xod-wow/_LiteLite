@@ -117,12 +117,12 @@ end
 
 
 function _LiteLite:SpellCastAnnounce(spellID, spellName)
-    if UnitIsPVP('player') or IsActiveBattlefieldArena() then
+    if not IsInInstance() or UnitIsPVP('player') or IsActiveBattlefieldArena() then
         return
     end
 
     if spellID == 1231411 then  -- Recuperate
-        SendChatMessage('Re-cu-per-ate.', 'SAY')
+        C_ChatInfo.SendChatMessage('Re-cu-per-ate.', 'SAY')
     end
 --[[
     if spellID == 115310 then
