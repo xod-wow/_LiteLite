@@ -194,7 +194,7 @@ end
 
 function _LiteLite:AutoEquipsetIcons()
     for _, setID in ipairs(C_EquipmentSet.GetEquipmentSetIDs()) do
-        local specIndex = C_EquipmentSet.GetEquipmentSetAssignedSpec(n)
+        local specIndex = C_EquipmentSet.GetEquipmentSetAssignedSpec(setID)
         if specIndex then
             local textureID = select(4, GetSpecializationInfo(specIndex))
             self:SetEquipsetIcon(setID, textureID)
