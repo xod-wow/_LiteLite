@@ -431,6 +431,13 @@ function _LiteLite:PLAYER_LOGIN()
     self.playerName = format("%s-%s", UnitFullName('player'))
     self.playerGUID = UnitGUID('player')
 
+    if self.db.battleTag == nil then
+        self:OnBattleNetInfoAvailable(self.playerGUID,
+            function (info)
+                self.db.battleTag = info and info.battleTag
+            end)
+    end
+
     self.questsCompleted = {}
     -- self:ScanQuestsCompleted()
 
@@ -2563,18 +2570,11 @@ end
 
 function _LiteLite:AutoInviteMyself()
     self.invited = {}
-    self:OnBattleNetInfoAvailable(GetPlayerGuid(),
-        function (info)
-            if info then
-                self.myBattleTag = info.battleTag
-                self:RegisterEvent("GUILD_ROSTER_UPDATE")
-                C_GuildInfo.GuildRoster()
-            end
-        end)
+    self:RegisterEvent("GUILD_ROSTER_UPDATE")
 end
 
 function _LiteLite:AutoInvite(name, info)
-    if info and info.battleTag == self.myBattleTag then
+    if info and info.battleTag == self.db.battleTag then
         printf("   - One of my toons, inviting %s", name)
         C_Timer.After(1, function () C_PartyInfo.InviteUnit(name) end)
         return true
