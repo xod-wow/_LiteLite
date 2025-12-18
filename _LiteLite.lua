@@ -141,10 +141,6 @@ function _LiteLite:NameplateSettings()
     SetCVar('nameplateMaxDistance', 100)
 end
 
-function _LiteLite:ChatFrameSettings()
-    -- Edit mode?
-end
-
 local function GetGameTooltipIcon()
     local _, id = GameTooltip:GetSpell()
     if id then
@@ -244,9 +240,6 @@ function _LiteLite:SlashCommand(arg)
         return true
     elseif arg == 'spec-config' or arg == 'sc' then
         self:ImportExportSpecConfig()
-        return true
-    elseif arg == 'chatframe-settings' or arg == 'cs' then
-        self:ChatFrameSettings()
         return true
     elseif arg == 'check-elemental-storms' or arg == 'ces' then
         self:CheckElementalStorms()
@@ -391,7 +384,6 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll announce-mob | am")
     printf("/ll auto-waypoint | aw")
     printf("/ll button-macro [|bm] <key> <macrotext>")
-    printf("/ll chatframe-settings")
     printf("/ll delves")
     printf("/ll equipset-icon [n [iconid]]")
     printf("/ll equipset-icon auto")
