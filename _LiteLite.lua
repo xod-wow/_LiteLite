@@ -2025,16 +2025,21 @@ local DragonridingActions = {
     [123] = 361584,
     [124] = 403092,
     [125] = 425782,
-    [126] = 374990,
+    [126] = 0,
 }
 
 function _LiteLite:SetupDragonridingBar()
     for actionID, spellID in pairs(DragonridingActions) do
-        local aType, aID, aSubType = GetActionInfo(actionID)
-        if aType ~= 'spell' or aID ~= spellID then
-            C_Spell.PickupSpell(spellID)
-            PlaceAction(actionID)
+        if spellID == 0 then
+            PickupAction(actionID)
             ClearCursor()
+        else
+            local aType, aID, aSubType = GetActionInfo(actionID)
+            if aType ~= 'spell' or aID ~= spellID then
+                C_Spell.PickupSpell(spellID)
+                PlaceAction(actionID)
+                ClearCursor()
+            end
         end
     end
 end
