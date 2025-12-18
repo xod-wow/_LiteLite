@@ -2015,7 +2015,7 @@ end
 
 function _LiteLite:PLAYER_INTERACTION_MANAGER_FRAME_SHOW(id)
     if id == Enum.PlayerInteractionType.ItemUpgrade then
-        ShowUIPanel(CharacterFrame)
+        C_Timer.After(0, function () ShowUIPanel(CharacterFrame) end)
     end
 end
 
