@@ -423,6 +423,8 @@ function _LiteLite:PLAYER_LOGIN()
     self.playerName = format("%s-%s", UnitFullName('player'))
     self.playerGUID = UnitGUID('player')
 
+    self.db.battleTagCache = self.db.battleTagCache or {}
+
     if self.db.battleTag == nil then
         self:OnBattleNetInfoAvailable(self.playerGUID,
             function (info)
@@ -2502,7 +2504,7 @@ function _LiteLite:OnBattleNetInfoAvailable(guid, func)
     local function TickerFunc(ticker)
         attempts = attempts + 1
         if attempts > 50 then
-            print('Ticker timed out after 25 attempts')
+            print('Ticker timed out after 50 attempts')
             ticker:Cancel()
             func(nil)   -- Call with nil info if attempts expired
             return
@@ -2523,8 +2525,8 @@ function _LiteLite:AutoInviteMyself()
     self:RegisterEvent("GUILD_ROSTER_UPDATE")
 end
 
-function _LiteLite:AutoInvite(name, info)
-    if info and info.battleTag == self.db.battleTag then
+function _LiteLite:AutoInvite(name, battleTag)
+    if battleTag == self.db.battleTag then
         printf("   - One of my toons, inviting %s", name)
         C_Timer.After(1, function () C_PartyInfo.InviteUnit(name) end)
         return true
@@ -2542,13 +2544,20 @@ function _LiteLite:GUILD_ROSTER_UPDATE()
     for i = 1, n do
         local name = GetGuildRosterInfo(i)
         if name ~= myName and self.invited[name] == nil then
-            self.invited[name] = 'pending'
             printf(" - Checking %d. %s", i, name)
-            local guid = select(17, GetGuildRosterInfo(i))
-            self:OnBattleNetInfoAvailable(guid,
-                function (info)
-                    self.invited[name] = self:AutoInvite(name, info)
-                end)
+            if self.db.battleTagCache[name] then
+                self.invited[name] = self:AutoInvite(name, self.db.battleTagCache[name])
+            else
+                self.invited[name] = 'pending'
+                local guid = select(17, GetGuildRosterInfo(i))
+                self:OnBattleNetInfoAvailable(guid,
+                    function (info)
+                        if info then
+                            self.db.battleTagCache[name] = info.battleTag
+                            self.invited[name] = self:AutoInvite(name, info.battleTag)
+                        end
+                    end)
+            end
         end
     end
 end
@@ -2559,9 +2568,8 @@ end
 
 function _LiteLite:AutoAcceptInvite(name, inviterInfo)
     if inviterInfo then
-        local myInfo = C_BattleNet.GetAccountInfoByGUID(self.playerGUID)
-        if inviterInfo.battleTag == myInfo.battleTag then
-            print('AutoInvite OK', name, inviterInfo.battleTag, myInfo.battleTag)
+        if inviterInfo.battleTag == self.db.battleTag then
+            print('AutoInvite OK', name, inviterInfo.battleTag, self.db.battleTag)
             AcceptGroup()
             StaticPopup_Hide("PARTY_INVITE")
         end
@@ -2572,10 +2580,10 @@ function _LiteLite:PARTY_INVITE_REQUEST(...)
     local inviterName, _, _, _, _, _, inviterGUID = ...
 
     if inviterName and inviterGUID then
-    self:OnBattleNetInfoAvailable(inviterGUID,
-        function (inviterInfo)
-            self:AutoAcceptInvite(inviterName, inviterInfo)
-        end)
+        self:OnBattleNetInfoAvailable(inviterGUID,
+            function (inviterInfo)
+                self:AutoAcceptInvite(inviterName, inviterInfo)
+            end)
     end
 end
 
