@@ -116,7 +116,7 @@ function _LiteLite:SetEditModeLayout(layout)
 end
 
 
-function _LiteLite:SpellCastAnnounce(spellID, spellName)
+function _LiteLite:SpellCastAnnounce(spellID)
     if not IsInInstance() or UnitIsPVP('player') or IsActiveBattlefieldArena() then
         return
     end
@@ -436,7 +436,7 @@ function _LiteLite:PLAYER_LOGIN()
     -- self:ScanQuestsCompleted()
 
     self:SetupSlashCommand()
-    self:RegisterEvent('COMBAT_LOG_EVENT_UNFILTERED')
+    self:RegisterUnitEvent('UNIT_SPELLCAST_SUCCEEDED', 'player')
     self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
     self:RegisterEvent('CHAT_MSG_MONSTER_EMOTE')
     self:RegisterEvent('CHAT_MSG_LOOT')
@@ -530,13 +530,9 @@ function _LiteLite:CHAT_MSG_LOOT(...)
     end
 end
 
-function _LiteLite:COMBAT_LOG_EVENT_UNFILTERED()
-    local ts, e, _, srcGUID, srcName, srcFlags, srcRaidFlags, destGUID, destName, destFlags, destRaidFlags, arg1, arg2, arg3 = CombatLogGetCurrentEventInfo()
-    if e == 'SPELL_CAST_SUCCESS' then
-        if srcGUID == UnitGUID('player') then
-            self:SpellCastAnnounce(arg1, arg2)
-        end
-    end
+function _LiteLite:UNIT_SPELLCAST_SUCCEEDED(...)
+    local unit, _, spellID  = ...
+    self:SpellCastAnnounce(spellID)
 end
 
 local StartQuotes = {
