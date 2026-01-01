@@ -2519,6 +2519,7 @@ end
 function _LiteLite:AutoInviteMyself()
     self.invited = {}
     self:RegisterEvent("GUILD_ROSTER_UPDATE")
+    C_GuildInfo.GuildRoster()
 end
 
 function _LiteLite:AutoInvite(name, battleTag)
