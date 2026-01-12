@@ -301,9 +301,6 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'decode' then
         self:Decode()
         return true
-    elseif arg == 'world-quest' or arg == 'wq' then
-        self:WorldQuestList()
-        return true
     end
 
     -- One argument options
@@ -347,6 +344,9 @@ function _LiteLite:SlashCommand(arg)
         return true
     elseif arg1 == 'tinspect' then
         self:TableInspectEval(arg2)
+        return true
+    elseif arg1 == 'world-quest' or arg1 == 'wq' then
+        self:WorldQuestList(arg2)
         return true
     end
 
@@ -403,7 +403,7 @@ function _LiteLite:SlashCommand(arg)
     printf("/ll mouseover-macro [spellname]")
     printf("/ll player-macro [spellname]")
     printf("/ll trinket-macro [spellname]")
-    printf("/ll world-quest [expansion] [-i|-r|-l]")
+    printf("/ll world-quest [tww|df|sl|bfa|legion|<mapid>]")
     return true
 end
 
@@ -1083,6 +1083,8 @@ function _LiteLite:FindChildZoneMaps(expansion)
         todo = { 1550 }
     elseif expansion == 'bfa' then
         todo = { 875, 876 }
+    elseif expansion == 'legion' then
+        todo = { 619 }
     elseif tonumber(expansion) then
         todo = { tonumber(expansion) }
     else
@@ -1142,18 +1144,7 @@ function _LiteLite:WorldQuestProcess(expansion)
         end, 10)
 end
 
-function _LiteLite:WorldQuestList(...)
-    local filter, expansion
-
-    for i = 1, select('#', ...) do
-        local arg = select(i, ...)
-        if arg:sub(1,1) == '-' then
-            filter = arg
-        else
-            expansion = arg
-        end
-    end
-
+function _LiteLite:WorldQuestList(expansion)
     self:WorldQuestProcess(expansion)
 end
 
@@ -1992,10 +1983,14 @@ function _LiteLite:LFG_LIST_JOINED_GROUP(resultID, kstringGroupName)
 
     if activityInfo.isMythicPlusActivity then
         local _, _, _, _, role = C_LFGList.GetApplicationInfo(resultID)
-        printf(format('Joined %s "%s" as %s', activityInfo.fullName, kstringGroupName, _G[role]))
+        local msg = format('Joined %s "%s" as %s', activityInfo.fullName, kstringGroupName, _G[role])
+        local dashes = string.rep('-', msg:len())
+        printf(HEIRLOOM_BLUE_COLOR:WrapTextInColorCode(dashes))
+        printf(HEIRLOOM_BLUE_COLOR:WrapTextInColorCode(msg))
+        printf(HEIRLOOM_BLUE_COLOR:WrapTextInColorCode(dashes))
 
+--[[
         -- kstring is gone before the GROUP_JOINED so can't use it
-
         local chatMsg = format('Joined %s as %s', activityInfo.fullName, _G[role])
         local function sendmsg()
             SendChatMessage(chatMsg, IsInRaid() and "RAID" or "PARTY")
@@ -2005,6 +2000,7 @@ function _LiteLite:LFG_LIST_JOINED_GROUP(resultID, kstringGroupName)
         else
             EventUtil.RegisterOnceFrameEventAndCallback("GROUP_JOINED", sendmsg)
         end
+]]
     end
 end
 
