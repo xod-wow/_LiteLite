@@ -450,8 +450,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('LFG_LIST_JOINED_GROUP')
     self:RegisterEvent('PLAYER_INTERACTION_MANAGER_FRAME_SHOW')
     self:RegisterEvent('PLAYER_LOGOUT')
-
-    self:PageMultiBarBottomRight()
+    self:RegisterEvent('SETTINGS_LOADED')
 
     self:BiggerFrames()
     self:SmallerPetHitText()
@@ -460,7 +459,6 @@ function _LiteLite:PLAYER_LOGIN()
     self:SellJunkButton()
     self:AutoRepairAll()
     self:RotatingMarker()
-    self:StopSpellAutoPush()
     self:CHAT_MSG_COMBAT_XP_GAIN()
     -- self:LargerCUFDispelIcons()
     self:HideProfessionUnspentReminder()
@@ -499,6 +497,13 @@ function _LiteLite:SellJunkButton()
         MerchantSellAllJunkButton:SetScript('OnClick', MerchantFrame_OnSellAllJunkButtonConfirmed)
         -- MerchantSellAllJunkButton:SetScript('OnClick', self.SellJunk)
     end
+end
+
+function _LiteLite:SETTINGS_LOADED()
+    self:EnableAutoLoot()
+    self:RaidFrameOptions()
+    self:StopSpellAutoPush()
+    self:ShowActionBars()
 end
 
 function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
@@ -576,8 +581,7 @@ end
 
 function _LiteLite:NextGameSoundOutput()
     local cvar = 'Sound_OutputDriverIndex'
-    local i = BlizzardOptionsPanel_GetCVarSafe(cvar) or 0
-    local n = Sound_GameSystem_GetNumOutputDrivers() or 1
+    local i = GetCVar(cvar) or 0
 
     i = i + 1
     if i >= Sound_GameSystem_GetNumOutputDrivers() then
@@ -1354,9 +1358,21 @@ function _LiteLite:SetAceProfile(svName, profileName)
     end
 end
 
+function _LiteLite:EnableAutoLoot()
+    SetCVar("autoLootDefault", true)
+end
+
+function _LiteLite:RaidFrameOptions()
+    SetCVar("raidFramesDisplayClassColor", true)
+    SetCVar("raidFramesDisplayPowerBars", true)
+    SetCVar("raidFramesDisplayOnlyHealerPowerBars", true)
+    SetCVar("raidOptionDisplayMainTankAndAssist", false)
+end
+
 function _LiteLite:OtherAddonProfiles()
     self:SetAceProfile('HandyNotesDB', 'Default')
     self:SetAceProfile('EnhancedRaidFramesDB', 'Default')
+    self:SetAceProfile('SimulationCraftDB', 'Default')
 end
 
 function _LiteLite:MuteDragonridingMounts()
@@ -2361,38 +2377,12 @@ end
 ]]
 
 
-function _LiteLite:PageMultiBarBottomRight()
---[=[
-    local ap = CreateFrame("Frame", "_LiteLiteActionPager", nil, "SecureGroupHeaderTemplate")
-    SecureHandlerSetFrameRef(ap, "bar", MultiBarBottomRight)
-    SecureHandlerWrapScript(MainMenuBar, "OnAttributeChanged", ap,
-        [[
-            print('x')
-            print(name)
-            print(value)
-            if name == 'actionpage' then
-                local bar = self:GetFrameRef('bar')
-                if HasBonusActionBar() then
-                    bar:SetAttribute("actionpage", 14)
-                else
-                    bar:SetAttribute("actionpage", 5)
-                end
-            end
-       ]])
-
-    local function Update()
-        if HasBonusActionBar() then
-            MultiBarBottomRight:SetAttribute("actionpage", 14)
-        else
-            MultiBarBottomRight:SetAttribute("actionpage", 5)
-        end
-    end
-]=]
-    -- Hooking because it's called in ActionBarController_UpdateAll before
-    -- all of the bar buttons are updated for their state. Not because we care
-    -- at all about the stance bar.
-    -- hooksecurefunc(StanceBar, 'Update', Update)
-    -- Update()
+function _LiteLite:ShowActionBars()
+    Settings.SetValue("PROXY_SHOW_ACTIONBAR_2", true)
+    Settings.SetValue("PROXY_SHOW_ACTIONBAR_3", true)
+    Settings.SetValue("PROXY_SHOW_ACTIONBAR_4", true)
+    Settings.SetValue("PROXY_SHOW_ACTIONBAR_5", true)
+    Settings.SetValue("PROXY_SHOW_ACTIONBAR_6", true)
 end
 
 local DRIVE_TREE = 1056
