@@ -1566,19 +1566,6 @@ function _LiteLite:StopSpellAutoPush()
 end
 
 local ImportExportMixin = {
-    GetLoadoutExportString =
-        function (self, currentSpecID, configID)
-            local exportStream = ExportUtil.MakeExportDataStream()
-            local configInfo = C_Traits.GetConfigInfo(configID)
-            local treeInfo = C_Traits.GetTreeInfo(configID, configInfo.treeIDs[1])
-            local treeHash = C_Traits.GetTreeHash(treeInfo.ID)
-            local serializationVersion = C_Traits.GetLoadoutSerializationVersion()
-
-            self:WriteLoadoutHeader(exportStream, serializationVersion, currentSpecID, treeHash)
-            self:WriteLoadoutContent(exportStream, configID, treeInfo.ID)
-
-            return exportStream:GetExportString()
-        end,
     ImportLoadout =
         function (self, importText, loadoutName)
             printf('Importing loadout: ' .. loadoutName)
@@ -1596,13 +1583,13 @@ local ImportExportMixin = {
             if not loadoutContent then printf('Loadout did not convert') return end
             local loadoutEntryInfo = self:ConvertToImportLoadoutEntryInfo(configID, treeInfo.ID, loadoutContent)
 
-
             if loadoutName == 'active' then
                 C_Traits.ResetTree(configID, configInfo.treeIDs[1])
                 self:PurchaseLoadout(configID, loadoutEntryInfo)
                 C_Traits.CommitConfig(configID) -- TTT says this doesn't work
             else
                 local ok, err = C_ClassTalents.ImportLoadout(configID, loadoutEntryInfo, loadoutName)
+                C_Traits.RollbackConfig(configID)
                 if not ok then
                     printf('Loadout import failed: %s: %s', loadoutName, err)
                     return
@@ -1645,8 +1632,10 @@ local function GetActionMacroInfo(actionID)
     return GetMacroInfo(macroName)
 end
 
--- JSON strictly can't have gaps in an array, and Blizzard's serializer isn't
--- smart enough to turn it into a hash without string-ifying the keys
+--- Use JSON becuase I can peer at it. CBOR is better but it would have to be
+--- Base64 encoded. Difficulty: JSON can't have gaps in an array, and Blizzard's
+--- serializer will bomb out if t[1] exists and there are gaps, so force the
+--- serializer to output a key table by tostring()ing the indexes.
 local function SpecConfigToString()
     local map = {}
 
@@ -1668,23 +1657,14 @@ local function SpecConfigToString()
         end
     end
 
-    C_AddOns.LoadAddOn('Blizzard_PlayerSpells')
-
-    local exporter = CreateFromMixins(ClassTalentImportExportMixin, ImportExportMixin)
-
-    map.loadouts = {}
-
     local specID = PlayerUtil.GetCurrentSpecID()
-    for _,configID in ipairs(C_ClassTalents.GetConfigIDsBySpecID(specID)) do
-        local info = C_Traits.GetConfigInfo(configID)
-        map.loadouts[info.name] = exporter:GetLoadoutExportString(specID, configID)
-    end
+    local lastSelectedConfigID = C_ClassTalents.GetLastSelectedSavedConfigID(specID)
+    local configID = C_ClassTalents.GetActiveConfigID()
 
-    -- No named sets, export current talents instead
-    if next(map.loadouts) == nil then
-        local configID = C_ClassTalents.GetActiveConfigID()
-        map.loadouts['active'] = exporter:GetLoadoutExportString(specID, configID)
-    end
+    map.loadout = {
+        string = C_Traits.GenerateImportString(configID),
+        name = lastSelectedConfigID and C_Traits.GetConfigInfo(lastSelectedConfigID).name or 'active'
+    }
 
     -- Clique bindings
     if Clique and Clique.db then
@@ -1757,21 +1737,29 @@ local function SpecConfigFromString(text)
         SetAction(i, map.actions[index])
     end
 
-    printf('Setting up loadouts')
-    local currentConfigsByName = {}
-    local specID = PlayerUtil.GetCurrentSpecID()
-    for _,configID in ipairs(C_ClassTalents.GetConfigIDsBySpecID(specID)) do
-        local info = C_Traits.GetConfigInfo(configID)
-        currentConfigsByName[info.name] = configID
-    end
-
-    local importer = CreateFromMixins(ClassTalentImportExportMixin, ImportExportMixin)
-    for name, data in pairs(map.loadouts or {}) do
-        if currentConfigsByName[name] then
-            printf('Deleting existing loadout: ' .. name)
-            C_ClassTalents.DeleteConfig(currentConfigsByName[name])
+    printf('Setting up loadout')
+    if map.loadout then
+        local currentConfigsByName = {}
+        local specID = PlayerUtil.GetCurrentSpecID()
+        for _,configID in ipairs(C_ClassTalents.GetConfigIDsBySpecID(specID)) do
+            local info = C_Traits.GetConfigInfo(configID)
+            currentConfigsByName[info.name] = configID
         end
-        importer:ImportLoadout(data, name)
+
+        C_AddOns.LoadAddOn('Blizzard_PlayerSpells')
+        local importer = CreateFromMixins(ClassTalentImportExportMixin, ImportExportMixin)
+        if currentConfigsByName[map.loadout.name] then
+            local lastSelectedConfigID = C_ClassTalents.GetLastSelectedSavedConfigID(specID)
+            local activeConfigName = lastSelectedConfigID and C_Traits.GetConfigInfo(lastSelectedConfigID).name
+            if activeConfigName == map.loadout.name then
+                printf('Importing into active loadout: ' .. map.loadout.name)
+                map.loadout.name = 'active'
+            else
+                printf('Deleting existing inactive loadout: ' .. map.loadout.name)
+                C_ClassTalents.DeleteConfig(currentConfigsByName[map.loadout.name])
+            end
+        end
+        importer:ImportLoadout(map.loadout.string, map.loadout.name)
     end
 
     if map.clique and Clique and Clique.db then
