@@ -1589,7 +1589,7 @@ local ImportExportMixin = {
                 C_Traits.CommitConfig(configID) -- TTT says this doesn't work
             else
                 local ok, err = C_ClassTalents.ImportLoadout(configID, loadoutEntryInfo, loadoutName)
-                C_Traits.RollbackConfig(configID)
+                C_Traits.CommitConfig(configID) -- TTT says this doesn't work
                 if not ok then
                     printf('Loadout import failed: %s: %s', loadoutName, err)
                     return
