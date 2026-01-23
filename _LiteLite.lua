@@ -2156,17 +2156,27 @@ function HearthstoneToyButton:Advance()
     end
 end
 
-function HearthstoneToyButton:UpdateToy(item)
+function HearthstoneToyButton:IsHearthstone(item)
     local name = item:GetItemName()
-    if name:find('Hearthstone') and not tContains(self.toys, name) then
+    local id = item:GetItemID()
+    if notHearthstone[id] then
+        return false
+    elseif name:find('Hearthstone') then
+        return true
+    elseif id == 54452 then -- Ethereal Portal
+        return true
+    else
+        return false
+    end
+end
+
+function HearthstoneToyButton:UpdateToy(item)
+    if self:IsHearthstone(item) then
+        local name = item:GetItemName()
         local id = item:GetItemID()
-        if notHearthstone[id] then
-            -- pass
-        elseif PlayerHasToy(id) then
+        if not tContains(self.toys, name) and PlayerHasToy(id) then
             table.insert(self.toys, name)
             if self.n == nil then self:Advance() end
-        -- else
-        --     print('No toy', id, name)
         end
     end
 end
