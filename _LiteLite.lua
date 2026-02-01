@@ -412,6 +412,8 @@ function _LiteLite:SetupSlashCommand()
     _G.SLASH__LiteLite1 = "/litelite"
     _G.SLASH__LiteLite2 = "/ll"
 
+    SlashCmdList['CDM'] = function (...) CooldownViewerSettings:Show() end
+    _G.SLASH_CDM1 = "/cdm"
 end
 
 function _LiteLite:PLAYER_LOGIN()
@@ -808,6 +810,10 @@ function _LiteLite:UpdateScanning()
 end
 
 function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
+    if C_Secrets.ShouldUnitIdentityBeSecret(unit) then
+        return
+    end
+
     local name = UnitName(unit):lower()
     local guid = UnitGUID(unit)
 
