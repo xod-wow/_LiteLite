@@ -502,9 +502,13 @@ function _LiteLite:SellJunkButton()
 end
 
 function _LiteLite:SETTINGS_LOADED()
-    self:EnableAutoLoot()
+    SetCVar("cooldownViewerEnabled", true)
+    SetCVar("damageMeterEnabled", true)
+
+    SetCVar("autoLootDefault", true)
+    SetCVar("AutoPushSpellToActionBar", 0)
+
     self:RaidFrameOptions()
-    self:StopSpellAutoPush()
     self:ShowActionBars()
 end
 
@@ -1365,7 +1369,6 @@ function _LiteLite:SetAceProfile(svName, profileName)
 end
 
 function _LiteLite:EnableAutoLoot()
-    SetCVar("autoLootDefault", true)
 end
 
 function _LiteLite:RaidFrameOptions()
@@ -1581,10 +1584,6 @@ function _LiteLite:RotatingMarker()
                 self:SetAttribute("macrotext", "/wm [@cursor] " .. n)
             end
         ]])
-end
-
-function _LiteLite:StopSpellAutoPush()
-    SetCVar("AutoPushSpellToActionBar", 0)
 end
 
 local ImportExportMixin = {
@@ -2380,20 +2379,8 @@ function _LiteLite:ListDelves()
     _LiteLiteTable:Show()
 end
 
---[[
-    Not sure how to make ActionBarController_UpdateAll without taint. Or how to
-    make actionpage change without taint before UPDATE_BONUS_ACTIONBAR which
-    causes it to be called.
-
-    Things that don't work:
-    1. RegisterAttributeDriver(MultiBarBottomRight, "actionpage", "[stealth] 14; 5")
-        because the individual bars don't control their own updating
-    2. SecureHandlerSetFrameRef/WrapScript
-        becuse ActionBarController is not a secure frame.
-]]
-
-
 function _LiteLite:ShowActionBars()
+    -- SetCVar('enableMultiActionBars', 0x1f)
     Settings.SetValue("PROXY_SHOW_ACTIONBAR_2", true)
     Settings.SetValue("PROXY_SHOW_ACTIONBAR_3", true)
     Settings.SetValue("PROXY_SHOW_ACTIONBAR_4", true)
