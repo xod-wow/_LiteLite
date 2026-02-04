@@ -2510,14 +2510,12 @@ function _LiteLite:AutoInvite(name, battleTag)
 end
 
 function _LiteLite:GUILD_ROSTER_UPDATE()
-    local myName = string.join('-', UnitFullName('player'))
-
     -- printf("AutoInviteMyself check due to GUILD_ROSTER_UPDATE")
 
     local _, n = GetNumGuildMembers()
     for i = 1, n do
         local name = GetGuildRosterInfo(i)
-        if name ~= myName and self.invited[name] == nil then
+        if name ~= self.playerName and self.invited[name] == nil then
             printf(" - Checking %d. %s", i, name)
             if self.db.battleTagCache[name] then
                 self.invited[name] = self:AutoInvite(name, self.db.battleTagCache[name])
