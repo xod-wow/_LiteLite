@@ -1577,7 +1577,7 @@ function _LiteLite:RotatingMarker()
                 self:SetAttribute("macrotext", "/ping [@mouseover,help] warning; [@mouseover] attack")
             elseif IsControlKeyDown() then
                 self:SetAttribute("n", 0)
-                self:SetAttribute("macrotext", "/cwm 0")
+                self:SetAttribute("macrotext", "/cwm all")
             else
                 local n = ( self:GetAttribute("n") or 0 ) % 8 + 1
                 self:SetAttribute("n", n)
