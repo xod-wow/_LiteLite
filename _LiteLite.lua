@@ -251,7 +251,7 @@ function _LiteLite:SlashCommand(arg)
         self:HookTooltip()
         return true
     elseif arg == 'kickoff' or arg == 'ko' then
-        self:KickOfflineRaidMembers()
+        self:KickOfflineMembers()
         return true
     elseif arg == 'great-vault' or arg == 'gv' then
         self:ShowGreatVault()
@@ -1162,15 +1162,24 @@ function _LiteLite:WorldQuestList(expansion)
     self:WorldQuestProcess(expansion)
 end
 
-function _LiteLite:KickOfflineRaidMembers()
-    if not UnitIsGroupLeader('player') or not IsInRaid() then
+function _LiteLite:KickOfflineMembers()
+    if not UnitIsGroupLeader('player') then
         return
     end
 
-    for i = 40, 1, -1 do
-        local unit = 'raid'..i
+    local function checkboot(unit)
         if UnitExists(unit) and not UnitIsConnected(unit) then
             UninviteUnit(GetUnitName(unit, true))
+        end
+    end
+
+    if IsInRaid() then
+        for i = 40, 1, -1 do
+            checkboot('raid'..i)
+        end
+    elseif IsInGroup() then
+        for i = 4, 1, -1 do
+            checkboot('party'..i)
         end
     end
 end
