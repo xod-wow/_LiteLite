@@ -181,8 +181,8 @@ function _LiteTableMixin:UpdateCells()
     if self.enableSort and self.sortColumn then
         local n = math.abs(self.sortColumn)
         local function colComp(a, b)
-            local aVal = GetCellDisplayText(a[n])
-            local bVal = GetCellDisplayText(b[n])
+            local aVal = tonumber(a[n]) or GetCellDisplayText(a[n])
+            local bVal = tonumber(b[n]) or GetCellDisplayText(b[n])
             if self.sortColumn >= 0 then
                 return aVal < bVal
             else
