@@ -472,7 +472,8 @@ function _LiteLite:PLAYER_LOGIN()
     self:SetupHearthstoneButton()
     self:AcceptMyInvites()
     self:CheckVaultRewards()
-    self:FixSettingsClose()
+    -- self:FixSettingsClose()
+    self:DynamicCDMBuffBars()
 
     _LiteLiteTable:SetAutoWidth(true)
 end
@@ -1305,6 +1306,9 @@ local function PrintFactionIncrease(factionName, amount)
 end
 
 function _LiteLite:CHAT_MSG_COMBAT_FACTION_CHANGE(msg)
+    if C_ChatInfo.InChatMessagingLockdown and C_ChatInfo.InChatMessagingLockdown() then
+        return
+    end
     local factionName, amount = msg:match('with (.-) increased by (%d+)')
     amount = tonumber(amount)
     if factionName and amount and amount > 50 then
@@ -2599,4 +2603,56 @@ function _LiteLite:FixSettingsClose()
             end
             self.closeGameMenuOnSettingsHide = nil
         end)
+end
+
+
+-- Don't leave gaps in the bar "grid". Who knows what will taint here, but so
+-- far this works. When the invididual itemFrame are hidden, also set the
+-- appropriate attribute (ignoreInLayout) for GridLayout to ignore them and
+-- force an update of the GridLayout.
+
+function _LiteLite:DynamicCDMBuffBars()
+    local BuffBarCooldownViewer = BuffBarCooldownViewer
+
+    local function Layout()
+        BuffBarCooldownViewer:GetItemContainerFrame():Layout()
+    end
+
+    local isDirty
+
+    local function OnUpdate()
+        if isDirty then
+            Layout()
+            isDirty = nil
+        end
+    end
+
+    local hookedFrames = {}
+
+    local function HookItemFrame(itemFrame)
+        if not hookedFrames[itemFrame] then
+            hooksecurefunc(itemFrame, 'SetShown',
+                function (_, isShown)
+                    local ignoreInLayout = (not isShown) or nil
+                    itemFrame.ignoreInLayout = ignoreInLayout
+                    isDirty = true
+                end)
+            itemFrame.ignoreInLayout = (not itemFrame:IsShown()) or nil
+            hookedFrames[itemFrame] = true
+        end
+    end
+
+    self.cdmUpdater = CreateFrame('Frame')
+    self.cdmUpdater:SetScript('OnUpdate', OnUpdate)
+    
+    -- Hook them immediately
+    for _, itemFrame in ipairs(BuffBarCooldownViewer:GetItemFrames()) do
+        HookItemFrame(itemFrame)
+    end
+
+    -- And also hook any new ones that are made
+    hooksecurefunc(BuffBarCooldownViewer, 'OnAcquireItemFrame',
+        function (_, itemFrame) HookItemFrame(itemFrame) end)
+
+    Layout()
 end
