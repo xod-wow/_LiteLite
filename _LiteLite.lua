@@ -2607,9 +2607,8 @@ end
 
 
 -- Don't leave gaps in the bar "grid". Who knows what will taint here, but so
--- far this works. When the invididual itemFrame are hidden, also set the
--- appropriate attribute (ignoreInLayout) for GridLayout to ignore them and
--- force an update of the GridLayout.
+-- far this works. Set the invididual itemFrames to not layout when hidden, and
+-- force a relayout when their shown state is changed. This is very efficient.
 
 function _LiteLite:DynamicCDMBuffBars()
     local BuffBarCooldownViewer = BuffBarCooldownViewer
@@ -2620,7 +2619,11 @@ function _LiteLite:DynamicCDMBuffBars()
 
     local isDirty
 
-    local function OnUpdate()
+    local function MarkDirty()
+        isDirty = true
+    end
+
+    local function LayoutIfDirty()
         if isDirty then
             Layout()
             isDirty = nil
@@ -2631,19 +2634,16 @@ function _LiteLite:DynamicCDMBuffBars()
 
     local function HookItemFrame(itemFrame)
         if not hookedFrames[itemFrame] then
-            hooksecurefunc(itemFrame, 'SetShown',
-                function (_, isShown)
-                    local ignoreInLayout = (not isShown) or nil
-                    itemFrame.ignoreInLayout = ignoreInLayout
-                    isDirty = true
-                end)
-            itemFrame.ignoreInLayout = (not itemFrame:IsShown()) or nil
+            itemFrame.includeAsLayoutChildWhenHidden = nil      -- Magic here
+            -- hooksecurefunc(itemFrame, 'SetShown', Layout)
+            hooksecurefunc(itemFrame, 'SetShown', MarkDirty)
+            MarkDirty()
             hookedFrames[itemFrame] = true
         end
     end
 
     self.cdmUpdater = CreateFrame('Frame')
-    self.cdmUpdater:SetScript('OnUpdate', OnUpdate)
+    self.cdmUpdater:SetScript('OnUpdate', LayoutIfDirty)
     
     -- Hook them immediately
     for _, itemFrame in ipairs(BuffBarCooldownViewer:GetItemFrames()) do
@@ -2653,6 +2653,4 @@ function _LiteLite:DynamicCDMBuffBars()
     -- And also hook any new ones that are made
     hooksecurefunc(BuffBarCooldownViewer, 'OnAcquireItemFrame',
         function (_, itemFrame) HookItemFrame(itemFrame) end)
-
-    Layout()
 end
