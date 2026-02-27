@@ -2153,16 +2153,14 @@ local notHearthstone = {
     [211946] = true,
 }
 
-function HearthstoneToyButton:UpdateMacros()
+function HearthstoneToyButton:UpdateMacro(index)
     local name = self.toys[self.n]
     local icon = select(10, C_Item.GetItemInfo(name))
     if icon then
-        for i = 1, MAX_ACCOUNT_MACROS + MAX_CHARACTER_MACROS do
-            local _, _, body = GetMacroInfo(i)
-            if body and body:find("/click _LLHS", nil, true) then
-                body = body:gsub("#showtooltip[^\n]*", "#showtooltip " .. name)
-                EditMacro(i, nil, icon, body)
-            end
+        local _, _, body = GetMacroInfo(index)
+        if body and body:find("/click _LLHS", nil, true) then
+            body = body:gsub("#showtooltip[^\n]*", "#showtooltip " .. name)
+            EditMacro(index, nil, icon, body)
         end
     end
 end
@@ -2186,7 +2184,10 @@ function HearthstoneToyButton:Advance()
         self:SetScript('PreClick', function () printf(self.toys[self.n]) end)
         self:SetAttribute('toy', self.toys[self.n])
         -- Editing a macro while it's running is bad juju
-        C_Timer.After(0, function () self:UpdateMacros() end)
+        local macroIndex = GetRunningMacro()
+        if macroIndex then
+            C_Timer.After(0, function () self:UpdateMacro(macroIndex) end)
+        end
     end
 end
 
