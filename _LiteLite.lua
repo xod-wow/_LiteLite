@@ -2153,6 +2153,20 @@ local notHearthstone = {
     [211946] = true,
 }
 
+function HearthstoneToyButton:UpdateMacros()
+    local name = self.toys[self.n]
+    local icon = select(10, C_Item.GetItemInfo(name))
+    if icon then
+        for i = 1, MAX_ACCOUNT_MACROS + MAX_CHARACTER_MACROS do
+            local _, _, body = GetMacroInfo(i)
+            if body and body:find("/click _LLHS", nil, true) then
+                body = body:gsub("#showtooltip[^\n]*", "#showtooltip " .. name)
+                EditMacro(i, nil, icon, body)
+            end
+        end
+    end
+end
+
 function HearthstoneToyButton:Shuffle()
     for i = #self.toys, 2, -1 do
         local r = math.random(i)
@@ -2171,6 +2185,8 @@ function HearthstoneToyButton:Advance()
         -- print(self:GetName(), 'Advance', self.toys[self.n])
         self:SetScript('PreClick', function () printf(self.toys[self.n]) end)
         self:SetAttribute('toy', self.toys[self.n])
+        -- Editing a macro while it's running is bad juju
+        C_Timer.After(0, function () self:UpdateMacros() end)
     end
 end
 
