@@ -446,6 +446,7 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('ENCOUNTER_END')
     self:RegisterEvent('CHAT_MSG_COMBAT_XP_GAIN')
     self:RegisterEvent('CHAT_MSG_COMBAT_FACTION_CHANGE')
+    -- self:RegisterEvent('FACTION_STANDING_CHANGED')
     self:RegisterEvent('TRAIT_CONFIG_UPDATED')
     self:RegisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
     self:RegisterEvent('PLAYER_REGEN_ENABLED')
@@ -1305,6 +1306,10 @@ local function PrintFactionIncrease(factionName, amount)
     end
 end
 
+function _LiteLite:FACTION_STANDING_CHANGED(factionID, updatedStanding)
+    printf("FACTION_STANDING_CHANGED %d %s", factionID, tostring(updatedStanding))
+end
+
 function _LiteLite:CHAT_MSG_COMBAT_FACTION_CHANGE(msg)
     if C_ChatInfo.InChatMessagingLockdown and C_ChatInfo.InChatMessagingLockdown() then
         return
@@ -1312,7 +1317,7 @@ function _LiteLite:CHAT_MSG_COMBAT_FACTION_CHANGE(msg)
     local factionName, amount = msg:match('with (.-) increased by (%d+)')
     amount = tonumber(amount)
     if factionName and amount and amount >= 50 then
-        C_Timer.After(0, function () PrintFactionIncrease(factionName, amount) end)
+        C_Timer.After(0.1, function () PrintFactionIncrease(factionName, amount) end)
     end
 end
 
