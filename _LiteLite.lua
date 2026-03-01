@@ -1278,7 +1278,7 @@ local function GetFactionNumbersByName(name)
     for i = 1, C_Reputation.GetNumFactions() do
         local data = C_Reputation.GetFactionDataByIndex(i)
         if data and data.isHeader == false and data.name == name then
-            if C_Reputation.IsFactionParagon(data.factionID) then
+            if C_Reputation.IsFactionParagonForCurrentPlayer(data.factionID) then
                 local currentValue, threshold = C_Reputation.GetFactionParagonInfo(data.factionID)
                 return 'P x' .. math.floor(currentValue / threshold),
                        currentValue % threshold,
@@ -1311,7 +1311,7 @@ function _LiteLite:CHAT_MSG_COMBAT_FACTION_CHANGE(msg)
     end
     local factionName, amount = msg:match('with (.-) increased by (%d+)')
     amount = tonumber(amount)
-    if factionName and amount and amount > 50 then
+    if factionName and amount and amount > 49 then
         C_Timer.After(0, function () PrintFactionIncrease(factionName, amount) end)
     end
 end
