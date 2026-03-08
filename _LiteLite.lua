@@ -1135,7 +1135,7 @@ end
 function _LiteLite:WorldQuestProcess(expansion)
     local mapQuests = { }
     for _, mapID in ipairs(self:FindChildZoneMaps(expansion)) do
-        for _, questInfo in ipairs(C_TaskQuest.GetQuestsForPlayerByMapID(mapID)) do
+        for _, questInfo in ipairs(C_TaskQuest.GetQuestsOnMap(mapID)) do
             if C_QuestLog.IsWorldQuest(questInfo.questID) and questInfo.mapID == mapID then
                 table.insert(mapQuests, questInfo)
                 C_TaskQuest.RequestPreloadRewardData(questInfo.questID)
