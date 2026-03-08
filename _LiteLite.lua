@@ -851,7 +851,9 @@ local badAtlasNames = {
 function _LiteLite:VignetteMatches(scanMobName, info)
     scanMobName = scanMobName:lower()
     local guidType = strsplit('-', info.objectGUID)
-    if info.atlasName:lower():find(scanMobName, nil, true) then
+    if scanMobName:sub(1,1) == '^' and info.atlasName:lower():find(scanMobName) then
+        return true
+    elseif info.atlasName:lower():find(scanMobName, nil, true) then
         return true
     elseif scanMobName == 'vignette' then
         return not badAtlasNames[info.atlasName]
