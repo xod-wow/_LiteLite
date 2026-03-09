@@ -868,7 +868,7 @@ function _LiteLite:VignetteMatches(scanMobName, info)
 end
 
 function _LiteLite:AddWaypoint(data)
-    print(format("Addin %s (%s)", data.objectGUID, data.name))
+    print(format("Adding %s (%s)", data.objectGUID, data.name))
     data.tomTomWaypoint =
         TomTom:AddWaypoint(
             data.uiMapID,
@@ -2160,6 +2160,24 @@ local notHearthstone = {
     [211946] = true,
 }
 
+local function IsMyMacro(index)
+    local _, _, body = GetMacroInfo(index)
+    return body and body:find("/click _LLHS", nil, true)
+end
+
+function HearthstoneToyButton:FindMacroIndex()
+    local index = GetRunningMacro()
+    if index and IsMyMacro(index) then
+        return index
+    else
+        for i = 1, MAX_ACCOUNT_MACROS+MAX_CHARACTER_MACROS do
+            if IsMyMacro(i) then
+                return i
+            end
+        end
+    end
+end
+
 function HearthstoneToyButton:UpdateMacro(index)
     local name = self.toys[self.n]
     local icon = select(10, C_Item.GetItemInfo(name))
@@ -2191,7 +2209,7 @@ function HearthstoneToyButton:Advance()
         self:SetScript('PreClick', function () printf(self.toys[self.n]) end)
         self:SetAttribute('toy', self.toys[self.n])
         -- Editing a macro while it's running is bad juju
-        local macroIndex = GetRunningMacro()
+        local macroIndex = self:FindMacroIndex()
         if macroIndex then
             C_Timer.After(0, function () self:UpdateMacro(macroIndex) end)
         end
