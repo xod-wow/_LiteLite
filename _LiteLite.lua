@@ -1093,7 +1093,9 @@ local IgnoreMaps = {
 
 function _LiteLite:FindChildZoneMaps(expansion)
     local todo
-    if not expansion or expansion == 'tww' then
+    if not expansion or expansion == 'midnight' then
+        todo = { 2537 }
+    elseif expansion == 'tww' then
         todo = { 2274 }
     elseif expansion == 'df' then
         todo = { 1978 }
@@ -2179,6 +2181,7 @@ function HearthstoneToyButton:FindMacroIndex()
 end
 
 function HearthstoneToyButton:UpdateMacro(index)
+printf('UpdateMacro', index)
     local name = self.toys[self.n]
     local icon = select(10, C_Item.GetItemInfo(name))
     if icon then
@@ -2211,6 +2214,7 @@ function HearthstoneToyButton:Advance()
         -- Editing a macro while it's running is bad juju
         local macroIndex = self:FindMacroIndex()
         if macroIndex then
+printf('Queue update')
             C_Timer.After(0, function () self:UpdateMacro(macroIndex) end)
         end
     end
@@ -2354,11 +2358,6 @@ end
 --  highlightWorldQuestsOnHover=false
 -- }
 
-local DelvePrimaryOnlyMaps = {
-    [2346]  = true,     -- Undermine
-    [2371]  = true,     -- K'aresh
-}
-
 local function GetDelveStory(poiInfo)
     if poiInfo.tooltipWidgetSet then
         local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(poiInfo.tooltipWidgetSet)
@@ -2373,24 +2372,29 @@ local function GetDelveStory(poiInfo)
 end
 
 function _LiteLite:ListDelves()
-    local delveData = {}
-    for _, mapID in ipairs(self:FindChildZoneMaps('tww')) do
+    local delveDataByName = {}
+    for _, mapID in ipairs(self:FindChildZoneMaps('midnight')) do
         local mapInfo = C_Map.GetMapInfo(mapID)
         local delveList = C_AreaPoiInfo.GetDelvesForMap(mapID)
         for _, poiID in ipairs(delveList) do
             local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
-            if poiInfo.isPrimaryMapForPOI or DelvePrimaryOnlyMaps[mapID] then
-                local name = poiInfo.name
-                local isBountiful = ( poiInfo.atlasName == 'delves-bountiful' )
-                local story = GetDelveStory(poiInfo)
-                if isBountiful then
-                    table.insert(delveData, { mapInfo.name, name, story, isBountiful, color=ORANGE_FONT_COLOR })
-                else
-                    table.insert(delveData, { mapInfo.name, name, story, isBountiful })
-                end
+            local isBountiful = ( poiInfo.atlasName == 'delves-bountiful' )
+            local data = {
+                mapInfo.name,
+                poiInfo.name,
+                GetDelveStory(poiInfo),
+                isBountiful,
+                isPrimary = poiInfo.isPrimaryMapForPOI,
+                color = isBountiful and ORANGE_FONT_COLOR or nil,
+            }
+            -- isPrimaryMapForPOI is only true when there are at least two
+            if not delveDataByName[poiInfo.name] or poiInfo.isPrimaryMapForPOI then
+                delveDataByName[poiInfo.name] = data
             end
         end
     end
+
+    local delveData = GetValuesArray(delveDataByName)
 
     table.sort(delveData,
         function (a, b)
