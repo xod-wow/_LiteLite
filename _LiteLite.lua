@@ -2187,13 +2187,14 @@ function HearthstoneToyButton:FindMacroIndex()
 end
 
 function HearthstoneToyButton:UpdateMacro(index)
-printf('UpdateMacro', index)
-    local name = self.toys[self.n]
-    local icon = select(10, C_Item.GetItemInfo(name))
+    local toyName = self.toys[self.n]
+    local icon = select(5, C_Item.GetItemInfoInstant(toyName))
+-- printf('UpdateMacro %d toyName=%s icon=%d grm=%s', index, toyName, icon, tostring(GetRunningMacro()))
     if icon then
         local _, _, body = GetMacroInfo(index)
         if body and body:find("/click _LLHS", nil, true) then
-            body = body:gsub("#showtooltip[^\n]*", "#showtooltip " .. name)
+            body = body:gsub("#showtooltip[^\n]*", "#showtooltip " .. toyName)
+-- printf('EditMacro %d toyName=%s icon=%d', index, toyName, icon)
             EditMacro(index, nil, icon, body)
         end
     end
@@ -2220,8 +2221,7 @@ function HearthstoneToyButton:Advance()
         -- Editing a macro while it's running is bad juju
         local macroIndex = self:FindMacroIndex()
         if macroIndex then
-printf('Queue update')
-            C_Timer.After(0, function () self:UpdateMacro(macroIndex) end)
+            C_Timer.After(0.1, function () self:UpdateMacro(macroIndex) end)
         end
     end
 end
