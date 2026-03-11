@@ -848,10 +848,17 @@ local badAtlasNames = {
     ["dragon-rostrum"]      = true,
 }
 
+-- Stuff that annoys me but I haven't put a deny option in yet
+local badObjectIDs = {
+    ["620688"]              = true, -- Incomplete Book of Sonnets
+}
+
 function _LiteLite:VignetteMatches(scanMobName, info)
     scanMobName = scanMobName:lower()
-    local guidType = strsplit('-', info.objectGUID)
-    if scanMobName:sub(1,1) == '^' and info.atlasName:lower():find(scanMobName) then
+    local guidType, _, _, _, _, id = strsplit('-', info.objectGUID)
+    if badObjectIDs[id] then
+        return false
+    elseif scanMobName:sub(1,1) == '^' and info.atlasName:lower():find(scanMobName) then
         return true
     elseif info.atlasName:lower():find(scanMobName, nil, true) then
         return true
@@ -864,7 +871,6 @@ function _LiteLite:VignetteMatches(scanMobName, info)
     else
         return false
     end
-
 end
 
 function _LiteLite:AddWaypoint(data)
