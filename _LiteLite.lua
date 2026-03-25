@@ -475,6 +475,8 @@ function _LiteLite:PLAYER_LOGIN()
     self:CheckVaultRewards()
     -- self:FixSettingsClose()
     self:DynamicCDMBuffBars()
+    self:LongerRaidInfoFrame()
+    self:StatBlock()
 
     _LiteLiteTable:SetAutoWidth(true)
 end
@@ -2448,6 +2450,13 @@ function _LiteLite:ListDelves()
     _LiteLiteTable:Show()
 end
 
+function _LiteLite:LongerRaidInfoFrame()
+    local x, y = RaidInfoFrame:GetSize()
+    RaidInfoFrame:SetSize(x, y + 150)
+    x, y = RaidInfoFrame.ScrollBox:GetSize()
+    RaidInfoFrame.ScrollBox:SetSize(x, y + 150)
+end
+
 function _LiteLite:ShowActionBars()
     -- SetCVar('enableMultiActionBars', 0x1f)
     Settings.SetValue("PROXY_SHOW_ACTIONBAR_2", true)
@@ -2710,3 +2719,123 @@ function _LiteLite:DynamicCDMBuffBars()
     hooksecurefunc(BuffBarCooldownViewer, 'OnAcquireItemFrame',
         function (_, itemFrame) HookItemFrame(itemFrame) end)
 end
+
+local stats = {
+    {
+        text = "Avoidance",
+        get = function () return string.format("%.1f%%", GetCombatRatingBonus(CR_AVOIDANCE)) end,
+    },
+    {
+        text = "Leech",
+        get = function () return string.format("%.1f%%", GetLifesteal()) end,
+    },
+    {
+        text = "Versatility",
+        get =
+            function ()
+                local v = GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)
+                        + GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)
+                return string.format("%.1f%%", v)
+            end,
+        color = FACTION_GREEN_COLOR,
+    },
+    {
+        text = "Mastery",
+        get = function () return string.format("%.1f%%", GetMasteryEffect()) end,
+        color = YELLOW_FONT_COLOR,
+    },
+    {
+        text = "Haste",
+        get = function () return string.format("%.1f%%", GetHaste()) end,
+        color = ORANGE_FONT_COLOR,
+    },
+    {
+        text = "Crit",
+        get = function () return string.format("%.1f%%", GetSpellCritChance()) end,
+        color = FACTION_RED_COLOR,
+    },
+    {
+        text =
+            function ()
+                local spec = C_SpecializationInfo.GetSpecialization()
+                local primaryStat = select(6, C_SpecializationInfo.GetSpecializationInfo(spec))
+                if primaryStat == 1 then
+                    return "Strength"
+                elseif primaryStat == 2 then
+                    return "Agility"
+                elseif primaryStat == 4 then
+                    return "Intellect"
+                end
+            end,
+        get =
+            function ()
+                local spec = C_SpecializationInfo.GetSpecialization()
+                local primaryStat = select(6, C_SpecializationInfo.GetSpecializationInfo(spec))
+                return UnitStat('player', primaryStat)
+            end,
+        color = EPIC_PURPLE_COLOR,
+    },
+}
+
+local StatBlock
+
+function _LiteLite:StatBlock()
+    if StatBlock then return end
+
+    StatBlock = CreateFrame("Frame", nil, UIParent, "VerticalLayoutFrame")
+    StatBlock:SetPoint("BOTTOMLEFT", ChatFrame1Background, "BOTTOMRIGHT", 4, 0)
+    StatBlock.childLayoutDirection = "bottomToTop"
+    for layoutIndex, info in pairs(stats) do
+        local fs = StatBlock:CreateFontString(nil, "ARTWORK", "NumberFontNormal")
+        fs.layoutIndex = layoutIndex
+        local text = type(info.text) == 'function' and info.text() or info.text
+        fs:SetText(text)    -- Dummy to set size so Layout() works
+        if info.color then
+            fs:SetTextColor(info.color:GetRGB())
+        end
+        StatBlock[layoutIndex] = fs
+    end
+    StatBlock:Layout()
+    local function Update(self)
+        for layoutIndex, info in pairs(stats) do
+            local text = type(info.text) == 'function' and info.text() or info.text
+            self[layoutIndex]:SetFormattedText("%s:   %s", text, info.get())
+        end
+    end
+--[[
+    StatBlock:SetScript('OnUpdate',
+        function (self, elapsed)
+            self.elapsed = (self.elapsed or 0) + elapsed
+            if self.elapsed > 0.25 then
+                Update(self)
+                self.elapsed = 0
+            end
+        end)
+]]
+    -- It's not even vaguely clear that this is worth it compared to
+    -- OnUpdate. This crazy list of events taken from PaperDollFrame.
+    StatBlock:SetScript('OnEvent', Update)
+    StatBlock:RegisterEvent("PLAYER_ENTERING_WORLD")
+    StatBlock:RegisterEvent("CHARACTER_POINTS_CHANGED")
+    StatBlock:RegisterEvent("UNIT_STATS")
+    StatBlock:RegisterEvent("UNIT_RANGEDDAMAGE")
+    StatBlock:RegisterEvent("UNIT_ATTACK_POWER")
+    StatBlock:RegisterEvent("UNIT_RANGED_ATTACK_POWER")
+    StatBlock:RegisterEvent("UNIT_ATTACK")
+    StatBlock:RegisterEvent("UNIT_SPELL_HASTE")
+    StatBlock:RegisterEvent("UNIT_RESISTANCES")
+    StatBlock:RegisterEvent("SKILL_LINES_CHANGED")
+    StatBlock:RegisterEvent("COMBAT_RATING_UPDATE")
+    StatBlock:RegisterEvent("MASTERY_UPDATE")
+    StatBlock:RegisterEvent("SPEED_UPDATE")
+    StatBlock:RegisterEvent("LIFESTEAL_UPDATE")
+    StatBlock:RegisterEvent("AVOIDANCE_UPDATE")
+    StatBlock:RegisterEvent("PLAYER_TALENT_UPDATE")
+    StatBlock:RegisterEvent("PLAYER_DAMAGE_DONE_MODS")
+    StatBlock:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
+    StatBlock:RegisterUnitEvent("UNIT_DAMAGE", "player")
+    StatBlock:RegisterUnitEvent("UNIT_ATTACK_SPEED", "player")
+    StatBlock:RegisterEvent("PLAYER_TARGET_CHANGED")
+    Update(StatBlock)
+end
+
