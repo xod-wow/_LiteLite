@@ -298,6 +298,9 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'auto-invite-myself' or arg == 'aim' then
         self:AutoInviteMyself()
         return true
+    elseif arg == 'fleeting-potions' or arg == 'fp' then
+        self:FleetingPotions()
+        return true
     elseif arg == 'decode' then
         self:Decode()
         return true
@@ -412,7 +415,7 @@ function _LiteLite:SetupSlashCommand()
     _G.SLASH__LiteLite1 = "/litelite"
     _G.SLASH__LiteLite2 = "/ll"
 
-    SlashCmdList['CDM'] = function (...) CooldownViewerSettings:Show() end
+    SlashCmdList['CDM'] = function () CooldownViewerSettings:Show() end
     _G.SLASH_CDM1 = "/cdm"
 end
 
@@ -476,7 +479,6 @@ function _LiteLite:PLAYER_LOGIN()
     -- self:FixSettingsClose()
     self:DynamicCDMBuffBars()
     self:LongerRaidInfoFrame()
-    self:StatBlock()
 
     _LiteLiteTable:SetAutoWidth(true)
 end
@@ -516,7 +518,7 @@ function _LiteLite:SETTINGS_LOADED()
     self:ShowActionBars()
 end
 
-function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, name)
+function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, _name)
     if C_Map.GetBestMapForUnit('player') == 534 then -- Tanaan Jungle
         PlaySound(11466)
         self:FlashScreen(10)
@@ -914,7 +916,7 @@ function _LiteLite:RemoveAllScanWaypoints()
     if not self.scannedGUID or not TomTom then
         return
     end
-    for objectGUID, data in pairs(self.scannedGUID) do
+    for _, data in pairs(self.scannedGUID) do
         self:RemoveWaypoint(data)
     end
 end
@@ -1154,7 +1156,7 @@ function _LiteLite:WorldQuestProcess(expansion)
     end
 
     C_Timer.NewTicker(0.5,
-        function (self)
+        function (ticker)
             local allKnown = true
             for _, info in pairs(mapQuests) do
                 if not HaveQuestRewardData(info.questID) then allKnown = false break end
@@ -1167,7 +1169,7 @@ function _LiteLite:WorldQuestProcess(expansion)
                 _LiteLiteTable:SetEnableSort(true)
                 _LiteLiteTable:SetSortColumn(1)
                 _LiteLiteTable:Show()
-                self:Cancel()
+                ticker:Cancel()
             end
         end, 10)
 end
@@ -1361,7 +1363,7 @@ local function PrintIfCompletedQuest(questID)
     end
 end
 
-function _LiteLite:PrintSkips(what)
+function _LiteLite:PrintSkips()
     PrintIfCompletedQuest(45383)        -- Nighthold
 end
 
@@ -1657,11 +1659,11 @@ local ImportExportMixin = {
             local allSucceeded
             while true do
                 local didSomething = false
-                allSuccedeed = true
-                for i, nodeEntry in pairs(loadoutEntryInfo) do
+                allSucceeded = true
+                for _, nodeEntry in pairs(loadoutEntryInfo) do
                     local success = C_Traits.SetSelection(configID, nodeEntry.nodeID, nodeEntry.selectionEntryID)
                     if not success then
-                        for rank = 1, nodeEntry.ranksPurchased do
+                        for _rank = 1, nodeEntry.ranksPurchased do
                             success = C_Traits.PurchaseRank(configID, nodeEntry.nodeID)
                         end
                     end
@@ -1876,13 +1878,13 @@ function _LiteLite:UpdateEquipmentSet()
     C_Timer.After(0, UpdateEquipmentSetForLoadout)
 end
 
-function _LiteLite:TRAIT_CONFIG_UPDATED(id, ...)
+function _LiteLite:TRAIT_CONFIG_UPDATED(id)
     if id == C_ClassTalents.GetActiveConfigID() then
         self:UpdateEquipmentSet()
     end
 end
 
-function _LiteLite:ACTIVE_TALENT_GROUP_CHANGED(...)
+function _LiteLite:ACTIVE_TALENT_GROUP_CHANGED()
     self:UpdateEquipmentSet()
 end
 
@@ -1903,7 +1905,7 @@ end
 
 function _LiteLite:HideProfessionUnspentReminder()
     hooksecurefunc('MainMenuMicroButton_ShowAlert',
-        function (microButton, text, tutorialIndex, cvarBitfield)
+        function (microButton, text, _tutorialIndex, _cvarBitfield)
             if text == PROFESSIONS_UNSPENT_SPEC_POINTS_REMINDER then
                 -- print(microButton:GetName(), text, 'triggered')
                 MainMenuMicroButton_HideAlert(microButton)
@@ -1989,7 +1991,7 @@ function _LiteLite:GuildNews(minItemLevel)
     self.newsScanner:RegisterEvent("GUILD_NEWS_UPDATE")
     self.newsScanner:RegisterEvent("GUILD_ROSTER_UPDATE")
     self.newsScanner:SetScript("OnEvent",
-        function (self, event, ...)
+        function (self, event)
             if not _LiteLiteTable:IsShown() then
                 self:UnregisterAllEvents()
             elseif event == "GUILD_ROSTER_UPDATE" then
@@ -2228,6 +2230,14 @@ function HearthstoneToyButton:Advance()
     end
 end
 
+local ExtraHSItemIDs = {
+    [54452] = true,         -- Ethereal Portal
+    [190237] = true,        -- Broker Translocation Matrix
+    [206195] = true,        -- Path of the Naaru
+    [210455] = true,        -- Draenic Hologem
+    [235016] = true,        -- Redeployment Module
+}
+
 function HearthstoneToyButton:IsHearthstone(item)
     local name = item:GetItemName()
     local id = item:GetItemID()
@@ -2235,7 +2245,7 @@ function HearthstoneToyButton:IsHearthstone(item)
         return false
     elseif name:find('Hearthstone') then
         return true
-    elseif id == 54452 then -- Ethereal Portal
+    elseif ExtraHSItemIDs[id] then -- Ethereal Portal
         return true
     else
         return false
@@ -2258,7 +2268,7 @@ end
 -- there's any way to query toys outside the filter which is annoying, since
 -- the index arg is a filtered toys index.
 
-function HearthstoneToyButton:Update(event, itemID, isNew, hasFanfare)
+function HearthstoneToyButton:Update(_event, itemID, _isNew, _hasFanfare)
     if itemID == nil then
         -- I'm trying not to scan too much, as this fires semi-regularly, I think
         -- every PLAYER_ENTERING_WORLD.
@@ -2709,7 +2719,7 @@ function _LiteLite:DynamicCDMBuffBars()
 
     self.cdmUpdater = CreateFrame('Frame')
     self.cdmUpdater:SetScript('OnUpdate', LayoutIfDirty)
-    
+
     -- Hook them immediately
     for _, itemFrame in ipairs(BuffBarCooldownViewer:GetItemFrames()) do
         HookItemFrame(itemFrame)
@@ -2720,87 +2730,91 @@ function _LiteLite:DynamicCDMBuffBars()
         function (_, itemFrame) HookItemFrame(itemFrame) end)
 end
 
-local stats = {
-    {
-        text = "Avoidance",
-        get = function () return string.format("%.1f%%", GetCombatRatingBonus(CR_AVOIDANCE)) end,
-    },
-    {
-        text = "Leech",
-        get = function () return string.format("%.1f%%", GetLifesteal()) end,
-    },
-    {
-        text = "Versatility",
-        get =
-            function ()
-                local v = GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)
-                        + GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)
-                return string.format("%.1f%%", v)
-            end,
-        color = FACTION_GREEN_COLOR,
-    },
-    {
-        text = "Mastery",
-        get = function () return string.format("%.1f%%", GetMasteryEffect()) end,
-        color = YELLOW_FONT_COLOR,
-    },
-    {
-        text = "Haste",
-        get = function () return string.format("%.1f%%", GetHaste()) end,
-        color = ORANGE_FONT_COLOR,
-    },
-    {
-        text = "Crit",
-        get = function () return string.format("%.1f%%", GetSpellCritChance()) end,
-        color = FACTION_RED_COLOR,
-    },
-    {
-        text =
-            function ()
-                local spec = C_SpecializationInfo.GetSpecialization()
-                local primaryStat = select(6, C_SpecializationInfo.GetSpecializationInfo(spec))
-                if primaryStat == 1 then
-                    return "Strength"
-                elseif primaryStat == 2 then
-                    return "Agility"
-                elseif primaryStat == 4 then
-                    return "Intellect"
-                end
-            end,
-        get =
-            function ()
-                local spec = C_SpecializationInfo.GetSpecialization()
-                local primaryStat = select(6, C_SpecializationInfo.GetSpecializationInfo(spec))
-                return UnitStat('player', primaryStat)
-            end,
-        color = EPIC_PURPLE_COLOR,
-    },
-}
 
-local StatBlock
+--[[ StatBlock -------------------------------------------------------------]]--
 
-function _LiteLite:StatBlock()
-    if StatBlock then return end
+do
+    local stats = {
+        {
+            text = "Avoidance",
+            get = function () return string.format("%.1f%%", GetCombatRatingBonus(CR_AVOIDANCE)) end,
+        },
+        {
+            text = "Leech",
+            get = function () return string.format("%.1f%%", GetLifesteal()) end,
+        },
+        {
+            text = "Versatility",
+            get =
+                function ()
+                    local v = GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)
+                            + GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)
+                    return string.format("%.1f%%", v)
+                end,
+            color = FACTION_GREEN_COLOR,
+        },
+        {
+            text = "Mastery",
+            get = function () return string.format("%.1f%%", GetMasteryEffect()) end,
+            color = YELLOW_FONT_COLOR,
+        },
+        {
+            text = "Haste",
+            get = function () return string.format("%.1f%%", GetHaste()) end,
+            color = ORANGE_FONT_COLOR,
+        },
+        {
+            text = "Crit",
+            get = function () return string.format("%.1f%%", GetSpellCritChance()) end,
+            color = FACTION_RED_COLOR,
+        },
+        {
+            text =
+                function ()
+                    local spec = C_SpecializationInfo.GetSpecialization()
+                    local primaryStat = select(6, C_SpecializationInfo.GetSpecializationInfo(spec))
+                    if primaryStat == 1 then
+                        return "Strength"
+                    elseif primaryStat == 2 then
+                        return "Agility"
+                    elseif primaryStat == 4 then
+                        return "Intellect"
+                    end
+                end,
+            get =
+                function ()
+                    local spec = C_SpecializationInfo.GetSpecialization()
+                    local primaryStat = select(6, C_SpecializationInfo.GetSpecializationInfo(spec))
+                    if primaryStat then
+                        return UnitStat('player', primaryStat)
+                    end
+                end,
+            color = EPIC_PURPLE_COLOR,
+        },
+    }
 
-    StatBlock = CreateFrame("Frame", nil, UIParent, "VerticalLayoutFrame")
+    local StatBlock = CreateFrame("Frame", nil, UIParent, "VerticalLayoutFrame")
     StatBlock:SetPoint("BOTTOMLEFT", ChatFrame1Background, "BOTTOMRIGHT", 4, 0)
     StatBlock.childLayoutDirection = "bottomToTop"
     for layoutIndex, info in pairs(stats) do
         local fs = StatBlock:CreateFontString(nil, "ARTWORK", "NumberFontNormal")
         fs.layoutIndex = layoutIndex
         local text = type(info.text) == 'function' and info.text() or info.text
-        fs:SetText(text)    -- Dummy to set size so Layout() works
         if info.color then
             fs:SetTextColor(info.color:GetRGB())
         end
         StatBlock[layoutIndex] = fs
     end
-    StatBlock:Layout()
-    local function Update(self)
+
+    local function Update()
         for layoutIndex, info in pairs(stats) do
             local text = type(info.text) == 'function' and info.text() or info.text
-            self[layoutIndex]:SetFormattedText("%s:   %s", text, info.get())
+            local v = info.get()
+            if v then
+                StatBlock[layoutIndex]:SetFormattedText("%s:   %s", text, v)
+            end
         end
+        StatBlock:Layout()
     end
 --[[
     StatBlock:SetScript('OnUpdate',
@@ -2839,3 +2853,48 @@ function _LiteLite:StatBlock()
     Update(StatBlock)
 end
 
+--[[ Fleeting Potion Updater  ----------------------------------------------]]--
+
+do
+    local function Update()
+        for actionID = 1, 180 do
+            local actionType, itemID = GetActionInfo(actionID)
+            if actionType == 'item' then
+                local name, _, _, _, _, itemType, itemSubType = C_Item.GetItemInfo(itemID)
+                if name and itemType == 'Consumable' and itemSubType == 'Potions' then
+                    local normal = name:gsub("^Fleeting ", "")
+                    local fleeting = "Fleeting " .. normal
+                    local fleetingCount = C_Item.GetItemCount(fleeting)
+                    if fleetingCount > 0 and name ~= fleeting then
+                        printf("Switching %d to %s", actionID, fleeting)
+                        C_Item.PickupItem(fleeting)
+                        C_ActionBar.PutActionInSlot(actionID)
+                        ClearCursor()
+                    elseif fleetingCount == 0 and name ~= normal then
+                        printf("Switching %d to %s", actionID, normal)
+                        C_Item.PickupItem(normal)
+                        C_ActionBar.PutActionInSlot(actionID)
+                        ClearCursor()
+                    end
+                end
+            end
+        end
+    end
+
+    local events = {
+        "ACTIONBAR_SLOT_CHANGED",
+        "ACTIVE_TALENT_GROUP_CHANGED",
+        "BAG_UPDATE_DELAYED",
+        "PLAYER_ENTERING_WORLD",
+        "PLAYER_SPECIALIZATION_CHANGED",
+    }
+
+    local PotionScanner = CreateFrame("Frame")
+    FrameUtil.RegisterFrameForEvents(PotionScanner, events)
+    PotionScanner:SetScript('OnEvent',
+        function ()
+            if not InCombatLockdown() then
+                Update()
+            end
+        end)
+end

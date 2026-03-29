@@ -146,7 +146,7 @@ end
 function _LiteTableMixin:SetupColumnHeaders()
     self.headerCells:ReleaseAll()
     local offset = 8
-    for i, name in ipairs(self.columnNames) do
+    for i, _name in ipairs(self.columnNames) do
         local cell = self.headerCells:Acquire()
         cell:SetID(i)
         cell:ClearAllPoints()
