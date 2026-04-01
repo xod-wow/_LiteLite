@@ -2786,33 +2786,61 @@ do
                     local spec = C_SpecializationInfo.GetSpecialization()
                     local primaryStat = select(6, C_SpecializationInfo.GetSpecializationInfo(spec))
                     if primaryStat then
-                        return UnitStat('player', primaryStat)
+                        return tostring(UnitStat('player', primaryStat))
                     end
                 end,
             color = EPIC_PURPLE_COLOR,
         },
     }
 
+    local function SetStat(self, name, val)
+        self.LeftText:SetText(name)
+        self.RightText:SetText(val)
+        return self.LeftText:GetWidth() + self.RightText:GetWidth() + 12
+    end
+
+    local function CreateLine(self, layoutIndex, font, color)
+        local line = CreateFrame("Frame", nil, self)
+        line.layoutIndex = layoutIndex
+
+        line:SetHeight(font:GetFontHeight() + 4)
+
+        line.LeftText = line:CreateFontString(nil, "ARTWORK", font:GetName())
+        line.LeftText:SetPoint("LEFT", line, "LEFT", 2)
+        if color then
+            line.LeftText:SetTextColor(color:GetRGB())
+        end
+
+        line.RightText = line:CreateFontString(nil, "ARTWORK", font:GetName())
+        line.RightText:SetPoint("RIGHT", line, "RIGHT", -2)
+        if color then
+            line.RightText:SetTextColor(color:GetRGB())
+        end
+
+        line.SetStat = SetStat
+
+        return line
+    end
+
     local StatBlock = CreateFrame("Frame", nil, UIParent, "VerticalLayoutFrame")
     StatBlock:SetPoint("BOTTOMLEFT", ChatFrame1Background, "BOTTOMRIGHT", 4, 0)
     StatBlock.childLayoutDirection = "bottomToTop"
-    for layoutIndex, info in pairs(stats) do
-        local fs = StatBlock:CreateFontString(nil, "ARTWORK", "NumberFontNormal")
-        fs.layoutIndex = layoutIndex
-        local text = type(info.text) == 'function' and info.text() or info.text
-        if info.color then
-            fs:SetTextColor(info.color:GetRGB())
-        end
-        StatBlock[layoutIndex] = fs
+    for i, info in pairs(stats) do
+        StatBlock[i] = CreateLine(StatBlock, i, NumberFontNormal, info.color)
     end
 
     local function Update()
-        for layoutIndex, info in pairs(stats) do
+        local width = 0
+        for i, info in pairs(stats) do
             local text = type(info.text) == 'function' and info.text() or info.text
             local v = info.get()
             if v then
-                StatBlock[layoutIndex]:SetFormattedText("%s:   %s", text, v)
+                local lineWidth = StatBlock[i]:SetStat(text, v)
+                width = math.max(width, lineWidth)
             end
+        end
+        for i in ipairs(StatBlock) do
+            StatBlock[i]:SetWidth(width)
         end
         StatBlock:Layout()
     end
