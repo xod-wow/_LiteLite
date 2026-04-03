@@ -2241,7 +2241,12 @@ local ExtraHSItemIDs = {
 function HearthstoneToyButton:IsHearthstone(item)
     local name = item:GetItemName()
     local id = item:GetItemID()
+    local _, _, race = UnitRace('player')
+
     if notHearthstone[id] then
+        return false
+    elseif id == 210455 and not (race == 11 or race == 30) then
+        -- Draenic Hologem requires Draenei or Lightforged Draenei
         return false
     elseif name:find('Hearthstone') then
         return true
