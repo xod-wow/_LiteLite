@@ -2742,35 +2742,40 @@ do
     local stats = {
         {
             text = "Avoidance",
-            get = function () return string.format("%.1f%%", GetCombatRatingBonus(CR_AVOIDANCE)) end,
+            get = function () return GetCombatRatingBonus(CR_AVOIDANCE) end,
+            format = "%.1f%%",
         },
         {
             text = "Leech",
-            get = function () return string.format("%.1f%%", GetLifesteal()) end,
+            get = function () return GetLifesteal() end,
+            format = "%.1f%%",
         },
         {
             text = "Versatility",
             get =
                 function ()
-                    local v = GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)
-                            + GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)
-                    return string.format("%.1f%%", v)
+                    return GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)
+                         + GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)
                 end,
+            format = "%.1f%%",
             color = FACTION_GREEN_COLOR,
         },
         {
             text = "Mastery",
-            get = function () return string.format("%.1f%%", GetMasteryEffect()) end,
+            get = function () return GetMasteryEffect() end,
+            format = "%.1f%%",
             color = YELLOW_FONT_COLOR,
         },
         {
             text = "Haste",
-            get = function () return string.format("%.1f%%", GetHaste()) end,
+            get = function () return GetHaste() end,
+            format = "%.1f%%",
             color = ORANGE_FONT_COLOR,
         },
         {
             text = "Crit",
-            get = function () return string.format("%.1f%%", GetSpellCritChance()) end,
+            get = function () return GetSpellCritChance() end,
+            format = "%.1f%%",
             color = FACTION_RED_COLOR,
         },
         {
@@ -2791,39 +2796,48 @@ do
                     local spec = C_SpecializationInfo.GetSpecialization()
                     local primaryStat = select(6, C_SpecializationInfo.GetSpecializationInfo(spec))
                     if primaryStat then
-                        return tostring(UnitStat('player', primaryStat))
+                        return UnitStat('player', primaryStat)
                     end
                 end,
+            format = "%d",
             color = EPIC_PURPLE_COLOR,
         },
     }
 
-    local function SetStat(self, name, val)
-        self.LeftText:SetText(name)
-        self.RightText:SetText(val)
+    local LineMixin = {}
+
+    function LineMixin:UpdateFromInfo(info)
+        local text = type(info.text) == 'function' and info.text() or info.text
+        local v = info.get()
+        if v then
+            local valueString = string.format(info.format, v)
+            self.LeftText:SetText(text)
+            self.RightText:SetText(valueString)
+        end
         return self.LeftText:GetWidth() + self.RightText:GetWidth() + 12
+    end
+
+    function LineMixin:Initialize(font, color)
+        self:SetHeight(font:GetFontHeight() + 4)
+
+        self.LeftText = self:CreateFontString(nil, "ARTWORK", font:GetName())
+        self.LeftText:SetPoint("LEFT", self, "LEFT", 2)
+        if color then
+            self.LeftText:SetTextColor(color:GetRGB())
+        end
+
+        self.RightText = self:CreateFontString(nil, "ARTWORK", font:GetName())
+        self.RightText:SetPoint("RIGHT", self, "RIGHT", -2)
+        if color then
+            self.RightText:SetTextColor(color:GetRGB())
+        end
     end
 
     local function CreateLine(self, layoutIndex, font, color)
         local line = CreateFrame("Frame", nil, self)
+        Mixin(line, LineMixin)
+        line:Initialize(font, color)
         line.layoutIndex = layoutIndex
-
-        line:SetHeight(font:GetFontHeight() + 4)
-
-        line.LeftText = line:CreateFontString(nil, "ARTWORK", font:GetName())
-        line.LeftText:SetPoint("LEFT", line, "LEFT", 2)
-        if color then
-            line.LeftText:SetTextColor(color:GetRGB())
-        end
-
-        line.RightText = line:CreateFontString(nil, "ARTWORK", font:GetName())
-        line.RightText:SetPoint("RIGHT", line, "RIGHT", -2)
-        if color then
-            line.RightText:SetTextColor(color:GetRGB())
-        end
-
-        line.SetStat = SetStat
-
         return line
     end
 
@@ -2837,12 +2851,8 @@ do
     local function Update()
         local width = 0
         for i, info in pairs(stats) do
-            local text = type(info.text) == 'function' and info.text() or info.text
-            local v = info.get()
-            if v then
-                local lineWidth = StatBlock[i]:SetStat(text, v)
-                width = math.max(width, lineWidth)
-            end
+            local lineWidth = StatBlock[i]:UpdateFromInfo(info)
+            width = math.max(width, lineWidth)
         end
         for i in ipairs(StatBlock) do
             StatBlock[i]:SetWidth(width)
@@ -2889,29 +2899,53 @@ end
 --[[ Fleeting Potion Updater  ----------------------------------------------]]--
 
 do
-    local function Update()
-        for actionID = 1, 180 do
-            local actionType, itemID = GetActionInfo(actionID)
-            if actionType == 'item' then
-                local name, _, _, _, _, itemType, itemSubType = C_Item.GetItemInfo(itemID)
-                if name and itemType == 'Consumable' and itemSubType == 'Potions' then
-                    local normal = name:gsub("^Fleeting ", "")
-                    local fleeting = "Fleeting " .. normal
-                    local fleetingCount = C_Item.GetItemCount(fleeting)
-                    if fleetingCount > 0 and name ~= fleeting then
-                        printf("Switching %d to %s", actionID, fleeting)
-                        C_Item.PickupItem(fleeting)
-                        C_ActionBar.PutActionInSlot(actionID)
-                        ClearCursor()
-                    elseif fleetingCount == 0 and name ~= normal then
-                        printf("Switching %d to %s", actionID, normal)
-                        C_Item.PickupItem(normal)
-                        C_ActionBar.PutActionInSlot(actionID)
-                        ClearCursor()
-                    end
-                end
+    local function CheckAndSwapAction(actionID)
+        local actionType, itemID = GetActionInfo(actionID)
+        if actionType ~= 'item' then
+            return
+        end
+
+        local name, _, _, _, _, itemType, itemSubType = C_Item.GetItemInfo(itemID)
+        if not (name and itemType == 'Consumable' and itemSubType == 'Potions') then
+            return
+        end
+
+        local normal = name:gsub("^Fleeting ", "")
+        local normalCount = C_Item.GetItemCount(normal)
+        local fleeting = "Fleeting " .. normal
+        local fleetingCount = C_Item.GetItemCount(fleeting)
+        if fleetingCount > 0 then
+            if name ~= fleeting then
+                printf("Switching %d to %s", actionID, fleeting)
+                C_Item.PickupItem(fleeting)
+                C_ActionBar.PutActionInSlot(actionID)
+                ClearCursor()
+            end
+        elseif normalCount > 0 then
+            if name ~= normal then
+                printf("Switching %d to %s", actionID, normal)
+                C_Item.PickupItem(normal)
+                C_ActionBar.PutActionInSlot(actionID)
+                ClearCursor()
             end
         end
+    end
+
+    local dirty = false
+
+    local function OnUpdate()
+        if dirty then
+            if not InCombatLockdown() then
+                for actionID = 1, 180 do
+                    CheckAndSwapAction(actionID)
+                end
+            end
+            dirty = false
+        end
+    end
+
+    local function OnEvent()
+        dirty = true
     end
 
     local events = {
@@ -2924,10 +2958,7 @@ do
 
     local PotionScanner = CreateFrame("Frame")
     FrameUtil.RegisterFrameForEvents(PotionScanner, events)
-    PotionScanner:SetScript('OnEvent',
-        function ()
-            if not InCombatLockdown() then
-                Update()
-            end
-        end)
+
+    PotionScanner:SetScript('OnEvent', OnEvent)
+    PotionScanner:SetScript('OnUpdate', OnUpdate)
 end
