@@ -484,7 +484,7 @@ function _LiteLite:PLAYER_LOGIN()
 end
 
 function _LiteLite:CheckVaultRewards()
-    if C_WeeklyRewards.HasAvailableRewards() then
+    if C_WeeklyRewards and C_WeeklyRewards.HasAvailableRewards() then
         printf("Check your vault!")
     end
 end
@@ -2473,6 +2473,7 @@ function _LiteLite:LongerRaidInfoFrame()
 end
 
 function _LiteLite:ShowActionBars()
+    if WOW_PROJECT_ID ~= 1 then return end
     -- SetCVar('enableMultiActionBars', 0x1f)
     Settings.SetValue("PROXY_SHOW_ACTIONBAR_2", true)
     Settings.SetValue("PROXY_SHOW_ACTIONBAR_3", true)
@@ -2691,6 +2692,8 @@ end
 -- force a relayout when their shown state is changed. This is very efficient.
 
 function _LiteLite:DynamicCDMBuffBars()
+    if WOW_PROJECT_ID ~= 1 then return end
+
     local BuffBarCooldownViewer = BuffBarCooldownViewer
 
     local function Layout()
@@ -2738,7 +2741,7 @@ end
 
 --[[ StatBlock -------------------------------------------------------------]]--
 
-do
+if WOW_PROJECT_ID == 1 then
     local stats = {
         {
             text = "Avoidance",
