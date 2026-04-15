@@ -8,4 +8,7 @@
 _LiteTable.xml
 _LiteLite.xml
 
+modules-[Family].xml
+
 KeybindingStrings.lua
+

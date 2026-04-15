@@ -4,6 +4,10 @@
 --
 ----------------------------------------------------------------------------]]--
 
+local _, addon = ...
+
+local modules = {}
+
 local MouseoverMacroTemplate =
 [[#showtooltip {1}
 /cast [@mouseover,help,nodead][help,nodead] {1}
@@ -27,22 +31,6 @@ local PlayerMacroTemplate =
 /cast [mod:alt][@player] {1}
 ]]
 
-local ScanTooltip = CreateFrame("GameTooltip", "_LiteLiteScanTooltip", nil, "GameTooltipTemplate")
-do
-    ScanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
-
-    ScanTooltip.left = {}
-    ScanTooltip.right = {}
-
-    for i = 1, 5 do
-        local L = ScanTooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        local R = ScanTooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        ScanTooltip.left[i] = L
-        ScanTooltip.right[i] = R
-        ScanTooltip:AddFontStrings(L, R)
-    end
-end
-
 _LiteLite = CreateFrame('Frame')
 _LiteLite:SetScript('OnEvent',
         function (self, e, ...)
@@ -52,104 +40,37 @@ _LiteLite:RegisterEvent('PLAYER_LOGIN')
 
 local printTag = ORANGE_FONT_COLOR:WrapTextInColorCode("LiteLite: ")
 
-local function printf(fmt, ...)
-    local msg = string.format(fmt, ...)
-    SELECTED_CHAT_FRAME:AddMessage(printTag .. msg)
-end
-
-local function printfc(fmt, color, ...)
-    local msg = string.format(fmt, ...)
-    SELECTED_CHAT_FRAME:AddMessage(printTag .. color:WrapTextInColorCode(msg))
-end
-
-local function Embiggen(f)
-    f:SetScale(1.25)
-end
-
-function _LiteLite:SmallerPetHitText()
-    PetHitIndicator:SetScale(0.5)
-end
-
-function _LiteLite:BiggerFrames()
-    QuestFrame:HookScript('OnShow', Embiggen)
-    GossipFrame:HookScript('OnShow', Embiggen)
-    ItemTextFrame:HookScript('OnShow', Embiggen)
-    TabardFrame:HookScript('OnShow', Embiggen)
-    CommunitiesFrame:HookScript('OnShow', Embiggen)
-    if EncounterJournal_LoadUI then
-        hooksecurefunc('EncounterJournal_LoadUI',
-            function ()
-                EncounterJournal:HookScript('OnShow', Embiggen)
-            end)
-    end
-    if ChallengeMode_LoadUI then
-        hooksecurefunc('ChallengeMode_LoadUI', self.MoveKeystoneFrame)
-    end
-end
-
-function _LiteLite:FlashScreen(seconds)
-    local f = _LiteLiteFullScreenFlash
-    f:Show()
-    f.pulseAnim:Play()
-    C_Timer.After(seconds or 5, function () f.pulseAnim:Stop() f:Hide() end)
-end
-
-function _LiteLite:SetEditModeLayout(layout)
-    if tonumber(layout) then
-        C_EditMode.SetActiveLayout(tonumber(layout))
-        return
-    end
-
-    if layout == nil then
-        local w, h = GetPhysicalScreenSize()
-        layout = tostring(w) .. 'x' .. tostring(h)
-    end
-
-    local layoutData = C_EditMode.GetLayouts()
-
-    for i, layoutInfo in ipairs(layoutData.layouts) do
-        if layoutInfo.layoutName == layout then
-            C_EditMode.SetActiveLayout(i+2)
-            return
+function addon.RegisterModule(info)
+    table.insert(modules, info)
+    if info.SlashCommands then
+        for keyword, func in pairs(info.SlashCommands) do
+            addon.SlashCmdList[keyword] = func
         end
     end
 end
 
-
-function _LiteLite:SpellCastAnnounce(spellID)
-    if not IsInInstance() or UnitIsPVP('player') or IsActiveBattlefieldArena() then
-        return
-    end
-
-    if spellID == 1231411 then  -- Recuperate
-        C_ChatInfo.SendChatMessage('Re-cu-per-ate.', 'SAY')
-    end
---[[
-    if spellID == 115310 then
-        -- Revival (Mistweaver Monk)
-        msg = format('%s cast - %s', GetSpellLink(spellName), self.playerName)
-        SendChatMessage(msg, 'SAY')
-    end
-]]
+function addon.format(fmt, ...)
+    return printTag .. string.format(fmt, ...)
 end
 
-function _LiteLite:NameplateSettings()
-    SetCVar('nameplateShowFriendlyNPCs', 1)
-    SetCVar('nameplateShowFriends', 1)
-    SetCVar('nameplateShowEnemies', 1)
-    SetCVar('nameplateShowAll', 1)
-    SetCVar('nameplateMaxDistance', 100)
+function addon.printf(fmt, ...)
+    SELECTED_CHAT_FRAME:AddMessage(addon.format(fmt, ...))
 end
 
-local function GetGameTooltipIcon()
-    local _, id = GameTooltip:GetSpell()
-    if id then
-        return C_Spell.GetSpellTexture(id)
-    end
-    _,  id = GameTooltip:GetItem()
-    if id then
-        return select(10, GetItemInfo(id))
-    end
+function addon.formatc(fmt, color, ...)
+    local msg = string.format(fmt, ...)
+    return printTag .. color:WrapTextInColorCode(msg)
+end
+
+function addon.printfc(fmt, color, ...)
+    SELECTED_CHAT_FRAME:AddMessage(addon.formatc(fmt, color, ...))
+end
+
+function addon.FlashScreen(seconds)
+    local f = _LiteLiteFullScreenFlash
+    f:Show()
+    f.pulseAnim:Play()
+    C_Timer.After(seconds or 5, function () f.pulseAnim:Stop() f:Hide() end)
 end
 
 local function strtemplate(str, vars, ...)
@@ -188,70 +109,24 @@ function _LiteLite:CreateSpellMacro(template, spell)
     if i then PickupMacro(i) end
 end
 
-function _LiteLite:AutoEquipsetIcons()
-    for _, setID in ipairs(C_EquipmentSet.GetEquipmentSetIDs()) do
-        local specIndex = C_EquipmentSet.GetEquipmentSetAssignedSpec(setID)
-        if specIndex then
-            local textureID = select(4, GetSpecializationInfo(specIndex))
-            self:SetEquipsetIcon(setID, textureID)
-        end
-    end
-end
-
-function _LiteLite:SetEquipsetIcon(n, textureID)
-    local setID = tonumber(n)
-                    or C_EquipmentSet.GetEquipmentSetID(n)
-                    or PaperDollFrame.EquipmentManagerPane.selectedSetID
-
-    if setID == nil then
-        return
-    end
-
-    local name = C_EquipmentSet.GetEquipmentSetInfo(setID)
-    if name == nil then
-        return
-    end
-
-    textureID = tonumber(textureID) or GetGameTooltipIcon()
-
-    if textureID == nil then
-        return
-    end
-
-    printf('Setting equipset icon for %s (%d) to %d', name, setID, textureID)
-    C_EquipmentSet.ModifyEquipmentSet(n, name, textureID)
-end
+addon.SlashCmdList = { }
 
 function _LiteLite:SlashCommand(arg)
+    local cmd, rest = string.split(' ', arg, 2)
+
+    if addon.SlashCmdList[cmd] then
+        addon.SlashCmdList[cmd](rest)
+        return true
+    end
+
     local arg1, arg2, arg3
 
     -- Zero argument options
-    if arg == 'quest-report' or arg == 'qr' then
-        local now = GetServerTime()
-        self:ScanQuestsCompleted(now)
-        self:ReportQuestsCompleted()
-        return true
-    elseif arg == 'quest-baseline' or arg == 'qb' then
-        local now = GetServerTime()
-        self:ScanQuestsCompleted()
-        for k in pairs(self.questsCompleted) do
-            self.questsCompleted[k] = 0
-        end
-        return true
-    elseif arg == 'spec-config' or arg == 'sc' then
+    if arg == 'spec-config' or arg == 'sc' then
         self:ImportExportSpecConfig()
-        return true
-    elseif arg == 'check-elemental-storms' or arg == 'ces' then
-        self:CheckElementalStorms()
-        return true
-    elseif arg == 'nameplate-settings' or arg == 'ns' then
-        self:NameplateSettings()
         return true
     elseif arg == 'tooltip-ids' or arg == 'ti' then
         self:HookTooltip()
-        return true
-    elseif arg == 'kickoff' or arg == 'ko' then
-        self:KickOfflineMembers()
         return true
     elseif arg == 'great-vault' or arg == 'gv' then
         self:ShowGreatVault()
@@ -259,20 +134,11 @@ function _LiteLite:SlashCommand(arg)
     elseif arg == 'mythic-plus-history' or arg == 'mph' then
         self:MythicPlusHistory()
         return true
-    elseif arg == 'mythic-plus-dungeons' or arg == 'mpd' then
-        self:MythicPlusDungeons()
-        return true
-    elseif arg == 'xp' then
-        self:CHAT_MSG_COMBAT_XP_GAIN()
-        return true
     elseif arg == 'announce-mob' or arg == 'am' then
         self:ReportTargetLocation()
         return true
     elseif arg == 'paste' then
         self:CopyPaste()
-        return true
-    elseif arg == 'skips' then
-        self:PrintSkips()
         return true
     elseif arg == 'dragonridingbar' or arg == 'drb' then
         self:SetupDragonridingBar()
@@ -291,15 +157,6 @@ function _LiteLite:SlashCommand(arg)
         return true
     elseif arg == 'cagepets' or arg == 'cp' then
         self:CageTriplicatePets()
-        return true
-    elseif arg == 'restored-coffer-keys' or arg == 'rck' then
-        self:RestoredCofferKeys()
-        return true
-    elseif arg == 'auto-invite-myself' or arg == 'aim' then
-        self:AutoInviteMyself()
-        return true
-    elseif arg == 'fleeting-potions' or arg == 'fp' then
-        self:FleetingPotions()
         return true
     elseif arg == 'lure' then
         self:MidnightSkinningLure()
@@ -332,9 +189,6 @@ function _LiteLite:SlashCommand(arg)
     elseif arg1 == 'copy-chat' or arg1 == 'cc' then
         self:CopyChat()
         return true
-    elseif arg1 == 'catalyst' or arg1 == 'cat' then
-        self:CatalystCharges()
-        return true
     elseif arg1 == 'guild-news' or arg1 == 'gn' then
         local iLevel = tonumber(arg2)
         self:GuildNews(iLevel)
@@ -343,16 +197,10 @@ function _LiteLite:SlashCommand(arg)
         self:ListDelves(arg2)
         return true
     elseif arg1 == 'auto-waypoint' or arg1 == 'aw' then
-        self.db.autoScanWaypoint = StringToBoolean(arg2 or 0) or nil
-        return true
-    elseif arg1 == 'layout' then
-        self:SetEditModeLayout(arg2)
+        addon.db.autoScanWaypoint = StringToBoolean(arg2 or 0) or nil
         return true
     elseif arg1 == 'tinspect' then
         self:TableInspectEval(arg2)
-        return true
-    elseif arg1 == 'world-quest' or arg1 == 'wq' then
-        self:WorldQuestList(arg2)
         return true
     end
 
@@ -381,35 +229,34 @@ function _LiteLite:SlashCommand(arg)
         self:ScanMobList()
         return true
     elseif arg1 == 'bind-macro' or arg1 == 'bm' then
-        self.db.bindKey = arg2
-        self.db.bindMacro = arg3:gsub("\\n", "\n")
+        addon.db.bindKey = arg2
+        addon.db.bindMacro = arg3:gsub("\\n", "\n")
         self:SetBindMacro()
         return true
     end
 
-    printf("/ll announce-mob | am")
-    printf("/ll auto-waypoint | aw")
-    printf("/ll button-macro [|bm] <key> <macrotext>")
-    printf("/ll delves")
-    printf("/ll equipset-icon [n [iconid]]")
-    printf("/ll equipset-icon auto")
-    printf("/ll find-mob substring")
-    printf("/ll gkeys text")
-    printf("/ll great-vault | gv")
-    printf("/ll gvals text")
-    printf("/ll guild-news <min-ilevel>")
-    printf("/ll mythic-plus-dungeons | mpd")
-    printf("/ll mythic-plus-history | mph")
-    printf("/ll nameplate-settings")
-    printf("/ll quest-baseline")
-    printf("/ll quest-report")
-    printf("/ll spec-config | sc")
-    printf("/ll tooltip-ids")
-    printf("/ll cursor-macro [spellname]")
-    printf("/ll mouseover-macro [spellname]")
-    printf("/ll player-macro [spellname]")
-    printf("/ll trinket-macro [spellname]")
-    printf("/ll world-quest [tww|df|sl|bfa|legion|<mapid>]")
+    addon.printf("/ll announce-mob | am")
+    addon.printf("/ll auto-waypoint | aw")
+    addon.printf("/ll button-macro [|bm] <key> <macrotext>")
+    addon.printf("/ll delves")
+    addon.printf("/ll equipset-icon [n [iconid]]")
+    addon.printf("/ll equipset-icon auto")
+    addon.printf("/ll find-mob substring")
+    addon.printf("/ll gkeys text")
+    addon.printf("/ll great-vault | gv")
+    addon.printf("/ll gvals text")
+    addon.printf("/ll guild-news <min-ilevel>")
+    addon.printf("/ll mythic-plus-history | mph")
+    addon.printf("/ll nameplate-settings")
+    addon.printf("/ll quest-baseline")
+    addon.printf("/ll quest-report")
+    addon.printf("/ll spec-config | sc")
+    addon.printf("/ll tooltip-ids")
+    addon.printf("/ll cursor-macro [spellname]")
+    addon.printf("/ll mouseover-macro [spellname]")
+    addon.printf("/ll player-macro [spellname]")
+    addon.printf("/ll trinket-macro [spellname]")
+    addon.printf("/ll world-quest [tww|df|sl|bfa|legion|<mapid>]")
     return true
 end
 
@@ -423,34 +270,18 @@ function _LiteLite:SetupSlashCommand()
 end
 
 function _LiteLite:PLAYER_LOGIN()
-    printf('Initialized.')
+    addon.printf('Initialized.')
 
     _LiteLiteDB = _LiteLiteDB or {}
-    self.db = _LiteLiteDB
+    addon.db = _LiteLiteDB
 
-    self.playerName = format("%s-%s", UnitFullName('player'))
-    self.playerGUID = UnitGUID('player')
-
-    self.db.battleTagCache = self.db.battleTagCache or {}
-
-    if self.db.battleTag == nil then
-        self:OnBattleNetInfoAvailable(self.playerGUID,
-            function (info)
-                self.db.battleTag = info and info.battleTag
-            end)
+    for _, info in ipairs(modules) do
+        if info.Initialize then
+            info.Initialize()
+        end
     end
 
-    self.questsCompleted = {}
-    -- self:ScanQuestsCompleted()
-
     self:SetupSlashCommand()
-    self:RegisterUnitEvent('UNIT_SPELLCAST_SUCCEEDED', 'player')
-    self:RegisterEvent('CHAT_MSG_MONSTER_YELL')
-    self:RegisterEvent('CHAT_MSG_MONSTER_EMOTE')
-    self:RegisterEvent('CHAT_MSG_LOOT')
-    self:RegisterEvent('ENCOUNTER_START')
-    self:RegisterEvent('ENCOUNTER_END')
-    self:RegisterEvent('CHAT_MSG_COMBAT_XP_GAIN')
     self:RegisterEvent('CHAT_MSG_COMBAT_FACTION_CHANGE')
     -- self:RegisterEvent('FACTION_STANDING_CHANGED')
     self:RegisterEvent('TRAIT_CONFIG_UPDATED')
@@ -461,52 +292,16 @@ function _LiteLite:PLAYER_LOGIN()
     self:RegisterEvent('PLAYER_LOGOUT')
     self:RegisterEvent('SETTINGS_LOADED')
 
-    self:BiggerFrames()
-    self:SmallerPetHitText()
-    self:OtherAddonProfiles()
-    self:MuteDragonridingMounts()
-    self:SellJunkButton()
-    self:AutoRepairAll()
-    self:RotatingMarker()
-    self:CHAT_MSG_COMBAT_XP_GAIN()
-    -- self:LargerCUFDispelIcons()
-    self:HideProfessionUnspentReminder()
-    self:HideActionButtonEffects()
     self:UpdateScanning()
-    self:ClearTrackedPerksActivities()
     self:SetBindMacro()
-    self:RemixFix()
-    self:SetupHearthstoneButton()
-    self:AcceptMyInvites()
     self:CheckVaultRewards()
-    -- self:FixSettingsClose()
-    self:DynamicCDMBuffBars()
-    self:LongerRaidInfoFrame()
 
     _LiteLiteTable:SetAutoWidth(true)
 end
 
 function _LiteLite:CheckVaultRewards()
     if C_WeeklyRewards and C_WeeklyRewards.HasAvailableRewards() then
-        printf("Check your vault!")
-    end
-end
-
-function _LiteLite:RemixFix()
-    if PlayerGetTimerunningSeasonID and PlayerGetTimerunningSeasonID() == 1 then
-        MailFrame:HookScript('OnShow',
-            function () OpenAllMail:SetShown(UnitLevel('player') == 70) end)
-    end
-end
-
-function _LiteLite:AutoRepairAll()
-    MerchantRepairAllButton:HookScript('OnShow', function () RepairAllItems() end)
-end
-
-function _LiteLite:SellJunkButton()
-    if MerchantSellAllJunkButton then
-        MerchantSellAllJunkButton:SetScript('OnClick', MerchantFrame_OnSellAllJunkButtonConfirmed)
-        -- MerchantSellAllJunkButton:SetScript('OnClick', self.SellJunk)
+        addon.printf("Check your vault!")
     end
 end
 
@@ -518,77 +313,6 @@ function _LiteLite:SETTINGS_LOADED()
     SetCVar("AutoPushSpellToActionBar", 0)
 
     self:RaidFrameOptions()
-    self:ShowActionBars()
-end
-
-function _LiteLite:CHAT_MSG_MONSTER_YELL(msg, _name)
-    if C_Map.GetBestMapForUnit('player') == 534 then -- Tanaan Jungle
-        PlaySound(11466)
-        self:FlashScreen(10)
-        msg = ORANGE_FONT_COLOR:WrapTextInColorCode(msg)
-        UIErrorsFrame:AddMessage(msg, 0.1, 1.0, 0.1)
-    end
-end
-
-function _LiteLite:CHAT_MSG_MONSTER_EMOTE(msg, name)
-    if C_Map.GetBestMapForUnit('player') == 1970 then -- Zereth Mortis
-        msg = ORANGE_FONT_COLOR:WrapTextInColorCode(msg)
-        UIErrorsFrame:AddMessage(string.format(msg, name))
-    end
-end
-
-function _LiteLite:CHAT_MSG_LOOT(...)
-    if select(8, GetInstanceInfo()) == 2769 then
-        local msg = ...
-        if msg and msg:find('Prototype A.S.M.R.', nil, true) then
-            PlaySound(11466)
-            self:FlashScreen(10)
-            msg = ORANGE_FONT_COLOR:WrapTextInColorCode(msg)
-            UIErrorsFrame:AddMessage(msg)
-            printf(msg)
-        end
-    end
-end
-
-function _LiteLite:UNIT_SPELLCAST_SUCCEEDED(...)
-    local unit, _, spellID  = ...
-    self:SpellCastAnnounce(spellID)
-end
-
-local StartQuotes = {
-    "I have a bad feeling about this.",
-    "Never tell me the odds!",
-    "Let's keep a little optimism here.",
-    "I expect to be well paid. I'm in it for the money.",
-    "What good is a reward if you ain't around to use it?",
-    "I take orders from just one person: me.",
-    "You said you wanted to be around when I made a mistake, well, this could be it, sweetheart.",
-    "Bring em on! I prefer a straight fight to all this sneaking around.",
-}
-
-function _LiteLite:ENCOUNTER_START()
-    if UnitName('player') == "Tansolo" and math.random() <= 0.2 then
-        local n = math.random(#StartQuotes)
-        SendChatMessage(StartQuotes[n], 'SAY')
-    end
-end
-
-local EndQuotes = {
-    "Don't everbody thank me at once.",
-    "You know, sometimes I amaze even myself.",
-    "You like me because I'm a scoundrel. There aren’t enough scoundrels in your life.",
-    "Afraid I was gonna leave without giving you a goodbye kiss?",
-    "Sorry about the mess.",
-    "Come on, admit it. Sometimes you think I’m all right.",
-    "Scoundrel? Scoundrel? I like the sound of that.",
-    "No reward is worth this.",
-}
-
-function _LiteLite:ENCOUNTER_END()
-    if UnitName('player') == "Tansolo" and math.random() <= 0.2 then
-        local n = math.random(#EndQuotes)
-        SendChatMessage(EndQuotes[n], 'SAY')
-    end
 end
 
 -- So I can toggle between my USB headset and my speakers without
@@ -610,32 +334,12 @@ function _LiteLite:NextGameSoundOutput()
     UIErrorsFrame:AddMessage(deviceName, 0.1, 1.0, 0.1)
 end
 
-function _LiteLite:ScanQuestsCompleted(scanTime)
-    scanTime = scanTime or 0
-
-    for i = 1,100000 do
-        if not self.questsCompleted[i] and C_QuestLog.IsQuestFlaggedCompleted(i) then
-            self.questsCompleted[i] = scanTime
-        end
-    end
-end
-
-function _LiteLite:ReportQuestsCompleted()
-    printf("Completed quests report:")
-    for i = 1,100000 do
-        if self.questsCompleted[i] and self.questsCompleted[i] > 0 then
-            local title = C_TaskQuest.GetQuestInfoByQuestID(i)
-            printf(format("Newly completed: %d (%s) at %d", i, title or UNKNOWN, self.questsCompleted[i]))
-        end
-    end
-end
-
 function _LiteLite:SearchGlobalKeys(text)
     if not text then return end
 
     text = text:lower()
 
-    printf("Searching global keys for %s", tostring(text))
+    addon.printf("Searching global keys for %s", tostring(text))
 
     local lines = {}
     for k, v in pairs(_G) do
@@ -657,7 +361,7 @@ function _LiteLite:SearchGlobalValues(text)
 
     text = text:lower()
 
-    printf("Searching global values for %s", tostring(text))
+    addon.printf("Searching global values for %s", tostring(text))
 
     local lines = {}
     for k, v in pairs(_G) do
@@ -768,41 +472,41 @@ function _LiteLite:HookTooltip()
 end
 
 function _LiteLite:ScanMobList()
-    printf("Scan for mobs:")
-    if next(self.db.scanMobNames or {}) then
-        for i, name in pairs(self.db.scanMobNames or {}) do
-            printf("%d. %s", i, name)
+    addon.printf("Scan for mobs:")
+    if next(addon.db.scanMobNames or {}) then
+        for i, name in pairs(addon.db.scanMobNames or {}) do
+            addon.printf("%d. %s", i, name)
         end
     else
-        printf("   None.")
+        addon.printf("   None.")
     end
 end
 
 function _LiteLite:ScanMobClear()
-    self.db.scanMobNames = table.wipe(self.db.scanMobNames or {})
+    addon.db.scanMobNames = table.wipe(addon.db.scanMobNames or {})
     self:UpdateScanning()
 end
 
 function _LiteLite:ScanMobAdd(name)
-    self.db.scanMobNames = self.db.scanMobNames or {}
-    table.insert(self.db.scanMobNames, name:lower())
+    addon.db.scanMobNames = addon.db.scanMobNames or {}
+    table.insert(addon.db.scanMobNames, name:lower())
     self:UpdateScanning()
 end
 
 function _LiteLite:ScanMobDel(name)
-    if self.db.scanMobNames then
+    if addon.db.scanMobNames then
         local n = tonumber(name)
         if n then
-            table.remove(self.db.scanMobNames, n)
+            table.remove(addon.db.scanMobNames, n)
         else
-            tDeleteItem(self.db.scanMobNames, name:lower())
+            tDeleteItem(addon.db.scanMobNames, name:lower())
         end
         self:UpdateScanning()
     end
 end
 
 function _LiteLite:UpdateScanning()
-    if next(self.db.scanMobNames or {}) then
+    if next(addon.db.scanMobNames or {}) then
         self.scannedGUID = self.scannedGUID or {}
         self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
         if WOW_PROJECT_ID == 1 then
@@ -832,13 +536,13 @@ function _LiteLite:NAME_PLATE_UNIT_ADDED(unit)
 
     local npcID = select(6, strsplit('-', UnitGUID(unit)))
 
-    for _, n in ipairs(self.db.scanMobNames) do
+    for _, n in ipairs(addon.db.scanMobNames) do
         if ( name and name:find(n, nil, true) ) or
            ( npcID and tonumber(n) == tonumber(npcID) ) then
             if not self.scannedGUID[guid] then
                 self.scannedGUID[guid] = { name = name }
                 local msg = format("Nameplate %s found", name)
-                printf(msg)
+                addon.printf(msg)
                 PlaySound(11466)
             end
             if not GetRaidTargetIndex(unit) then
@@ -990,7 +694,7 @@ function _LiteLite:ScanMobAddFromVignette(id)
     local uiMapID = C_Map.GetBestMapForUnit('player')
     if not uiMapID then return end
 
-    for _, n in ipairs(self.db.scanMobNames) do
+    for _, n in ipairs(addon.db.scanMobNames) do
         if self:VignetteMatches(n, info) then
             local pos = C_VignetteInfo.GetVignettePosition(info.vignetteGUID, uiMapID)
             if pos then
@@ -1006,13 +710,13 @@ function _LiteLite:ScanMobAddFromVignette(id)
                 else
                     data.autoClear = false
                 end
-                printf(format("Vignette %s at (%.2f, %.2f)", data.name, pos.x*100, pos.y*100))
-                printf(format("  guid %s", data.objectGUID))
-                printf(format("  atlas %s", data.atlasName))
-                printf(format("  autoClear %s", tostring(data.autoClear)))
+                addon.printf(format("Vignette %s at (%.2f, %.2f)", data.name, pos.x*100, pos.y*100))
+                addon.printf(format("  guid %s", data.objectGUID))
+                addon.printf(format("  atlas %s", data.atlasName))
+                addon.printf(format("  autoClear %s", tostring(data.autoClear)))
                 PlaySound(11466)
                 self.scannedGUID[data.objectGUID] = data
-                if TomTom and self.db.autoScanWaypoint then
+                if TomTom and addon.db.autoScanWaypoint then
                     self:AddWaypoint(data)
                     TomTom:SetClosestWaypoint()
                 end
@@ -1050,61 +754,13 @@ function _LiteLite:PLAYER_LOGOUT()
     self:RemoveAllScanWaypoints()
 end
 
-local function UpdateQuestRewards(tableWidget, rowData, info)
-    local numRewards = GetNumQuestLogRewards(info.questID)
-    if numRewards == 0 then
-        local copper = GetQuestLogRewardMoney(info.questID)
-        if copper > 0 then
-            rowData[4] = GetMoneyString(copper)
-            tableWidget:MarkDirty()
-        end
-        return
-    end
-
-    local questContainer = ContinuableContainer:Create()
-
-    for i = 1, numRewards do
-        local _, _, _, _, _, itemID = GetQuestLogRewardInfo(i, info.questID)
-        local item = Item:CreateFromItemID(itemID)
-        questContainer:AddContinuable(item)
-    end
-
-    questContainer:ContinueOnLoad(
-        function ()
-            for i = 1, numRewards do
-                local itemName, itemTexture, numItems, quality, _, itemID, itemLevel = GetQuestLogRewardInfo(i, info.questID)
-                ScanTooltip:SetQuestLogItem("reward", i, info.questID, true)
-                local _, link = ScanTooltip:GetItem()
-                rowData[4] = format("%s x%d", link, numItems)
-            end
-            tableWidget:MarkDirty()
-        end)
-end
-
-local function GetQuest(tableWidget, info)
-    local link = GetQuestLink(info.questID)
-    local name, faction, capped = C_TaskQuest.GetQuestInfoByQuestID(info.questID)
-    local secondsRemaining = C_TaskQuest.GetQuestTimeLeftSeconds(info.questID)
-    local color = QuestUtils_GetQuestTimeColor(secondsRemaining or 0)
-    local formatterOutput = WorldQuestsSecondsFormatter:Format(secondsRemaining)
-    local mapInfo = C_Map.GetMapInfo(info.mapID)
-    local rowData = { mapInfo.name, link or name, nil, nil, color:WrapTextInColorCode(formatterOutput) }
-    if faction and C_QuestLog.QuestContainsFirstTimeRepBonusForPlayer(info.questID) then
-        local factionData = C_MajorFactions.GetMajorFactionData(faction)
-                            or C_Reputation.GetFactionDataByID(faction)
-        rowData[3] = factionData and factionData.name
-    end
-    UpdateQuestRewards(tableWidget, rowData, info)
-    tableWidget:AddRow(rowData)
-end
-
 local IgnoreMaps = {
     [2213] = true,      -- City of Threads
     [2216] = true,      -- City of Threads - Lower
     [2256] = true,      -- Azj-kahet Lower
 }
 
-function _LiteLite:FindChildZoneMaps(expansion)
+function addon.FindChildZoneMaps(expansion)
     local todo
     if not expansion or expansion == 'midnight' then
         todo = { 2537 }
@@ -1147,62 +803,6 @@ function _LiteLite:FindChildZoneMaps(expansion)
     return wanted
 end
 
-function _LiteLite:WorldQuestProcess(expansion)
-    local mapQuests = { }
-    for _, mapID in ipairs(self:FindChildZoneMaps(expansion)) do
-        for _, questInfo in ipairs(C_TaskQuest.GetQuestsOnMap(mapID)) do
-            if C_QuestLog.IsWorldQuest(questInfo.questID) and questInfo.mapID == mapID then
-                table.insert(mapQuests, questInfo)
-                C_TaskQuest.RequestPreloadRewardData(questInfo.questID)
-            end
-        end
-    end
-
-    C_Timer.NewTicker(0.5,
-        function (ticker)
-            local allKnown = true
-            for _, info in pairs(mapQuests) do
-                if not HaveQuestRewardData(info.questID) then allKnown = false break end
-            end
-            if allKnown then
-                _LiteLiteTable:Setup("World Quests", { "Zone", "Quest", "Reputation", "Reward", "Time left" })
-                for _, info in pairs(mapQuests) do
-                    GetQuest(_LiteLiteTable, info)
-                end
-                _LiteLiteTable:SetEnableSort(true)
-                _LiteLiteTable:SetSortColumn(1)
-                _LiteLiteTable:Show()
-                ticker:Cancel()
-            end
-        end, 10)
-end
-
-function _LiteLite:WorldQuestList(expansion)
-    self:WorldQuestProcess(expansion)
-end
-
-function _LiteLite:KickOfflineMembers()
-    if not UnitIsGroupLeader('player') then
-        return
-    end
-
-    local function checkboot(unit)
-        if UnitExists(unit) and not UnitIsConnected(unit) then
-            UninviteUnit(GetUnitName(unit, true))
-        end
-    end
-
-    if IsInRaid() then
-        for i = 40, 1, -1 do
-            checkboot('raid'..i)
-        end
-    elseif IsInGroup() then
-        for i = 4, 1, -1 do
-            checkboot('party'..i)
-        end
-    end
-end
-
 function _LiteLite:ShowGreatVault()
     WeeklyRewards_ShowUI()
     WeeklyRewardsFrame:SetUpConditionalActivities()
@@ -1212,83 +812,11 @@ end
 function _LiteLite:MythicPlusHistory()
     local runs = C_MythicPlus.GetRunHistory(false, true)
     table.sort(runs, function (a, b) return a.level > b.level end)
-    printf('Mythic plus runs this week:')
+    addon.printf('Mythic plus runs this week:')
     for i, info in ipairs(runs) do
         local name = C_ChallengeMode.GetMapUIInfo(info.mapChallengeModeID)
-        printf('% 2d:  %d%s %s',
+        addon.printf('% 2d:  %d%s %s',
                 i, info.level, info.completed and '+' or '', name)
-    end
-end
-
-local function scoreSort(a, b)
-    if a.name == 'Fortified' then
-        return true
-    else
-        return false
-    end
-end
-
-function _LiteLite:MythicPlusDungeons()
-    local output = { }
-
-    for _, mapID in pairs(C_ChallengeMode.GetMapTable()) do
-        if next(output) ~= nil then table.insert(output, '') end
-        local mapName, _, mapTimer = C_ChallengeMode.GetMapUIInfo(mapID)
-        local scores, overallScore = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapID)
-        table.insert(output, format('%s : %d', mapName, overallScore))
-        if scores then
-            table.sort(scores, scoreSort)
-            for _, info in ipairs(scores) do
-                local stars
-                if info.durationSec < mapTimer * 0.6 then
-                    stars = '+++'
-                elseif info.durationSec < mapTimer * 0.8 then
-                    stars = '++'
-                elseif info.durationSec < mapTimer then
-                    stars = '+'
-                else
-                    stars= ''
-                end
-                table.insert(output, format(' - %s : %s%d %d', info.name, stars, info.level, info.score))
-            end
-        end
-    end
-
-    _LiteLiteText.EditBox:SetText(table.concat(output, "\n"))
-    _LiteLiteText:Show()
-end
-
-local function IsJunk(bag, slot)
-    local info = C_Container.GetContainerItemInfo(bag, slot)
-    if info and info.quality == Enum.ItemQuality.Poor and not info.hasNoValue and not info.isLocked then
-        return true
-    end
-end
-
-function _LiteLite:SellJunk()
-    local numSold = 0
-    for bag = 0, 4, 1 do
-        for slot = 1, C_Container.GetContainerNumSlots(bag) do
-            if IsJunk(bag, slot) then
-                C_Container.UseContainerItem(bag, slot)
-                numSold = numSold + 1
-                if numSold == 12 then return end
-            end
-        end
-    end
-end
-
-function _LiteLite:CHAT_MSG_COMBAT_XP_GAIN()
-    local rest = GetXPExhaustion()
-    if not rest or rest == 0 then return end
-    local r, g, b = GetMessageTypeColor('COMBAT_XP_GAIN')
-    local pct = 100 * rest / UnitXPMax('player')
-    local msg = string.format('Rest remaining: %s (%0.1f%%)', AbbreviateNumbers(rest), pct)
-    for i = 1, NUM_CHAT_WINDOWS do
-        local f = Chat_GetChatFrame(i)
-        if tContains(f.messageTypeList, 'COMBAT_XP_GAIN') then
-            f:AddMessage(printTag .. msg, r, g, b)
-        end
     end
 end
 
@@ -1296,6 +824,18 @@ local function GetFactionNumbersByName(name)
     for i = 1, C_Reputation.GetNumFactions() do
         local data = C_Reputation.GetFactionDataByIndex(i)
         if data and data.factionID and data.name == name then
+            local friendshipData = C_GossipInfo.GetFriendshipReputation(data.factionID)
+            if friendshipData and friendshipData.friendshipFactionID > 0 then
+                local rankData = C_GossipInfo.GetFriendshipReputationRanks(data.factionID)
+                local rankText = string.format('%s %d/%d (%s)', FRIEND, rankData.currentLevel, rankData.maxLevel, friendshipData.reaction)
+                if rankData.currentLevel == rankData.maxLevel then
+                    return rankText, friendshipData.standing, friendshipData.reactionThreshold
+                else
+                    return rankText,
+                        friendshipData.standing - friendshipData.reactionThreshold,
+                        friendshipData.nextThreshold - friendshipData.reactionThreshold
+                end
+            end
             if C_Reputation.IsFactionParagonForCurrentPlayer(data.factionID) then
                 local currentValue, threshold = C_Reputation.GetFactionParagonInfo(data.factionID)
                 return 'P x' .. math.floor(currentValue / threshold),
@@ -1319,12 +859,12 @@ local function PrintFactionIncrease(factionName, amount)
     local name, cur, max = GetFactionNumbersByName(factionName)
     if name then
         local txt = string.format('%s +%d -> %s: %d/%d', factionName, amount, name, cur, max)
-        printf(BLUE_FONT_COLOR:WrapTextInColorCode(txt))
+        addon.printf(BLUE_FONT_COLOR:WrapTextInColorCode(txt))
     end
 end
 
 function _LiteLite:FACTION_STANDING_CHANGED(factionID, updatedStanding)
-    printf("FACTION_STANDING_CHANGED %d %s", factionID, tostring(updatedStanding))
+    addon.printf("FACTION_STANDING_CHANGED %d %s", factionID, tostring(updatedStanding))
 end
 
 function _LiteLite:CHAT_MSG_COMBAT_FACTION_CHANGE(msg)
@@ -1355,57 +895,6 @@ function _LiteLite:ReportTargetLocation()
     end
 end
 
-local function PrintIfCompletedQuest(questID)
-    local info = C_TooltipInfo.GetHyperlink("quest:"..questID)
-    if not info then return end
-    local name = info.lines[1].leftText
-    if name then
-        local complete = C_QuestLog.IsQuestFlaggedCompleted(questID)
-        local color = complete and GREEN_FONT_COLOR or RED_FONT_COLOR
-        printf( "%s: %s", name, color:WrapTextInColorCode(tostring(complete)))
-    end
-end
-
-function _LiteLite:PrintSkips()
-    PrintIfCompletedQuest(45383)        -- Nighthold
-end
-
-
-function _LiteLite:SetAceProfile(svName, profileName)
-    if not svName or not _G[svName] then return end
-
-    local acedb = LibStub('AceDB-3.0', true)
-    if not acedb then return end
-
-    local PlayerProfileName = string.format('%s - %s', UnitFullName('player'))
-    local _, ClassProfileName = UnitClass('player')
-    local RealmProfileName = GetRealmName()
-
-    for db in pairs(acedb.db_registry) do
-        if db.sv == _G[svName] then
-            if db:GetCurrentProfile() ~= profileName then
-                printf('Set %s profile %s', svName, profileName)
-                db:SetProfile(profileName)
-            end
-            if db.profiles[PlayerProfileName] then
-                printf('Delete %s profile %s', svName, PlayerProfileName)
-                db:DeleteProfile(PlayerProfileName)
-            end
-            if db.profiles[ClassProfileName] then
-                printf('Delete %s profile %s', svName, ClassProfileName)
-                db:DeleteProfile(ClassProfileName)
-            end
-            if db.profiles[RealmProfileName] then
-                printf('Delete %s profile %s', svName, RealmProfileName)
-                db:DeleteProfile(RealmProfileName)
-            end
-        end
-    end
-end
-
-function _LiteLite:EnableAutoLoot()
-end
-
 function _LiteLite:RaidFrameOptions()
     SetCVar("raidFramesDisplayClassColor", true)
     SetCVar("raidFramesDisplayPowerBars", true)
@@ -1413,230 +902,22 @@ function _LiteLite:RaidFrameOptions()
     SetCVar("raidOptionDisplayMainTankAndAssist", false)
 end
 
-function _LiteLite:OtherAddonProfiles()
-    self:SetAceProfile('HandyNotesDB', 'Default')
-    self:SetAceProfile('EnhancedRaidFramesDB', 'Default')
-    self:SetAceProfile('SimulationCraftDB', 'Default')
-end
-
-function _LiteLite:MuteDragonridingMounts()
-    -- These came from a weakaura
-    MuteSoundFile(4634942)
-    MuteSoundFile(4634944)
-    MuteSoundFile(4634946)
-    MuteSoundFile(4634910)
-    MuteSoundFile(4634908)
-    MuteSoundFile(4634912)
-    MuteSoundFile(4634914)
-    MuteSoundFile(4634916)
-    MuteSoundFile(4633292)
-    MuteSoundFile(4633294)
-    MuteSoundFile(4633296)
-    MuteSoundFile(4633298)
-    MuteSoundFile(4633300)
-    MuteSoundFile(4633392)
-    MuteSoundFile(4674593)
-    MuteSoundFile(4674595)
-    MuteSoundFile(4674599)
-    MuteSoundFile(4543973)
-    MuteSoundFile(4543973)
-    MuteSoundFile(4543977)
-    MuteSoundFile(4543979)
-    MuteSoundFile(4627086)
-    MuteSoundFile(4627088)
-    MuteSoundFile(4627090)
-    MuteSoundFile(4627092)
-    MuteSoundFile(4634924)
-    MuteSoundFile(4634926)
-    MuteSoundFile(4634928)
-    MuteSoundFile(4634930)
-    MuteSoundFile(4634932)
-    MuteSoundFile(4550997)
-    MuteSoundFile(4550999)
-    MuteSoundFile(4551001)
-    MuteSoundFile(4551003)
-    MuteSoundFile(4551005)
-    MuteSoundFile(4551007)
-    MuteSoundFile(4551009)
-    MuteSoundFile(4551011)
-    MuteSoundFile(4551013)
-    MuteSoundFile(4551015)
-    MuteSoundFile(4551017)
-    MuteSoundFile(1489053)
-    MuteSoundFile(1489050)
-    MuteSoundFile(540221)
-    MuteSoundFile(540218)
-    MuteSoundFile(540213)
-    MuteSoundFile(540119)
-    MuteSoundFile(540182)
-    MuteSoundFile(540243)
-    MuteSoundFile(540188)
-    MuteSoundFile(540108)
-    MuteSoundFile(540211)
-    MuteSoundFile(540197)
-    MuteSoundFile(1489050)
-    MuteSoundFile(1489051)
-    MuteSoundFile(1489052)
-    MuteSoundFile(1489053)
-    MuteSoundFile(12694571)
-    MuteSoundFile(12694572)
-    MuteSoundFile(12694573)
-    MuteSoundFile(597932)
-    MuteSoundFile(4633302)
-    MuteSoundFile(1563058)
-    MuteSoundFile(803549)
-    MuteSoundFile(803545)
-    MuteSoundFile(803547)
-    MuteSoundFile(803551)
-    MuteSoundFile(1321216)
-    MuteSoundFile(1321217)
-    MuteSoundFile(1321218)
-    MuteSoundFile(1321219)
-    MuteSoundFile(1321220)
-    MuteSoundFile(4634009)
-    MuteSoundFile(4634011)
-    MuteSoundFile(4634013)
-    MuteSoundFile(4634015)
-    MuteSoundFile(4634017)
-    MuteSoundFile(4634019)
-    MuteSoundFile(4634021)
-    MuteSoundFile(547436)
-    MuteSoundFile(4633370)
-    MuteSoundFile(4633372)
-    MuteSoundFile(4633374)
-    MuteSoundFile(4633376)
-    MuteSoundFile(4633378)
-    MuteSoundFile(4633382)
-    MuteSoundFile(4337227)
-    MuteSoundFile(4633304)
-    MuteSoundFile(4633306)
-    MuteSoundFile(4633308)
-    MuteSoundFile(4633310)
-    MuteSoundFile(4633312)
-    MuteSoundFile(4633314)
-    MuteSoundFile(4633338)
-    MuteSoundFile(4633340)
-    MuteSoundFile(4633342)
-    MuteSoundFile(4633344)
-    MuteSoundFile(4633346)
-    MuteSoundFile(4633348)
-    MuteSoundFile(4633350)
-    MuteSoundFile(4633354)
-    MuteSoundFile(4633356)
-    MuteSoundFile(4634009)
-    MuteSoundFile(4634011)
-    MuteSoundFile(4634013)
-    MuteSoundFile(4634015)
-    MuteSoundFile(4634017)
-    MuteSoundFile(4634019)
-    MuteSoundFile(4634021)
-    MuteSoundFile(547436)
-    MuteSoundFile(4633370)
-    MuteSoundFile(4633372)
-    MuteSoundFile(4633374)
-    MuteSoundFile(4633376)
-    MuteSoundFile(4633378)
-    MuteSoundFile(4633382)
-    MuteSoundFile(4337227)
-    MuteSoundFile(4633304)
-    MuteSoundFile(4633306)
-    MuteSoundFile(4633308)
-    MuteSoundFile(4633310)
-    MuteSoundFile(4633312)
-    MuteSoundFile(4633314)
-    MuteSoundFile(4633338)
-    MuteSoundFile(4633340)
-    MuteSoundFile(4633342)
-    MuteSoundFile(4633344)
-    MuteSoundFile(4633346)
-    MuteSoundFile(4633348)
-    MuteSoundFile(4633350)
-    MuteSoundFile(4633354)
-    MuteSoundFile(4633356)
-    MuteSoundFile(547714)
-    MuteSoundFile(547715)
-    MuteSoundFile(547716)
-    MuteSoundFile(4663454)
-    MuteSoundFile(4663456)
-    MuteSoundFile(4663458)
-    MuteSoundFile(4663460)
-    MuteSoundFile(4663462)
-    MuteSoundFile(4663464)
-    MuteSoundFile(4663466)
-    MuteSoundFile(1467222)
-    MuteSoundFile(598016)
-    MuteSoundFile(597968)
-    MuteSoundFile(597998)
-    MuteSoundFile(597968)
-    MuteSoundFile(598004)
-    MuteSoundFile(598010)
-    MuteSoundFile(597989)
-    MuteSoundFile(597932)
-    MuteSoundFile(598028)
-    MuteSoundFile(597986)
-    MuteSoundFile(3014246)
-    MuteSoundFile(3014247)
-    MuteSoundFile(1563054)
-    MuteSoundFile(1563055)
-end
-
--- Damn thing is underneath the action bars
-
-function _LiteLite.MoveKeystoneFrame()
-    if ChallengesKeystoneFrame then
-        ChallengesKeystoneFrame:ClearAllPoints()
-        ChallengesKeystoneFrame:SetPoint("TOP", UIParent, "TOP", 0, -60)
-    end
-end
-
-function _LiteLite:CatalystCharges()
-    local info = C_CurrencyInfo.GetCurrencyInfo(2533)
-    if info then
-        printf("%s: %d/%d\n", info.name, info.quantity, info.maxQuantity)
-    end
-end
-
-
--- Also does ping mouseover now
-
-function _LiteLite:RotatingMarker()
-    local b = CreateFrame('Button', 'RotatingMarker', nil, 'SecureActionButtonTemplate')
-    -- https://github.com/Stanzilla/WoWUIBugs/issues/317#issuecomment-1510847497
-    b:SetAttribute("pressAndHoldAction", true)
-    b:SetAttribute("type", "macro")
-    b:SetAttribute("typerelease", "macro")
-
-    SecureHandlerWrapScript(b, 'PreClick', b,
-        [[
-            if IsShiftKeyDown() then
-                self:SetAttribute("macrotext", "/ping [@mouseover,help] warning; [@mouseover] attack")
-            elseif IsControlKeyDown() then
-                self:SetAttribute("n", 0)
-                self:SetAttribute("macrotext", "/cwm all")
-            else
-                local n = ( self:GetAttribute("n") or 0 ) % 8 + 1
-                self:SetAttribute("n", n)
-                self:SetAttribute("macrotext", "/wm [@cursor] " .. n)
-            end
-        ]])
-end
-
 local ImportExportMixin = {
     ImportLoadout =
         function (self, importText, loadoutName)
-            printf('Importing loadout: ' .. loadoutName)
+            addon.printf('Importing loadout: ' .. loadoutName)
             local importStream = ExportUtil.MakeImportDataStream(importText)
             local headerValid, serializationVersion, specID, treeHash = self:ReadLoadoutHeader(importStream)
 
-            if not headerValid then printf('Bad header') return end
-            if specID ~= PlayerUtil.GetCurrentSpecID() then printf('Bad spec') return end
+            if not headerValid then addon.printf('Bad header') return end
+            if specID ~= PlayerUtil.GetCurrentSpecID() then addon.printf('Bad spec') return end
 
             local configID = C_ClassTalents.GetActiveConfigID()
             local configInfo = C_Traits.GetConfigInfo(configID)
             local treeInfo = C_Traits.GetTreeInfo(configID, configInfo.treeIDs[1])
 
             local loadoutContent = self:ReadLoadoutContent(importStream, treeInfo.ID)
-            if not loadoutContent then printf('Loadout did not convert') return end
+            if not loadoutContent then addon.printf('Loadout did not convert') return end
             local loadoutEntryInfo = self:ConvertToImportLoadoutEntryInfo(configID, treeInfo.ID, loadoutContent)
 
             if loadoutName == 'active' then
@@ -1647,7 +928,7 @@ local ImportExportMixin = {
                 local ok, err = C_ClassTalents.ImportLoadout(configID, loadoutEntryInfo, loadoutName)
                 C_Traits.CommitConfig(configID) -- TTT says this doesn't work
                 if not ok then
-                    printf('Loadout import failed: %s: %s', loadoutName, err)
+                    addon.printf('Loadout import failed: %s: %s', loadoutName, err)
                     return
                 end
             end
@@ -1779,21 +1060,21 @@ local function SpecConfigFromString(text)
     local map = C_EncodingUtil.DeserializeJSON(text)
     if not map then return end
 
-    printf('Loading macros')
+    addon.printf('Loading macros')
     if map.macros then
         for name, info in pairs(map.macros) do
-            printf(' - ' .. name)
+            addon.printf(' - ' .. name)
             SetMacro(info)
         end
     end
 
-    printf('Setting action bar actions')
+    addon.printf('Setting action bar actions')
     for i = 1, 180 do
         local index = tostring(i)
         SetAction(i, map.actions[index])
     end
 
-    printf('Setting up loadout')
+    addon.printf('Setting up loadout')
     if map.loadout then
         local currentConfigsByName = {}
         local specID = PlayerUtil.GetCurrentSpecID()
@@ -1808,10 +1089,10 @@ local function SpecConfigFromString(text)
             local lastSelectedConfigID = C_ClassTalents.GetLastSelectedSavedConfigID(specID)
             local activeConfigName = lastSelectedConfigID and C_Traits.GetConfigInfo(lastSelectedConfigID).name
             if activeConfigName == map.loadout.name then
-                printf('Importing into active loadout: ' .. map.loadout.name)
+                addon.printf('Importing into active loadout: ' .. map.loadout.name)
                 map.loadout.name = 'active'
             else
-                printf('Deleting existing inactive loadout: ' .. map.loadout.name)
+                addon.printf('Deleting existing inactive loadout: ' .. map.loadout.name)
                 C_ClassTalents.DeleteConfig(currentConfigsByName[map.loadout.name])
             end
         end
@@ -1819,7 +1100,7 @@ local function SpecConfigFromString(text)
     end
 
     if map.clique and Clique and Clique.db then
-        printf('Setting up Clique')
+        addon.printf('Setting up Clique')
         local p = Clique.db.profile
         p.bindings = p.bindings or {}
         table.wipe(p.bindings)
@@ -1859,7 +1140,7 @@ local function UpdateEquipmentSetForLoadout()
     local loadoutSetID = C_EquipmentSet.GetEquipmentSetID(loadoutSetName)
 
     if loadoutSetID then
-        printf('Change equipment set ' .. loadoutSetName)
+        addon.printf('Change equipment set ' .. loadoutSetName)
         C_EquipmentSet.UseEquipmentSet(loadoutSetID)
         return
     end
@@ -1870,7 +1151,7 @@ local function UpdateEquipmentSetForLoadout()
     local specSetID = C_EquipmentSet.GetEquipmentSetForSpec(specIndex)
     if specSetID then
         local specSetName = C_EquipmentSet.GetEquipmentSetInfo(specSetID)
-        printf('Change equipment set ' .. specSetName)
+        addon.printf('Change equipment set ' .. specSetName)
         C_EquipmentSet.UseEquipmentSet(specSetID)
         return
     end
@@ -1893,63 +1174,6 @@ end
 
 function _LiteLite:PLAYER_REGEN_ENABLED()
     UpdateEquipmentSetForLoadout()
-end
-
-function _LiteLite:LargerCUFDispelIcons()
-    hooksecurefunc("CompactUnitFrame_UpdateAuras",
-        function (frame)
-            if not frame:IsForbidden() and frame:GetName() then
-                for _,f in ipairs(frame.dispelDebuffFrames) do
-                    f:SetSize(24, 24)
-                end
-            end
-        end)
-end
-
-function _LiteLite:HideProfessionUnspentReminder()
-    hooksecurefunc('MainMenuMicroButton_ShowAlert',
-        function (microButton, text, _tutorialIndex, _cvarBitfield)
-            if text == PROFESSIONS_UNSPENT_SPEC_POINTS_REMINDER then
-                -- print(microButton:GetName(), text, 'triggered')
-                MainMenuMicroButton_HideAlert(microButton)
-                MicroButtonPulseStop(microButton)
-            end
-        end)
-end
-
-
-function _LiteLite:HideActionButtonEffects()
-    if WOW_PROJECT_ID ~= 1 then return end
-
-    -- Stop the castbar inside the actionbuttons
-    local events = {
-        "UNIT_SPELLCAST_INTERRUPTED",
-        "UNIT_SPELLCAST_SUCCEEDED",
-        "UNIT_SPELLCAST_FAILED",
-        "UNIT_SPELLCAST_START",
-        "UNIT_SPELLCAST_STOP",
-        "UNIT_SPELLCAST_CHANNEL_START",
-        "UNIT_SPELLCAST_CHANNEL_STOP",
-        "UNIT_SPELLCAST_RETICLE_TARGET",
-        "UNIT_SPELLCAST_RETICLE_CLEAR",
-        "UNIT_SPELLCAST_EMPOWER_START",
-        "UNIT_SPELLCAST_EMPOWER_STOP",
-    }
-
-    for _,e in ipairs(events) do
-        ActionBarActionEventsFrame:UnregisterEvent(e)
-    end
-
-    -- Stop the SpellActivationAlert start animation
-    hooksecurefunc(ActionButtonSpellAlertManager, 'ShowAlert',
-        function (_, b)
-            -- Bad attempt to restrict to ActionBarActionButtonMixin
-            if b.HasAction and b.SpellActivationAlert then
-                b.SpellActivationAlert.ProcStartAnim:Stop()
-                b.SpellActivationAlert.ProcStartFlipbook:SetAlpha(0)
-                b.SpellActivationAlert.ProcLoop:Play()
-            end
-        end)
 end
 
 local guildNameColors = {}
@@ -2029,9 +1253,9 @@ function _LiteLite:LFG_LIST_JOINED_GROUP(resultID, kstringGroupName)
         local _, _, _, _, role = C_LFGList.GetApplicationInfo(resultID)
         local msg = format('Joined %s "%s" as %s', activityInfo.fullName, kstringGroupName, _G[role])
         local dashes = string.rep('-', msg:len())
-        printf(HEIRLOOM_BLUE_COLOR:WrapTextInColorCode(dashes))
-        printf(HEIRLOOM_BLUE_COLOR:WrapTextInColorCode(msg))
-        printf(HEIRLOOM_BLUE_COLOR:WrapTextInColorCode(dashes))
+        addon.printf(HEIRLOOM_BLUE_COLOR:WrapTextInColorCode(dashes))
+        addon.printf(HEIRLOOM_BLUE_COLOR:WrapTextInColorCode(msg))
+        addon.printf(HEIRLOOM_BLUE_COLOR:WrapTextInColorCode(dashes))
 
 --[[
         -- kstring is gone before the GROUP_JOINED so can't use it
@@ -2082,272 +1306,15 @@ function _LiteLite:SetupDragonridingBar()
     end
 end
 
-local StormMapAchievements =  {
-    [2022] = {
-        id = 16468,
-        ['ElementalStorm-Lesser-Air'] = 1,
-        ['ElementalStorm-Lesser-Earth'] = 2,
-        ['ElementalStorm-Lesser-Fire'] = 3,
-        ['ElementalStorm-Lesser-Water'] = 4,
-    },
-    [2023] = {
-        id = 16476,
-        ['ElementalStorm-Lesser-Air'] = 1,
-        ['ElementalStorm-Lesser-Earth'] = 2,
-        ['ElementalStorm-Lesser-Fire'] = 3,
-        ['ElementalStorm-Lesser-Water'] = 4,
-    },
-    [2024] = {
-        id = 16484,
-        ['ElementalStorm-Lesser-Air'] = 1,
-        ['ElementalStorm-Lesser-Earth'] = 2,
-        ['ElementalStorm-Lesser-Fire'] = 3,
-        ['ElementalStorm-Lesser-Water'] = 4,
-    },
-    [2025] = {
-        id = 16489,
-        ['ElementalStorm-Lesser-Air'] = 1,
-        ['ElementalStorm-Lesser-Earth'] = 2,
-        ['ElementalStorm-Lesser-Fire'] = 3,
-        ['ElementalStorm-Lesser-Water'] = 4,
-    },
-}
-
-
-local CompletedColors = {
-    [true] = GREEN_FONT_COLOR,
-    [false] = RED_FONT_COLOR,
-}
-
-function _LiteLite:CheckElementalStorms()
-    local found = false
-    for uiMapID, achData in pairs(StormMapAchievements) do
-        local mapName = C_Map.GetMapInfo(uiMapID).name
-        local poiIDs = C_AreaPoiInfo.GetAreaPOIForMap(uiMapID)
-        for _, poiID in ipairs(poiIDs) do
-            local info = C_AreaPoiInfo.GetAreaPOIInfo(uiMapID, poiID)
-            if strfind(info.description, 'Cobalt Assembly') then
-                info.isPrimaryMapForPOI = ( uiMapID == 2024 )
-            end
-            if info.isPrimaryMapForPOI and info.name == "Elemental Storm" then
-                local critID = achData[info.atlasName]
-                local name, _, completed = GetAchievementCriteriaInfo(achData.id, critID)
-                local c = CompletedColors[completed]
-                printfc('%s : %s (%s)', c, mapName, name, completed and "DONE" or "MISSING")
-                printf(info.description)
-                found = true
-            end
-        end
-    end
-    if not found then
-        printf('No storm active')
-    end
-end
-
-function _LiteLite:ClearTrackedPerksActivities()
-    if not C_PerksActivities then return end
-    local ids = C_PerksActivities.GetTrackedPerksActivities().trackedIDs
-    for _, id in ipairs(ids) do
-       C_PerksActivities.RemoveTrackedPerksActivity(id)
-    end
-end
-
 local BindMacroButton = CreateFrame('Button', '_LiteLiteBindMacroButton', nil, 'SecureActionButtonTemplate')
 BindMacroButton:RegisterForClicks('AnyDown', 'AnyUp')
 
 function _LiteLite:SetBindMacro()
-    if self.db.bindKey and self.db.bindMacro then
+    if addon.db.bindKey and addon.db.bindMacro then
         BindMacroButton:SetAttribute('type', 'macro')
-        BindMacroButton:SetAttribute('macrotext', self.db.bindMacro)
-        SetOverrideBindingClick(BindMacroButton, true, self.db.bindKey, BindMacroButton:GetName())
+        BindMacroButton:SetAttribute('macrotext', addon.db.bindMacro)
+        SetOverrideBindingClick(BindMacroButton, true, addon.db.bindKey, BindMacroButton:GetName())
     end
-end
-
-local HearthstoneToyButton = CreateFrame('Button', '_LLHS', nil, 'SecureActionButtonTemplate')
-HearthstoneToyButton:RegisterForClicks('AnyDown', 'AnyUp')
-
-local notHearthstone = {
-    [110560] = true,
-    [118427] = true,
-    [119210] = true,
-    [119211] = true,
-    [140192] = true,
-    [211946] = true,
-}
-
-local function IsMyMacro(index)
-    local _, _, body = GetMacroInfo(index)
-    return body and body:find("/click _LLHS", nil, true)
-end
-
-function HearthstoneToyButton:FindMacroIndex()
-    local index = GetRunningMacro()
-    if index and IsMyMacro(index) then
-        return index
-    else
-        for i = 1, MAX_ACCOUNT_MACROS+MAX_CHARACTER_MACROS do
-            if IsMyMacro(i) then
-                return i
-            end
-        end
-    end
-end
-
-function HearthstoneToyButton:UpdateMacro(index)
-    local toyName = self.toys[self.n]
-    local icon = select(5, C_Item.GetItemInfoInstant(toyName))
--- printf('UpdateMacro %d toyName=%s icon=%d grm=%s', index, toyName, icon, tostring(GetRunningMacro()))
-    if icon then
-        local _, _, body = GetMacroInfo(index)
-        if body and body:find("/click _LLHS", nil, true) then
-            body = body:gsub("#showtooltip[^\n]*", "#showtooltip " .. toyName)
--- printf('EditMacro %d toyName=%s icon=%d', index, toyName, icon)
-            EditMacro(index, nil, icon, body)
-        end
-    end
-end
-
-function HearthstoneToyButton:Shuffle()
-    for i = #self.toys, 2, -1 do
-        local r = math.random(i)
-        self.toys[i], self.toys[r] = self.toys[r], self.toys[i]
-    end
-end
-
-function HearthstoneToyButton:Advance()
-    if not InCombatLockdown() and self.toys ~= nil then
-        if self.n == nil or self.n >= #self.toys then
-            self:Shuffle()
-            self.n = 1
-        else
-            self.n = self.n + 1
-        end
-        -- print(self:GetName(), 'Advance', self.toys[self.n])
-        self:SetScript('PreClick', function () printf(self.toys[self.n]) end)
-        self:SetAttribute('toy', self.toys[self.n])
-        -- Editing a macro while it's running is bad juju
-        local macroIndex = self:FindMacroIndex()
-        if macroIndex then
-            C_Timer.After(0.1, function () self:UpdateMacro(macroIndex) end)
-        end
-    end
-end
-
-local ExtraHSItemIDs = {
-    [54452] = true,         -- Ethereal Portal
-    [190237] = true,        -- Broker Translocation Matrix
-    [206195] = true,        -- Path of the Naaru
-    [210455] = true,        -- Draenic Hologem
-    [235016] = true,        -- Redeployment Module
-}
-
-function HearthstoneToyButton:IsHearthstone(item)
-    local name = item:GetItemName()
-    local id = item:GetItemID()
-    local _, _, race = UnitRace('player')
-
-    if notHearthstone[id] then
-        return false
-    elseif id == 210455 and not (race == 11 or race == 30) then
-        -- Draenic Hologem requires Draenei or Lightforged Draenei
-        return false
-    elseif name:find('Hearthstone') then
-        return true
-    elseif ExtraHSItemIDs[id] then -- Ethereal Portal
-        return true
-    else
-        return false
-    end
-end
-
-function HearthstoneToyButton:UpdateToy(item)
-    if self:IsHearthstone(item) then
-        local name = item:GetItemName()
-        local id = item:GetItemID()
-        if not tContains(self.toys, name) and PlayerHasToy(id) then
-            table.insert(self.toys, name)
-            if self.n == nil then self:Advance() end
-        end
-    end
-end
-
--- There's a few complicated cases on being able to scan toys, and I'm not
--- entirely sure when C_ToyBox.GetToyFromIndex works. I also don't think
--- there's any way to query toys outside the filter which is annoying, since
--- the index arg is a filtered toys index.
-
-function HearthstoneToyButton:Update(_event, itemID, _isNew, _hasFanfare)
-    if itemID == nil then
-        -- I'm trying not to scan too much, as this fires semi-regularly, I think
-        -- every PLAYER_ENTERING_WORLD.
-        if self.initialFullScan ~= nil then return end
-
-        local itemList = {}
-
-        -- Sometimes on first login this is 2. though perhaps now I set the
-        -- default filters explicitly that isn't true any more.
-        C_ToyBox.SetAllSourceTypeFilters(true)
-        C_ToyBox.SetAllExpansionTypeFilters(true)
-        C_ToyBox.SetUncollectedShown(true)
-        C_ToyBox.SetFilterString('')
-        local numFilteredToys = C_ToyBox.GetNumFilteredToys()
-
-        -- printf('HearthstoneToyButton:Update: #%d', numFilteredToys)
-
-        -- I think C_ToyBox.GetToyFromIndex relies on a client cache, which
-        -- could just be the item cache. Calling C_ToyBox.GetToyFromIndex seems
-        -- to return -1 if the toy is not cached, and trigger a TOYS_UPDATED
-        -- event with the itemID when fetched. (It also returns -1 for indexes
-        -- that don't exist.) It's possible GetItemInfo definitely works if the
-        -- id is not -1 but I haven't tested it.
-
-        for i = 1, numFilteredToys do
-            local id = C_ToyBox.GetToyFromIndex(i)
-            local item = Item:CreateFromItemID(id)
-            if not item:IsItemEmpty() then
-                table.insert(itemList, item)
-            end
-        end
-
-        -- printf('initial item count: %d', #itemList)
-
-        -- Current toy count is 900+ so just bail out if it looks like things
-        -- aren't working and assume we will get a TOYS_UPDATED nil event later.
-
-        if #itemList < 900 then return end
-
-        self.initialFullScan = true
-
-        self.toys = self.toys or {}
-
-        local cc = ContinuableContainer:Create()
-        cc:AddContinuables(itemList)
-        cc:ContinueOnLoad(
-            function ()
-                for _, item in ipairs(itemList) do
-                    self:UpdateToy(item)
-                end
-            end)
-    elseif itemID ~= nil then
-        -- printf('HearthstoneToyButton:Update: %d', itemID)
-        self.toys = self.toys or {}
-        local item = Item:CreateFromItemID(itemID)
-        item:ContinueOnItemLoad(function () self:UpdateToy(item) end)
-    end
-end
-
-function _LiteLite:SetupHearthstoneButton()
-    if WOW_PROJECT_ID ~= 1 then return end
-    HearthstoneToyButton:SetAttribute('type', 'toy')
-    HearthstoneToyButton:SetAttribute('typerelease', 'toy')
-    HearthstoneToyButton:SetAttribute('pressAndHoldAction', true)
-    HearthstoneToyButton:SetScript('PostClick', function (self) self:Advance() end)
-    EventUtil.RegisterOnceFrameEventAndCallback('PLAYER_ENTERING_WORLD',
-        function ()
-            HearthstoneToyButton:RegisterEvent('TOYS_UPDATED')
-            HearthstoneToyButton:SetScript('OnEvent', HearthstoneToyButton.Update)
-            HearthstoneToyButton:Update()
-        end)
 end
 
 -- {
@@ -2399,7 +1366,7 @@ end
 
 function _LiteLite:ListDelves()
     local delveDataByName = {}
-    for _, mapID in ipairs(self:FindChildZoneMaps('midnight')) do
+    for _, mapID in ipairs(addon.FindChildZoneMaps('midnight')) do
         local mapInfo = C_Map.GetMapInfo(mapID)
         local delveList = C_AreaPoiInfo.GetDelvesForMap(mapID)
         for _, poiID in ipairs(delveList) do
@@ -2468,23 +1435,6 @@ function _LiteLite:ListDelves()
     _LiteLiteTable:Show()
 end
 
-function _LiteLite:LongerRaidInfoFrame()
-    local x, y = RaidInfoFrame:GetSize()
-    RaidInfoFrame:SetSize(x, y + 150)
-    x, y = RaidInfoFrame.ScrollBox:GetSize()
-    RaidInfoFrame.ScrollBox:SetSize(x, y + 150)
-end
-
-function _LiteLite:ShowActionBars()
-    if WOW_PROJECT_ID ~= 1 then return end
-    -- SetCVar('enableMultiActionBars', 0x1f)
-    Settings.SetValue("PROXY_SHOW_ACTIONBAR_2", true)
-    Settings.SetValue("PROXY_SHOW_ACTIONBAR_3", true)
-    Settings.SetValue("PROXY_SHOW_ACTIONBAR_4", true)
-    Settings.SetValue("PROXY_SHOW_ACTIONBAR_5", true)
-    Settings.SetValue("PROXY_SHOW_ACTIONBAR_6", true)
-end
-
 local DRIVE_TREE = 1056
 
 function _LiteLite:ShowDRIVE()
@@ -2518,495 +1468,4 @@ function _LiteLite:CageTriplicatePets()
           C_PetJournal.CagePetByID(info[1])
        end
     end
-end
-
-function _LiteLite:RestoredCofferKeys()
-    local pinnacleCompleted = 0
-    for _, questID in ipairs({ 82449, 82706, 82679, 85460 }) do
-        if C_QuestLog.IsQuestFlaggedCompleted(questID)then
-            pinnacleCompleted = pinnacleCompleted + 1
-            break
-        end
-    end
-
-    local ecoSuccess = C_QuestLog.IsQuestFlaggedCompleted(85460)
-    local phaseDiving = C_QuestLog.IsQuestFlaggedCompleted(91093)
-
-    local specialCompleted =  false
-    for _, questID in ipairs({ 89294, 89293 }) do
-        if C_QuestLog.IsQuestFlaggedCompleted(questID) then
-            specialCompleted = true
-            break
-        end
-    end
-
-    local shardsCompleted = 0
-    for _, questID in ipairs({ 84736, 84737, 84738, 84739 }) do
-        if C_QuestLog.IsQuestFlaggedCompleted(questID) then
-            shardsCompleted = shardsCompleted + 1
-        end
-    end
-
-    local keysCompleted = 0
-    for _, questID in ipairs({ 91175, 91176, 91177, 91178 }) do
-        if C_QuestLog.IsQuestFlaggedCompleted(questID) then
-            keysCompleted = keysCompleted + 1
-        end
-    end
-
-    printf("Full keys completed: %d/4", keysCompleted)
-    printf("  Pinnacle cache: %d", pinnacleCompleted)
-    printf("  Ecological succession: %s", tostring(ecoSuccess))
-    printf("  Phase diving: %s", tostring(ecoSuccess))
-    printf("  K'aresh special assignment: %s", tostring(specialCompleted))
-    printf("Shards completed: %d/200", shardsCompleted*50)
-end
-
--- All of the ticker weirdness with the auto-inviting is because (a) battle.net
--- does not always answer, and takes a while to answer after login and (b) as
--- far as I can tell there is no way to tell the difference between "can't look
--- this GUID up right now" and "can never look this GUID up because it is not
--- part of our battle.net friends".
-
-function _LiteLite:OnBattleNetInfoAvailable(guid, func)
-    local attempts = 0
-
-    local function TickerFunc(ticker)
-        attempts = attempts + 1
-        if attempts > 50 then
-            print('Ticker timed out after 50 attempts')
-            ticker:Cancel()
-            func(nil)   -- Call with nil info if attempts expired
-            return
-        end
-        local info = C_BattleNet.GetAccountInfoByGUID(guid)
-        if info then
-            print(string.format('Ticker succeeded after %d attempts', attempts))
-            ticker:Cancel()
-            func(info)
-        end
-    end
-
-    C_Timer.NewTicker(0.2, TickerFunc)
-end
-
-function _LiteLite:AutoInviteMyself()
-    self.invited = {}
-    self:RegisterEvent("GUILD_ROSTER_UPDATE")
-    C_GuildInfo.GuildRoster()
-end
-
-function _LiteLite:AutoInvite(name, battleTag)
-    if battleTag == self.db.battleTag then
-        printf("   - One of my toons, inviting %s", name)
-        C_Timer.After(1, function () C_PartyInfo.InviteUnit(name) end)
-        return true
-    else
-        return false
-    end
-end
-
-function _LiteLite:GUILD_ROSTER_UPDATE()
-    -- printf("AutoInviteMyself check due to GUILD_ROSTER_UPDATE")
-
-    local _, n = GetNumGuildMembers()
-    for i = 1, n do
-        local name = GetGuildRosterInfo(i)
-        if name and name ~= self.playerName and self.invited[name] == nil then
-            printf(" - Checking %d. %s", i, name)
-            if self.db.battleTagCache[name] then
-                self.invited[name] = self:AutoInvite(name, self.db.battleTagCache[name])
-            else
-                self.invited[name] = 'pending'
-                local guid = select(17, GetGuildRosterInfo(i))
-                self:OnBattleNetInfoAvailable(guid,
-                    function (info)
-                        if info then
-                            self.db.battleTagCache[name] = info.battleTag
-                            self.invited[name] = self:AutoInvite(name, info.battleTag)
-                        end
-                    end)
-            end
-        end
-    end
-end
-
-function _LiteLite:AcceptMyInvites()
-    self:RegisterEvent("PARTY_INVITE_REQUEST")
-end
-
-function _LiteLite:AutoAcceptInvite(name, inviterInfo)
-    if inviterInfo then
-        if inviterInfo.battleTag == self.db.battleTag then
-            print('AutoInvite OK', name, inviterInfo.battleTag, self.db.battleTag)
-            AcceptGroup()
-            StaticPopup_Hide("PARTY_INVITE")
-        end
-    end
-end
-
-function _LiteLite:PARTY_INVITE_REQUEST(...)
-    local inviterName, _, _, _, _, _, inviterGUID = ...
-
-    if inviterName and inviterGUID then
-        self:OnBattleNetInfoAvailable(inviterGUID,
-            function (inviterInfo)
-                self:AutoAcceptInvite(inviterName, inviterInfo)
-            end)
-    end
-end
-
--- The Blizzard code ends up unalterably calling ToggleGameMenu when settings
--- panels are closed, which shows the game menu. This isn't the desired
--- behaviour if we have been shown with Settings.OpenToCategory through
--- the command line.
-
-function _LiteLite:FixSettingsClose()
-    GameMenuFrame:HookScript('OnHide',
-        function ()
-            self.closeGameMenuTime = GetTime()
-        end)
-
-    hooksecurefunc(Settings, 'OpenToCategory',
-        function ()
-            if self.closeGameMenuTime and self.closeGameMenuTime ~= GetTime() then
-                self.closeGameMenuOnSettingsHide = true
-                self.closeGameMenuTime = nil
-            end
-        end)
-
-    SettingsPanel:HookScript('OnHide',
-        function ()
-            if self.closeGameMenuOnSettingsHide then
-                C_Timer.After(0,
-                    function ()
-                        if not SettingsPanel:IsShown() and GameMenuFrame:IsShown() then
-                            HideUIPanel(GameMenuFrame)
-                        end
-                    end)
-            end
-            self.closeGameMenuOnSettingsHide = nil
-        end)
-end
-
-
--- Don't leave gaps in the bar "grid". Who knows what will taint here, but so
--- far this works. Set the invididual itemFrames to not layout when hidden, and
--- force a relayout when their shown state is changed. This is very efficient.
-
-function _LiteLite:DynamicCDMBuffBars()
-    if WOW_PROJECT_ID ~= 1 then return end
-
-    local BuffBarCooldownViewer = BuffBarCooldownViewer
-
-    local function Layout()
-        BuffBarCooldownViewer:GetItemContainerFrame():Layout()
-    end
-
-    local isDirty
-
-    local function MarkDirty()
-        isDirty = true
-    end
-
-    local function LayoutIfDirty()
-        if isDirty then
-            Layout()
-            isDirty = nil
-        end
-    end
-
-    local hookedFrames = {}
-
-    local function HookItemFrame(itemFrame)
-        if not hookedFrames[itemFrame] then
-            itemFrame.includeAsLayoutChildWhenHidden = nil      -- Magic here
-            -- hooksecurefunc(itemFrame, 'SetShown', Layout)
-            hooksecurefunc(itemFrame, 'SetShown', MarkDirty)
-            MarkDirty()
-            hookedFrames[itemFrame] = true
-        end
-    end
-
-    self.cdmUpdater = CreateFrame('Frame')
-    self.cdmUpdater:SetScript('OnUpdate', LayoutIfDirty)
-
-    -- Hook them immediately
-    for _, itemFrame in ipairs(BuffBarCooldownViewer:GetItemFrames()) do
-        HookItemFrame(itemFrame)
-    end
-
-    -- And also hook any new ones that are made
-    hooksecurefunc(BuffBarCooldownViewer, 'OnAcquireItemFrame',
-        function (_, itemFrame) HookItemFrame(itemFrame) end)
-end
-
-do
-    local CompletedMap = {
-        [true] = GREEN_FONT_COLOR:WrapTextInColorCode(COMPLETE),
-        [false] = RED_FONT_COLOR:WrapTextInColorCode(INCOMPLETE:upper()),
-    }
-
-    local data = {
-        { mapID = 2395, questID = 88545, x = 41.95, y = 80.05, text = "Gloomclaw" },
-        { mapID = 2437, questID = 88526, x = 47.69, y = 53.25, text = "Silverscale" },
-        { mapID = 2413, questID = 88531, x = 66.28, y = 47.91, text = "Lumenfin" },
-        { mapID = 2405, questID = 88532, x = 54.60, y = 65.80, text = "Umbrafan" },
-        { mapID = 2405, questID = 88524, x = 43.25, y = 82.75, text = "Netherscythe" },
-    }
-
-    local function OnMapForWaypoint(mapInfo, waypointMapID)
-        return mapInfo.mapID == waypointMapID or mapInfo.parentMapID == waypointMapID
-    end
-
-    local function AddWaypoint(info)
-        if TomTom then
-            TomTom:AddWaypoint(
-                info.mapID,
-                info.x / 100,
-                info.y / 100,
-                { title = info.text, minimap = true, world = true }
-            )
-        end
-    end
-
-    function _LiteLite:MidnightSkinningLure()
-        local currentMapID = C_Map.GetBestMapForUnit('player')
-        local currentMapInfo = C_Map.GetMapInfo(currentMapID)
-        for _, info in ipairs(data) do
-            local completed = C_QuestLog.IsQuestFlaggedCompleted(info.questID)
-            local mapInfo = C_Map.GetMapInfo(info.mapID)
-            printf("%s (%s): %s", info.text, mapInfo.name, CompletedMap[completed])
-            if not completed and OnMapForWaypoint(currentMapInfo, info.mapID) then
-                AddWaypoint(info)
-            end
-        end
-    end
-end
-
---[[ StatBlock -------------------------------------------------------------]]--
-
-if WOW_PROJECT_ID == 1 then
-    local stats = {
-        {
-            text = "Avoidance",
-            get = function () return GetCombatRatingBonus(CR_AVOIDANCE) end,
-            format = "%.1f%%",
-        },
-        {
-            text = "Leech",
-            get = function () return GetLifesteal() end,
-            format = "%.1f%%",
-        },
-        {
-            text = "Versatility",
-            get =
-                function ()
-                    return GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)
-                         + GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)
-                end,
-            format = "%.1f%%",
-            color = FACTION_GREEN_COLOR,
-        },
-        {
-            text = "Mastery",
-            get = function () return GetMasteryEffect() end,
-            format = "%.1f%%",
-            color = YELLOW_FONT_COLOR,
-        },
-        {
-            text = "Haste",
-            get = function () return GetHaste() end,
-            format = "%.1f%%",
-            color = ORANGE_FONT_COLOR,
-        },
-        {
-            text = "Crit",
-            get = function () return GetSpellCritChance() end,
-            format = "%.1f%%",
-            color = FACTION_RED_COLOR,
-        },
-        {
-            text =
-                function ()
-                    local spec = C_SpecializationInfo.GetSpecialization()
-                    local primaryStat = select(6, C_SpecializationInfo.GetSpecializationInfo(spec))
-                    if primaryStat == 1 then
-                        return "Strength"
-                    elseif primaryStat == 2 then
-                        return "Agility"
-                    elseif primaryStat == 4 then
-                        return "Intellect"
-                    end
-                end,
-            get =
-                function ()
-                    local spec = C_SpecializationInfo.GetSpecialization()
-                    local primaryStat = select(6, C_SpecializationInfo.GetSpecializationInfo(spec))
-                    if primaryStat then
-                        return UnitStat('player', primaryStat)
-                    end
-                end,
-            format = "%d",
-            color = EPIC_PURPLE_COLOR,
-        },
-    }
-
-    local LineMixin = {}
-
-    function LineMixin:UpdateFromInfo(info)
-        local text = type(info.text) == 'function' and info.text() or info.text
-        local v = info.get()
-        if v then
-            local valueString = string.format(info.format, v)
-            self.LeftText:SetText(text)
-            self.RightText:SetText(valueString)
-        end
-        return self.LeftText:GetWidth() + self.RightText:GetWidth() + 12
-    end
-
-    function LineMixin:Initialize(font, color)
-        self:SetHeight(font:GetFontHeight() + 4)
-
-        self.LeftText = self:CreateFontString(nil, "ARTWORK", font:GetName())
-        self.LeftText:SetPoint("LEFT", self, "LEFT", 2)
-        if color then
-            self.LeftText:SetTextColor(color:GetRGB())
-        end
-
-        self.RightText = self:CreateFontString(nil, "ARTWORK", font:GetName())
-        self.RightText:SetPoint("RIGHT", self, "RIGHT", -2)
-        if color then
-            self.RightText:SetTextColor(color:GetRGB())
-        end
-    end
-
-    local function CreateLine(self, layoutIndex, font, color)
-        local line = CreateFrame("Frame", nil, self)
-        Mixin(line, LineMixin)
-        line:Initialize(font, color)
-        line.layoutIndex = layoutIndex
-        return line
-    end
-
-    local StatBlock = CreateFrame("Frame", nil, UIParent, "VerticalLayoutFrame")
-    StatBlock:SetPoint("BOTTOMLEFT", ChatFrame1Background, "BOTTOMRIGHT", 4, 0)
-    StatBlock.childLayoutDirection = "bottomToTop"
-    for i, info in pairs(stats) do
-        StatBlock[i] = CreateLine(StatBlock, i, NumberFontNormal, info.color)
-    end
-
-    local function Update()
-        local width = 0
-        for i, info in pairs(stats) do
-            local lineWidth = StatBlock[i]:UpdateFromInfo(info)
-            width = math.max(width, lineWidth)
-        end
-        for i in ipairs(StatBlock) do
-            StatBlock[i]:SetWidth(width)
-        end
-        StatBlock:Layout()
-    end
---[[
-    StatBlock:SetScript('OnUpdate',
-        function (self, elapsed)
-            self.elapsed = (self.elapsed or 0) + elapsed
-            if self.elapsed > 0.25 then
-                Update(self)
-                self.elapsed = 0
-            end
-        end)
-]]
-    -- It's not even vaguely clear that this is worth it compared to
-    -- OnUpdate. This crazy list of events taken from PaperDollFrame.
-    StatBlock:SetScript('OnEvent', Update)
-    StatBlock:RegisterEvent("PLAYER_ENTERING_WORLD")
-    StatBlock:RegisterEvent("CHARACTER_POINTS_CHANGED")
-    StatBlock:RegisterEvent("UNIT_STATS")
-    StatBlock:RegisterEvent("UNIT_RANGEDDAMAGE")
-    StatBlock:RegisterEvent("UNIT_ATTACK_POWER")
-    StatBlock:RegisterEvent("UNIT_RANGED_ATTACK_POWER")
-    StatBlock:RegisterEvent("UNIT_ATTACK")
-    StatBlock:RegisterEvent("UNIT_SPELL_HASTE")
-    StatBlock:RegisterEvent("UNIT_RESISTANCES")
-    StatBlock:RegisterEvent("SKILL_LINES_CHANGED")
-    StatBlock:RegisterEvent("COMBAT_RATING_UPDATE")
-    StatBlock:RegisterEvent("MASTERY_UPDATE")
-    StatBlock:RegisterEvent("SPEED_UPDATE")
-    StatBlock:RegisterEvent("LIFESTEAL_UPDATE")
-    StatBlock:RegisterEvent("AVOIDANCE_UPDATE")
-    StatBlock:RegisterEvent("PLAYER_TALENT_UPDATE")
-    StatBlock:RegisterEvent("PLAYER_DAMAGE_DONE_MODS")
-    StatBlock:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
-    StatBlock:RegisterUnitEvent("UNIT_DAMAGE", "player")
-    StatBlock:RegisterUnitEvent("UNIT_ATTACK_SPEED", "player")
-    StatBlock:RegisterEvent("PLAYER_TARGET_CHANGED")
-    Update(StatBlock)
-end
-
---[[ Fleeting Potion Updater  ----------------------------------------------]]--
-
-do
-    local function CheckAndSwapAction(actionID)
-        local actionType, itemID = GetActionInfo(actionID)
-        if actionType ~= 'item' then
-            return
-        end
-
-        local name, _, _, _, _, itemType, itemSubType = C_Item.GetItemInfo(itemID)
-        if not (name and itemType == 'Consumable' and itemSubType == 'Potions') then
-            return
-        end
-
-        local normal = name:gsub("^Fleeting ", "")
-        local normalCount = C_Item.GetItemCount(normal)
-        local fleeting = "Fleeting " .. normal
-        local fleetingCount = C_Item.GetItemCount(fleeting)
-        if fleetingCount > 0 then
-            if name ~= fleeting then
-                printf("Switching %d to %s", actionID, fleeting)
-                C_Item.PickupItem(fleeting)
-                C_ActionBar.PutActionInSlot(actionID)
-                ClearCursor()
-            end
-        elseif normalCount > 0 then
-            if name ~= normal then
-                printf("Switching %d to %s", actionID, normal)
-                C_Item.PickupItem(normal)
-                C_ActionBar.PutActionInSlot(actionID)
-                ClearCursor()
-            end
-        end
-    end
-
-    local dirty = false
-
-    local function OnUpdate()
-        if dirty then
-            if not InCombatLockdown() then
-                for actionID = 1, 180 do
-                    CheckAndSwapAction(actionID)
-                end
-            end
-            dirty = false
-        end
-    end
-
-    local function OnEvent()
-        dirty = true
-    end
-
-    local events = {
-        "ACTIONBAR_SLOT_CHANGED",
-        "ACTIVE_TALENT_GROUP_CHANGED",
-        "BAG_UPDATE_DELAYED",
-        "PLAYER_ENTERING_WORLD",
-        "PLAYER_SPECIALIZATION_CHANGED",
-    }
-
-    local PotionScanner = CreateFrame("Frame")
-    FrameUtil.RegisterFrameForEvents(PotionScanner, events)
-
-    PotionScanner:SetScript('OnEvent', OnEvent)
-    PotionScanner:SetScript('OnUpdate', OnUpdate)
 end
