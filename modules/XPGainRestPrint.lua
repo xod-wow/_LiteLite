@@ -14,8 +14,12 @@ local function CHAT_MSG_COMBAT_XP_GAIN()
     end
 end
 
-addon.SlashCmdList['xp'] = CHAT_MSG_COMBAT_XP_GAIN
-
 EventRegistry:RegisterFrameEventAndCallback('CHAT_MSG_COMBAT_XP_GAIN', CHAT_MSG_COMBAT_XP_GAIN)
-EventUtil.ContinueOnPlayerLogin(CHAT_MSG_COMBAT_XP_GAIN)
 
+local moduleInfo = {
+    Initialize = CHAT_MSG_COMBAT_XP_GAIN,
+    SlashCommands = {
+        ['xp'] = CHAT_MSG_COMBAT_XP_GAIN,
+    }
+}
+addon.RegisterModule(moduleInfo)
