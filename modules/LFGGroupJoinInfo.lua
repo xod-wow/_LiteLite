@@ -1,4 +1,4 @@
---[[------------------------------------------------------------------------]]--
+local _, addon = ...
 
 local function LFG_LIST_JOINED_GROUP(_ownerID, resultID, kstringGroupName)
     local searchResultInfo = C_LFGList.GetSearchResultInfo(resultID)
