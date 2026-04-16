@@ -119,6 +119,9 @@ local function ListDelves()
 end
 
 local moduleInfo = {
+    HelpLines = {
+        "delves",
+    },
     SlashCommands = {
         ['delves'] = ListDelves
     }

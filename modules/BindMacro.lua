@@ -20,6 +20,9 @@ end
 
 local moduleInfo = {
     Initialize = SetBindMacro,
+    HelpLines = {
+        "bind-macro | bm <key> <macrocommand>",
+    },
     SlashCommands = {
         ['bind-macro'] = SlashCommand,
         ['bm'] = SlashCommand,

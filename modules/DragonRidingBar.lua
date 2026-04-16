@@ -26,6 +26,9 @@ local function SetupDragonridingBar()
 end
 
 local moduleInfo = {
+    HelpLines = {
+        "dragon-riding-bar | drb"
+    },
     SlashCommands = {
         ['dragon-riding-bar'] = SetupDragonridingBar,
         ['drb'] = SetupDragonridingBar,

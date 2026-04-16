@@ -18,6 +18,9 @@ local function CageTriplicatePets()
 end
 
 local moduleInfo = {
+    HelpLines = {
+        "cage-pets | cp",
+    },
     SlashCommands = {
         ['cage-pets'] = CageTriplicatePets,
         ['cp'] = CageTriplicatePets,

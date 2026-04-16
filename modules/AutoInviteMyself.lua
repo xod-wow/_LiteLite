@@ -111,6 +111,9 @@ end
 
 local moduleInfo = {
     Initialize = Initialize,
+    HelpLines = {
+        "auto-invite-myself | aim",
+    },
     SlashCommands = {
         ['auto-invite-myself'] = SlashCommand,
         ['aim'] = SlashCommand,

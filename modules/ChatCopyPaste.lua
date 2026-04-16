@@ -47,6 +47,11 @@ local function Decode()
 end
 
 local moduleInfo = {
+    HelpLines = {
+        "copy-chat | cc",
+        "decode",
+        "paste",
+    },
     SlashCommands = {
         ['copy-chat'] = CopyChat,
         ['cc'] = CopyChat,
