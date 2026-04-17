@@ -132,7 +132,7 @@ end
 
 function Scanner:RemoveWaypoint(data)
     if data.tomTomWaypoint then
-        printf("Clearing %s (%s)", data.objectGUID, data.name)
+        addon.printf("Clearing %s (%s)", data.objectGUID, data.name)
         TomTom:RemoveWaypoint(data.tomTomWaypoint)
         data.tomTomWaypoint = nil
     end
@@ -204,7 +204,7 @@ function Scanner:PruneScanWaypoints()
             if not TomTom:IsValidWaypoint(data.tomTomWaypoint) then
                 data.tomTomWaypoint = nil
             elseif self:ShouldClear(data) then
-                printf("Removing waypoint %s (%s)", objectGUID, data.name)
+                addon.printf("Removing waypoint %s (%s)", objectGUID, data.name)
                 local wp = data.tomTomWaypoint
                 data.tomTomWaypoint = nil
                 TomTom:RemoveWaypoint(wp)
