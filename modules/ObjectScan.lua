@@ -1,3 +1,8 @@
+-- Scan vignettes for things, alert sounds + tomtom
+-- lately I've been using
+--      ^vignetteloot$      treasures
+--      ^vignettekill$      rares (but not the always up ones)
+
 local _, addon = ...
 
 local Scanner = CreateFrame('Frame')

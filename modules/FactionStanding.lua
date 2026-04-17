@@ -1,3 +1,7 @@
+-- Print some better info when you get reputation increase, showing your new
+-- standing. Surprisingly annoying, there are now four different reputation
+-- mechanisms.
+
 local _, addon = ...
 
 local function GetFactionNumbersByName(name)

@@ -1,6 +1,8 @@
-local _, addon = ...
+-- Move the keystone frame up a bit. Not sure if this is still the case but
+-- in TWW it used to be hidden under the action bars meaning I couldn't click
+-- or put in the keystone.
 
--- Damn thing is underneath the action bars
+local _, addon = ...
 
 local function MoveKeystoneFrame()
     if ChallengesKeystoneFrame then
@@ -10,7 +12,9 @@ local function MoveKeystoneFrame()
 end
 
 local function Initialize()
-    if ChallengeMode_LoadUI then
+    if ChallengesKeystoneFrame then
+        MoveKeystoneFrame()
+    elseif ChallengeMode_LoadUI then
         hooksecurefunc('ChallengeMode_LoadUI', MoveKeystoneFrame)
     end
 end

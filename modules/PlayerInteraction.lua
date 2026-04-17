@@ -1,3 +1,6 @@
+-- Show some extra things on interact, currently only opening the PaperDoll
+-- frame when you open the item upgrade thing.
+
 local _, addon = ...
 
 local function OnShow(_ownerID, id)

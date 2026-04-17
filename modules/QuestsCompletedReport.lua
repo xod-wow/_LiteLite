@@ -1,3 +1,8 @@
+-- A bad attempt at a "what quest did I just complete" scanner, which is
+-- pretty much totally useless since you have to know beforehand. There must be
+-- a nice way to do this automatically since plenty of addons know questIDs for
+-- rares and mounts and stuff.
+
 local _, addon = ...
 
 local questsCompleted = {}

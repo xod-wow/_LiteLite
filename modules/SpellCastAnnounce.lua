@@ -1,3 +1,5 @@
+-- Print a message when you cast a specific spell
+
 local function SpellCastAnnounce(_ownerID, unit, _, spellID)
     if unit ~= 'player' then
         return

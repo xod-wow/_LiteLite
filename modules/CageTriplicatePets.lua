@@ -1,3 +1,5 @@
+-- Command to cage any triplicate battle pets
+
 local _, addon = ...
 
 -- Cage any battle pets we have 3 of

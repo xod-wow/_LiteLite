@@ -1,3 +1,5 @@
+-- Make some of the Blizzard frames bigger because I am blind.
+
 local _, addon = ...
 
 local function Embiggen(f)

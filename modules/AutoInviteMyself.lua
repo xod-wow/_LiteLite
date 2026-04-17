@@ -1,3 +1,6 @@
+-- 1. Automatically accept invites from accounts on my battle.net
+-- 2. After enabling, automatically invite guild members on my battle.net
+
 local _, addon = ...
 
 local playerName, playerGUID

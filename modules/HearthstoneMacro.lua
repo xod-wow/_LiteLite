@@ -1,3 +1,7 @@
+-- Create hidden button to cycle through all the hearthstone toys owned, and
+-- maintain a macro to click it that will update to show the icon of the one
+-- it will cast.
+
 local _, addon = ...
 
 local HearthstoneToyButton = CreateFrame('Button', '_LLHS', nil, 'SecureActionButtonTemplate')

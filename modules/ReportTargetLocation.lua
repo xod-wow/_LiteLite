@@ -1,5 +1,7 @@
-local _, addon = ...
+-- Be nice and report to other players that a rare is up.
+-- Assumes channel 1 is zone general.
 
+local _, addon = ...
 
 local function ReportTargetLocation()
     local n = UnitName('target')

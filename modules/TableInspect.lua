@@ -1,3 +1,5 @@
+-- /tinspect but in a scrolling big window
+
 local _, addon = ...
 
 -- Relies on LM.TableToString from LiteMount

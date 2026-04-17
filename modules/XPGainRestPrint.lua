@@ -1,3 +1,5 @@
+-- Show how much rest remains numerically
+
 local _, addon = ...
 
 local function CHAT_MSG_COMBAT_XP_GAIN()

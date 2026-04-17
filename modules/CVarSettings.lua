@@ -1,3 +1,5 @@
+-- Just some random CVars, miscelleanous crap
+
 local _, addon = ...
 
 local function ApplySettings()

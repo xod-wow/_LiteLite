@@ -1,3 +1,6 @@
+-- Set AceDB profiles to 'Default' for a bunch of annoying addons that default
+-- to per-character settings for no good reason.
+
 local _, addon = ...
 
 local function SetAceProfile(svName, profileName)

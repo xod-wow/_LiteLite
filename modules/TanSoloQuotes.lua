@@ -1,3 +1,5 @@
+-- Print some Star Wars quotes on encounter start and end for my toon TanSolo
+
 local _, addon = ...
 
 local StartQuotes = {

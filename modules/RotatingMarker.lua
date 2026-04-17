@@ -1,6 +1,10 @@
+-- Bind a key to place rotating world markers, as per a very old weakaura
+-- and then I made it into this when that stopped working.
+--
+-- Also does ping mouseover now, just not very well.
+
 local _, addon = ...
 
--- Also does ping mouseover now
 
 local function Initialize()
     local b = CreateFrame('Button', 'RotatingMarker', nil, 'SecureActionButtonTemplate')

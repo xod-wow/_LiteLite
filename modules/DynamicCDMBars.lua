@@ -1,8 +1,14 @@
-local _, addon = ...
+-- Change the buff bars (not icons) in the cooldown manager so that they grow
+-- upwards and are not in fixed places with gaps for any that aren't active.
+-- Configured order is still respected.
+--
+-- Who knows what will taint here, but so far this works.
+--
+-- Set the invididual itemFrames to not "layout when hidden", and force a
+-- re-layout when their shown state is changed. This is very efficient and
+-- I feel much more clever than I should.
 
--- Don't leave gaps in the bar "grid". Who knows what will taint here, but so
--- far this works. Set the invididual itemFrames to not layout when hidden, and
--- force a relayout when their shown state is changed. This is very efficient.
+local _, addon = ...
 
 local function DynamicCDMBuffBars()
     local BuffBarCooldownViewer = BuffBarCooldownViewer

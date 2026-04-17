@@ -1,3 +1,7 @@
+-- Enable automatic creation of mouseover, trinket, cursor and player macros.
+-- The clever part is the template, and the ability to find the thing from
+-- mouseover.
+
 local _, addon = ...
 
 local MouseoverMacroTemplate =

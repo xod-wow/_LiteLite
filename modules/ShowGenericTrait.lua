@@ -1,3 +1,6 @@
+-- Slash command to open the DRIVE UI. Could be expanded to other Generic
+-- Trait systems if there was any point.
+
 local _, addon = ...
 
 local function ShowDRIVE()

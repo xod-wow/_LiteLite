@@ -1,3 +1,7 @@
+-- Alert on various cool things notified in chat. None of these I'm using any
+-- more but I'm sure there'll be new raid drop mounts soon, and zone emotes
+-- are always potentially helpful.
+
 local _, addon = ...
 
 local function MonsterYell(_ownerID, msg, _name)

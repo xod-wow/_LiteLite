@@ -1,3 +1,7 @@
+-- Show a table of delves, including zone, current story and bountiful state
+-- Requires _LiteTable library. Could be modified to have its own _LiteTable
+-- but for now shares the global _LiteLite one.
+
 local _, addon = ...
 
 -- {

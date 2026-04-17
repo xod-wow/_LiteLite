@@ -1,3 +1,5 @@
+-- Slash command to show the Great Value without having to fiddle with the map
+
 local _, addon = ...
 
 local function ShowGreatVault()

@@ -1,3 +1,5 @@
+-- Disable some of the crap in actionbar buttons I hate
+
 local _, addon = ...
 
 local function Initialize()

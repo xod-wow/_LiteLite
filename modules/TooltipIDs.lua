@@ -1,3 +1,6 @@
+-- Show spell/item/unit IDs in tooltips. This will bug the hell out in various
+-- secret-ladent scenarios and is generally only useful for temporary debugging.
+
 local _, addon = ...
 
 local function HookTooltip()

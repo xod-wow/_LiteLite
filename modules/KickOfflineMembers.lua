@@ -1,3 +1,5 @@
+-- Kick anyone in the party/raid who is offline
+
 local _, addon = ...
 
 local function checkboot(unit)

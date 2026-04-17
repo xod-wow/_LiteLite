@@ -1,3 +1,7 @@
+-- Automatically or manually set the equipment set icons. Easiest mechanism
+-- sets them based on the spec assigned. There is no good reason for this
+-- other than I like not having it look ugly.
+
 local _, addon = ...
 
 local function GetGameTooltipIcon()

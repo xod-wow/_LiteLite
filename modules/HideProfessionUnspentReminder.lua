@@ -1,3 +1,5 @@
+-- Hide the alert that tells me I have to spend profession points
+
 local _, addon = ...
 
 local function Initialize()

@@ -1,3 +1,7 @@
+-- An attempt at a complete spec setup copy from one of my chars to another.
+-- There's a heap of bugs here I think but it's vaguely helpful. I wouldn't
+-- run this on any character you care about.
+
 local _, addon = ...
 
 local ImportExportMixin = {

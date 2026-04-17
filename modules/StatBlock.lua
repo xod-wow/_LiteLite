@@ -1,3 +1,5 @@
+-- Stat block UI element, hard attached to the right of the chat window.
+
 local _, addon = ...
 
 local stats = {

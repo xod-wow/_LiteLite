@@ -1,3 +1,5 @@
+-- Take the confirmation off the "sell all junk" button
+
 local _, addon = ...
 
 local function Initialize()

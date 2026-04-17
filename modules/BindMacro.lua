@@ -1,3 +1,6 @@
+-- Quickly bind a key to run an ad-hoc macro, so I can set up spammable
+-- /tar X etc.
+
 local _, addon = ...
 
 local BindMacroButton = CreateFrame('Button', '_LLBM', nil, 'SecureActionButtonTemplate')

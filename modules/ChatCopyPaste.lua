@@ -1,3 +1,6 @@
+-- Copy chat, chat paste and run each line as a macro, decode
+-- C_EncodingUtil blobs to look at.
+
 local _, addon = ...
 
 local function CopyChat(sourceFrame)

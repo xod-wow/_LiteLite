@@ -1,3 +1,4 @@
+-- Search through the global variables for text, either in key or value
 
 local _, addon = ...
 

@@ -1,3 +1,5 @@
+-- Remove the confirmation dialog on repair all. Don't be poor!
+
 local _, addon = ...
 
 local function Initialize()

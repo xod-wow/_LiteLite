@@ -1,3 +1,5 @@
+-- Add the actions onto my dragonriding bar in the order I like them
+
 local _, addon = ...
 
 local DragonridingActions = {

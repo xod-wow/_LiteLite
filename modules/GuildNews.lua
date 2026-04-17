@@ -1,3 +1,7 @@
+-- A better version of what loot people got, extracted from the guild news.
+-- Sadly the dates on them are in "maybe somewhere in the USA who knows"
+-- day granularity.
+
 local _, addon = ...
 
 local guildNameColors = {}

@@ -1,3 +1,5 @@
+-- Settings to ensure I have action bars 1-6 shown.
+
 local _, addon = ...
 
 local function Initialize()

@@ -1,3 +1,6 @@
+-- Make the raid info frame (list of lockouts) longer, the same length as
+-- the box it's attached to.
+
 local _, addon = ...
 
 local function Initialize()

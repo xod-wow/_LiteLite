@@ -1,3 +1,5 @@
+-- Show a table of world quests and their rep and item/gold rewards
+
 local _, addon = ...
 
 local ScanTooltip = CreateFrame("GameTooltip", "_LiteLiteScanTooltip", nil, "GameTooltipTemplate")

@@ -1,3 +1,5 @@
+-- Nameplate settings, these need redoing for Midnight
+
 local _, addon = ...
 
 local function Setup()

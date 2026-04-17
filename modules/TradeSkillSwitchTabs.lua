@@ -1,3 +1,6 @@
+-- Show buttons to the left of the professions panel to switch professions.
+-- Todo: make the buttons nice
+
 local _, addon = ...
 
 local TabButtons = { }

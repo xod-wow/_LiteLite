@@ -1,3 +1,6 @@
+-- Display what fancy beasts I've skinned to day, and also add tomtom
+-- waypoints for the ones in the current zone I haven't done.
+
 local _, addon = ...
 
 local CompletedMap = {

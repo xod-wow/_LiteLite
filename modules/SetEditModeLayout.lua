@@ -1,3 +1,6 @@
+-- Add a slash command to set the edit mode layout, which without an
+-- argument uses the current screen resolution.
+
 local _, addon = ...
 
 local function SetEditModeLayout(layout)

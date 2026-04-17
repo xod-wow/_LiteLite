@@ -1,3 +1,7 @@
+-- Mute some dragonriding mount sounds. I think this is probably something
+-- that if I need I should get from someone who updates it rather than this
+-- 2022 static version.
+
 local _, addon = ...
 
 local function Initialize()
