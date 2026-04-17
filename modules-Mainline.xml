@@ -17,7 +17,7 @@
     <Script file="modules\GuildNews.lua" />
     <Script file="modules\HearthstoneMacro.lua" />
     <Script file="modules\HideActionButtonEffects.lua" />
-    <Script file="modules\HideProfessionUnsentReminder.lua" />
+    <Script file="modules\HideProfessionUnspentReminder.lua" />
     <Script file="modules\KickOfflineMembers.lua" />
     <Script file="modules\LFGGroupJoinInfo.lua" />
     <Script file="modules\LongerRaidInfoFrame.lua" />

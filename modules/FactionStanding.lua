@@ -58,5 +58,5 @@ local function CHAT_MSG_COMBAT_FACTION_CHANGE(_ownerID, msg)
     end
 end
 
-EventRegistry:RegisterFrameEventAndCallback('FACTION_STANDING_CHANGED', FACTION_STANDING_CHANGED)
+-- EventRegistry:RegisterFrameEventAndCallback('FACTION_STANDING_CHANGED', FACTION_STANDING_CHANGED)
 EventRegistry:RegisterFrameEventAndCallback('CHAT_MSG_COMBAT_FACTION_CHANGE', CHAT_MSG_COMBAT_FACTION_CHANGE)
