@@ -81,9 +81,11 @@ function Scanner:NAME_PLATE_UNIT_ADDED(unit)
                 addon.printf(msg)
                 PlaySound(11466)
             end
+            --[[
             if not GetRaidTargetIndex(unit) then
                 SetRaidTarget(unit, 6)
             end
+            ]]
         end
     end
 end
