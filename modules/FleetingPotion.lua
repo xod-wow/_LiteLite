@@ -2,7 +2,7 @@
 -- version on your bars replaces them. And in reverse, looks for fleeting
 -- potions on your bars, and if you don't have them but do have normal
 -- versions, replace them.
--- 
+--
 -- In an ideal world I would adjust this to do Demonic Healthstone and
 -- Healthstone too, but I am lazy.
 

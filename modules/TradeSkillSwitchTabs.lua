@@ -7,7 +7,6 @@ local TabButtons = { }
 
 local function Update()
     local p1, p2, _, fishing, cooking = GetProfessions()
-    local i = 1
     for i, index in ipairs({ p1, p2, fishing, cooking }) do
         local _, icon, _, _, _, _, skillLine = GetProfessionInfo(index)
         TabButtons[i]:SetNormalTexture(icon)

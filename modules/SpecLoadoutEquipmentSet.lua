@@ -1,6 +1,8 @@
 -- Automatically equip an equipment set that's named for the loadout
 -- you switched to (well, Specname ' ' Loadoutname).
 
+local _, addon = ...
+
 local function UpdateEquipmentSetForLoadout()
     if InCombatLockdown() then return end
 

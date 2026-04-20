@@ -16,9 +16,9 @@ end
 
 local function SlashCommand(arg)
     local arg1, arg2 = string.split(' ', arg, 2)
-    addon.db.bindKey = arg2
-    addon.db.bindMacro = arg3:gsub("\\n", "\n")
-    self:SetBindMacro()
+    addon.db.bindKey = arg1
+    addon.db.bindMacro = arg2:gsub("\\n", "\n")
+    SetBindMacro()
 end
 
 local moduleInfo = {
