@@ -28,13 +28,23 @@ local function GetFactionNumbersByName(name)
             end
             local majorFactionData = C_MajorFactions.GetMajorFactionData(data.factionID)
             if majorFactionData then
-                return RENOWN_LEVEL_LABEL:format(majorFactionData.renownLevel),
+                return string.format("Renown %d/%d", majorFactionData.renownLevel, majorFactionData.maxLeveL),
                        majorFactionData.renownReputationEarned,
                        majorFactionData.renownLevelThreshold
             end
             return _G['FACTION_STANDING_LABEL'..data.reaction],
                    data.currentStanding,
                    data.nextReactionThreshold
+        end
+    end
+    for _, factionID in ipairs(C_MajorFactions.GetMajorFactionIDs(LE_EXPANSION_LEVEL_CURRENT)) do
+        if C_MajorFactions.ShouldDisplayMajorFactionAsJourney(factionID) then
+            local data = C_MajorFactions.GetMajorFactionData(data.factionID)
+            if data then
+                return string.format("Journey %d/%d", data.renownLevel, data.maxLevel),
+                       data.renownReputationEarned,
+                       data.renownLevelThreshold
+            end
         end
     end
 end
