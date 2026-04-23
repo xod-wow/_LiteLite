@@ -13,6 +13,7 @@ local stats = {
         get = function () return GetLifesteal() end,
         format = "%.1f%%",
     },
+--[[
     {
         text = "Versatility",
         get =
@@ -21,6 +22,19 @@ local stats = {
                      + GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)
             end,
         format = "%.1f%%",
+        color = FACTION_GREEN_COLOR,
+    },
+]]
+    {
+        text = "Versatility",
+        get =
+            function ()
+                -- This is stupid but can't add two secrets
+                local rb = GetCombatRatingBonus(CR_VERSATILITY_DAMAGE_DONE)
+                local vb = GetVersatilityBonus(CR_VERSATILITY_DAMAGE_DONE)
+                return string.format("%.1f+%.1f", vb, rb)
+            end,
+        format = "%s%%",
         color = FACTION_GREEN_COLOR,
     },
     {
@@ -77,12 +91,10 @@ function LineMixin:UpdateFromInfo(info)
         self.LeftText:SetText(text)
         self.RightText:SetText(valueString)
     end
-    return self.LeftText:GetWidth() + self.RightText:GetWidth() + 12
 end
 
 function LineMixin:Initialize(font, color)
-    self:SetHeight(font:GetFontHeight() + 4)
-
+    self:SetSize(140, font:GetFontHeight() + 4)
     self.LeftText = self:CreateFontString(nil, "ARTWORK", font:GetName())
     self.LeftText:SetPoint("LEFT", self, "LEFT", 2)
     if color then
@@ -112,13 +124,8 @@ for i, info in pairs(stats) do
 end
 
 local function Update()
-    local width = 0
     for i, info in pairs(stats) do
-        local lineWidth = StatBlock[i]:UpdateFromInfo(info)
-        width = math.max(width, lineWidth)
-    end
-    for i in ipairs(StatBlock) do
-        StatBlock[i]:SetWidth(width)
+        StatBlock[i]:UpdateFromInfo(info)
     end
     StatBlock:Layout()
 end
