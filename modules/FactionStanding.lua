@@ -39,7 +39,7 @@ local function GetFactionNumbersByName(name)
     end
     for _, factionID in ipairs(C_MajorFactions.GetMajorFactionIDs(LE_EXPANSION_LEVEL_CURRENT)) do
         if C_MajorFactions.ShouldDisplayMajorFactionAsJourney(factionID) then
-            local data = C_MajorFactions.GetMajorFactionData(data.factionID)
+            local data = C_MajorFactions.GetMajorFactionData(factionID)
             if data and data.name == name then
                 return string.format("Journey %d/%d", data.renownLevel, data.maxLevel),
                        data.renownReputationEarned,
