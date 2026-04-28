@@ -100,6 +100,7 @@ local badAtlasNames = {
 -- Stuff that annoys me but I haven't put a deny option in yet
 local badObjectIDs = {
     ["620688"]              = true, -- Incomplete Book of Sonnets
+    ["617881"]              = true, -- Rookery Cache
 }
 
 function Scanner:VignetteMatches(scanMobName, info)
@@ -180,6 +181,17 @@ function Scanner:IsCloseWaypoint(data)
     return false
 end
 
+function Scanner:IsWaypointOnCurrentMap(data)
+    local mapInfo = C_Map.GetMapInfo(C_Map.GetBestMapForUnit('player'))
+    if data.tomTomWaypoint[1] == mapInfo.mapID then
+        return true
+    elseif data.tomTomWaypoint[1] == mapInfo.parentMapID then
+        return true
+    else
+        return false
+    end
+end
+
 function Scanner:ShouldClear(data)
     if not data.tomTomWaypoint then
         return false
@@ -188,6 +200,8 @@ function Scanner:ShouldClear(data)
     elseif type(data.autoClear) == 'number' then
         return GetTime() >= data.autoClear
     elseif self:IsCloseWaypoint(data) then
+        return true
+    elseif not self:IsWaypointOnCurrentMap(data) then
         return true
     else
         return false
@@ -298,13 +312,15 @@ local function SlashCommand(arg)
         Scanner:ScanMobAdd(arg2)
     elseif arg1 == 'del' then
         Scanner:ScanMobDel(arg2)
-    elseif arg1 == 'clear' then
+    elseif arg1 == 'wipe' then
         Scanner:ScanMobClear()
     elseif arg1 == 'way' then
         if TomTom then
             Scanner:ShowScanWaypoints()
             TomTom:SetClosestWaypoint()
         end
+    elseif arg1 == 'clear' then
+        Scanner:RemoveAllScanWaypoints()
     end
     Scanner:ScanMobList()
 end
