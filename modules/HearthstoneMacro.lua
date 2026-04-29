@@ -118,7 +118,9 @@ end
 -- the index arg is a filtered toys index.
 
 function HearthstoneToyButton:Update(_event, itemID, _isNew, _hasFanfare)
-    if itemID == nil then
+    if InCombatLockdown() then
+        return
+    elseif itemID == nil then
         -- I'm trying not to scan too much, as this fires semi-regularly, I think
         -- every PLAYER_ENTERING_WORLD.
         if self.initialFullScan ~= nil then return end
