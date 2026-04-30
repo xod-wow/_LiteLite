@@ -260,7 +260,7 @@ function Scanner:ScanVignetteByID(id)
     local uiMapID = C_Map.GetBestMapForUnit('player')
     if not uiMapID then return end
 
-    for n in ipairs(addon.db.scanMobNames) do
+    for n in pairs(addon.db.scanMobNames) do
         if self:VignetteMatches(n, info) then
             local pos = C_VignetteInfo.GetVignettePosition(info.vignetteGUID, uiMapID)
             if pos then
