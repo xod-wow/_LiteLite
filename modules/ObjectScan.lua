@@ -10,6 +10,7 @@ Scanner:SetScript('OnEvent', function (self, ...) self:OnEvent(...) end)
 
 function Scanner:OnEvent(event, ...)
     if event == "NAME_PLATE_UNIT_ADDED" then
+        local unit = ...
         self:ScanUnitNameplate(unit)
     elseif event == "VIGNETTE_MINIMAP_UPDATED" then
         local id = ...
