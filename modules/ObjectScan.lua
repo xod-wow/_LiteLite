@@ -6,15 +6,27 @@
 local _, addon = ...
 
 local Scanner = CreateFrame('Frame')
-Scanner:SetScript('OnEvent',
-        function (self, e, ...)
-            if self[e] then self[e](self, ...) end
-        end)
+Scanner:SetScript('OnEvent', function (self, ...) self:OnEvent(...) end)
 
-function Scanner:ScanMobList()
+function Scanner:OnEvent(event, ...)
+    if event == "NAME_PLATE_UNIT_ADDED" then
+        self:ScanUnitNameplate(unit)
+    elseif event == "VIGNETTE_MINIMAP_UPDATED" then
+        local id = ...
+        self:ScanVignetteByID(id)
+    elseif event == "PLAYER_LOGOUT" then
+        self:RemoveAllWaypoints()
+    else
+        self:ScanAllVignettes()
+    end
+end
+
+function Scanner:ObjectList()
     addon.printf("Scan for mobs:")
     if next(addon.db.scanMobNames or {}) then
-        for i, name in pairs(addon.db.scanMobNames or {}) do
+        local names = GetKeysArray(addon.db.scanMobNames)
+        table.sort(names)
+        for i, name in ipairs(names) do
             addon.printf("%d. %s", i, name)
         end
     else
@@ -22,25 +34,25 @@ function Scanner:ScanMobList()
     end
 end
 
-function Scanner:ScanMobClear()
+function Scanner:ObjectWipe()
     addon.db.scanMobNames = table.wipe(addon.db.scanMobNames or {})
     self:UpdateScanning()
 end
 
-function Scanner:ScanMobAdd(name)
+function Scanner:ObjectAdd(name)
     addon.db.scanMobNames = addon.db.scanMobNames or {}
-    table.insert(addon.db.scanMobNames, name:lower())
+    addon.db.scanMobNames[name:lower()] = {}
     self:UpdateScanning()
 end
 
-function Scanner:ScanMobDel(name)
+function Scanner:ObjectDel(name)
     if addon.db.scanMobNames then
         local n = tonumber(name)
         if n then
-            table.remove(addon.db.scanMobNames, n)
-        else
-            tDeleteItem(addon.db.scanMobNames, name:lower())
+            local names = GetKeysArray(addon.db.scanMobNames)
+            name = names[n]
         end
+        addon.db.scanMobNames[name] = nil
         self:UpdateScanning()
     end
 end
@@ -49,6 +61,7 @@ function Scanner:UpdateScanning()
     if next(addon.db.scanMobNames or {}) then
         self.scannedGUID = self.scannedGUID or {}
         self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+        self:RegisterEvent("PLAYER_ENTERING_WORLD")
         self:RegisterEvent("PLAYER_LOGOUT")
         if WOW_PROJECT_ID == 1 then
             self:RegisterEvent("VIGNETTES_UPDATED")
@@ -56,13 +69,13 @@ function Scanner:UpdateScanning()
             self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
         end
     else
-        self:RemoveAllScanWaypoints()
-        self.scannedGUID = table.wipe(self.scannedGUID or {})
+        self:RemoveAllWaypoints()
         self:UnregisterAllEvents()
+        self.scannedGUID = table.wipe(self.scannedGUID or {})
     end
 end
 
-function Scanner:NAME_PLATE_UNIT_ADDED(unit)
+function Scanner:ScanUnitNameplate(unit)
     if C_Secrets.ShouldUnitIdentityBeSecret(unit) then
         return
     end
@@ -72,7 +85,7 @@ function Scanner:NAME_PLATE_UNIT_ADDED(unit)
 
     local npcID = select(6, strsplit('-', UnitGUID(unit)))
 
-    for _, n in ipairs(addon.db.scanMobNames) do
+    for n in pairs(addon.db.scanMobNames) do
         if ( name and name:find(n, nil, true) ) or
            ( npcID and tonumber(n) == tonumber(npcID) ) then
             if not self.scannedGUID[guid] then
@@ -147,7 +160,7 @@ function Scanner:RemoveWaypoint(data)
 end
 
 
-function Scanner:ShowScanWaypoints()
+function Scanner:ShowWaypoints()
     if not self.scannedGUID or not TomTom then
         return
     end
@@ -158,7 +171,7 @@ function Scanner:ShowScanWaypoints()
     end
 end
 
-function Scanner:RemoveAllScanWaypoints()
+function Scanner:RemoveAllWaypoints()
     if not self.scannedGUID or not TomTom then
         return
     end
@@ -208,7 +221,7 @@ function Scanner:ShouldClear(data)
     end
 end
 
-function Scanner:PruneScanWaypoints()
+function Scanner:PruneWaypoints()
     if not self.scannedGUID or not TomTom then
         return
     end
@@ -234,7 +247,7 @@ function Scanner:PruneScanWaypoints()
     end
 end
 
-function Scanner:ScanMobAddFromVignette(id)
+function Scanner:ScanVignetteByID(id)
     local info = C_VignetteInfo.GetVignetteInfo(id)
     if not info then
         return
@@ -246,7 +259,7 @@ function Scanner:ScanMobAddFromVignette(id)
     local uiMapID = C_Map.GetBestMapForUnit('player')
     if not uiMapID then return end
 
-    for _, n in ipairs(addon.db.scanMobNames) do
+    for n in ipairs(addon.db.scanMobNames) do
         if self:VignetteMatches(n, info) then
             local pos = C_VignetteInfo.GetVignettePosition(info.vignetteGUID, uiMapID)
             if pos then
@@ -277,13 +290,9 @@ function Scanner:ScanMobAddFromVignette(id)
     end
 end
 
-function Scanner:VIGNETTE_MINIMAP_UPDATED(id)
-    self:ScanMobAddFromVignette(id)
-end
-
-function Scanner:VIGNETTES_UPDATED()
+function Scanner:ScanAllVignettes()
     for _, id in ipairs(C_VignetteInfo.GetVignettes()) do
-        self:ScanMobAddFromVignette(id)
+        self:ScanVignetteByID(id)
     end
 
     if not TomTom then return end
@@ -293,36 +302,28 @@ function Scanner:VIGNETTES_UPDATED()
     -- Delay the delete to give the new one a chance to spawn.
     C_Timer.After(1,
         function ()
-            self:PruneScanWaypoints()
+            self:PruneWaypoints()
             TomTom:SetClosestWaypoint()
         end)
-end
-
-function Scanner:ZONE_CHANGED_NEW_AREA()
-    self:VIGNETTES_UPDATED()
-end
-
-function Scanner:PLAYER_LOGOUT()
-    self:RemoveAllScanWaypoints()
 end
 
 local function SlashCommand(arg)
     local arg1, arg2 = string.split(' ', arg or '', 2)
     if arg1 == 'add' then
-        Scanner:ScanMobAdd(arg2)
+        Scanner:ObjectAdd(arg2)
     elseif arg1 == 'del' then
-        Scanner:ScanMobDel(arg2)
+        Scanner:ObjectDel(arg2)
     elseif arg1 == 'wipe' then
-        Scanner:ScanMobClear()
+        Scanner:ObjectWipe()
     elseif arg1 == 'way' then
         if TomTom then
-            Scanner:ShowScanWaypoints()
+            Scanner:ShowWaypoints()
             TomTom:SetClosestWaypoint()
         end
     elseif arg1 == 'clear' then
-        Scanner:RemoveAllScanWaypoints()
+        Scanner:RemoveAllWaypoints()
     end
-    Scanner:ScanMobList()
+    Scanner:ObjectList()
 end
 
 local moduleInfo = {
@@ -330,8 +331,8 @@ local moduleInfo = {
     SlashCommands = {
         ['find-mob'] = SlashCommand,
         ['fm'] = SlashCommand,
-        ['scan-vignettes'] = function () Scanner:VIGNETTES_UPDATED() end,
-        ['sv'] = function () Scanner:VIGNETTES_UPDATED() end,
+        ['scan-vignettes'] = function () Scanner:ScanAllVignettes() end,
+        ['sv'] = function () Scanner:ScanAllVignettes() end,
     }
 }
 addon.RegisterModule(moduleInfo)
