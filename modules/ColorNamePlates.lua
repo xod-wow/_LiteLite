@@ -84,6 +84,13 @@ local function ShouldColorUnit(unit, includeBoss)
         return false
     elseif not UnitCanAttack('player', unit) then
         return false
+    elseif UnitInRaid(unit) or UnitInParty(unit) then
+        -- bad argument #1 to 'GetNamePlateForUnit'
+        -- (Raid<n>/Party<n> unit tokens are not allowed for this call.
+        -- I assume this happens when player or member is attackable due to
+        -- mind control etc. It's possible UnitIsHumanPlayer() is a better
+        -- idea.
+        return false
     elseif unit:sub(1, 5) == 'arena' then
         -- C_NamePlate.GetNamePlateForUnit errors on arena in retail
         return false
