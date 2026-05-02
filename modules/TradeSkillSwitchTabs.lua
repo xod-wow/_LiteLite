@@ -33,8 +33,8 @@ end
 local function Initialize()
     if ProfessionsFrame then
         CreateTabButtons()
-    else
-        hooksecurefunc('ProfressionsFrame_LoadUI', CreateTabButtons)
+    elseif ProfessionsFrame_LoadUI then
+        hooksecurefunc('ProfessionsFrame_LoadUI', CreateTabButtons)
     end
 end
 
