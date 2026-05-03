@@ -6,9 +6,7 @@ local Scanner = CreateFrame('Frame')
 Scanner:SetScript('OnEvent', function (self, ...) self:OnEvent(...) end)
 
 function Scanner:OnEvent(event)
-    if event == "AREA_POIS_UPDATED" then
-        self:ScanAllPOI()
-    end
+    self:ScanAllPOI()
 end
 
 function Scanner:POIList()
@@ -51,6 +49,8 @@ function Scanner:UpdateScanning()
     if next(addon.db.scanPOI or {}) then
         self.seenPOI = self.seenPOI or {}
         self:RegisterEvent("AREA_POIS_UPDATED")
+        self:RegisterEvent("PLAYER_ENTERING_WORLD")
+        self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
         self:ScanAllPOI()
     else
         self:UnregisterAllEvents()
@@ -107,9 +107,11 @@ end
 
 function Scanner:ScanAllPOI()
     local map = C_Map.GetBestMapForUnit('player')
-    self:CleanPOI(map)
-    for _, id in ipairs(C_AreaPoiInfo.GetEventsForMap(map)) do
-        self:ScanPOI(map, id)
+    if map then
+        self:CleanPOI(map)
+        for _, id in ipairs(C_AreaPoiInfo.GetEventsForMap(map)) do
+            self:ScanPOI(map, id)
+        end
     end
 end
 
