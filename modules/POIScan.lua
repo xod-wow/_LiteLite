@@ -77,8 +77,7 @@ function Scanner:POIMatches(text, info)
 end
 
 function Scanner:ScanPOI(map, id)
-    local guid = string.format('%d.%d', map, id)
-    if self.seenPOI[guid] then
+    if self.seenPOI[id] then
         return
     end
 
@@ -92,13 +91,23 @@ function Scanner:ScanPOI(map, id)
             addon.printf("POI found: %s", info.name)
             addon.printf("  atlas %s", info.atlasName)
             PlaySound(11466)
-            self.seenPOI[guid] = true
+            self.seenPOI[id] = true
+        end
+    end
+end
+
+function Scanner:CleanPOI(map)
+    local idList = C_AreaPoiInfo.GetEventsForMap(map)
+    for id in pairs(self.seenPOI) do
+        if not tContains(idList, id) then
+            self.seenPOI[id] = nil
         end
     end
 end
 
 function Scanner:ScanAllPOI()
     local map = C_Map.GetBestMapForUnit('player')
+    self:CleanPOI(map)
     for _, id in ipairs(C_AreaPoiInfo.GetEventsForMap(map)) do
         self:ScanPOI(map, id)
     end
