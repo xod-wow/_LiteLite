@@ -30,6 +30,7 @@
     <Script file="modules\ObjectScan.lua" />
     <Script file="modules\OtherAddonProfiles.lua" />
     <Script file="modules\PlayerInteraction.lua" />
+    <Script file="modules\POIScan.lua" />
     <Script file="modules\QuestsCompletedReport.lua" />
     <Script file="modules\ReportTargetLocation.lua" />
     <Script file="modules\RotatingMarker.lua" />
