@@ -5,7 +5,7 @@ local _, addon = ...
 local Scanner = CreateFrame('Frame')
 Scanner:SetScript('OnEvent', function (self, ...) self:OnEvent(...) end)
 
-function Scanner:OnEvent(event)
+function Scanner:OnEvent()
     self:ScanAllPOI()
 end
 
