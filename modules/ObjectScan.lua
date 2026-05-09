@@ -196,14 +196,18 @@ function Scanner:IsCloseWaypoint(data)
 end
 
 function Scanner:IsWaypointOnCurrentMap(data)
-    local mapInfo = C_Map.GetMapInfo(C_Map.GetBestMapForUnit('player'))
-    if data.tomTomWaypoint[1] == mapInfo.mapID then
+    local mapID = C_Map.GetBestMapForUnit('player')
+    if data.tomTomWaypoint[1] == mapID then
         return true
-    elseif data.tomTomWaypoint[1] == mapInfo.parentMapID then
-        return true
-    else
+    end
+    if not mapID then
         return false
     end
+    local mapInfo = C_Map.GetMapInfo(mapID)
+    if data.tomTomWaypoint[1] == mapInfo.parentMapID then
+        return true
+    end
+    return false
 end
 
 function Scanner:ShouldClear(data)
@@ -334,6 +338,7 @@ local moduleInfo = {
         ['fm'] = SlashCommand,
         ['scan-vignettes'] = function () Scanner:ScanAllVignettes() end,
         ['sv'] = function () Scanner:ScanAllVignettes() end,
+        ['prune'] = function () Scanner:PruneWaypoints() end,
     }
 }
 addon.RegisterModule(moduleInfo)

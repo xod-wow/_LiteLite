@@ -21,39 +21,36 @@ local _, addon = ...
 
 ]]
 
-local UnitMarkerTexts = {
-    [1]     = "{star}",
-    [2]     = "{circle}",
-    [3]     = "{diamond}",
-    [4]     = "{triangle}",
-    [5]     = "{moon}",
-    [6]     = "{square}",
-    [7]     = "{cross}",
-    [8]     = "{skull}",
-}
+-- This is compatible with FocusKick. The marker used is your position in the
+-- name-sorted list of party members.
 
--- This is compatible with FocusKick for compatibility, the marker used
--- is your position in the name-sorted list of party members.
+local currentMark
 
 local function GetMyMark()
     local playerName = UnitName('player')
     local names = { playerName }
     for i = 1, 4 do
         local unit = 'party'..i
-        local name = UnitName('party'..i)
         if UnitExists(unit) then
-            table.insert(names, UnitName(unit))
+            local name = UnitName(unit)
+            table.insert(names, name)
         end
     end
     table.sort(names)
     local markIndex = tIndexOf(names, playerName)
-    return markIndex, UnitMarkerTexts[markIndex]
+    return markIndex, string.format('{rt%d}', markIndex)
 end
 
 local function IsFocusTargetMarkerMacro(body)
-    if body and
-       (body:find(SLASH_FOCUS1) or body:find(SLASH_FOCUS2)) and
-       (body:find(SLASH_TARGETMARKER1) or body:find(SLASH_TARGETMARKER2)) then
+    if body
+       and
+       (body:find(SLASH_FOCUS1) or body:find(SLASH_FOCUS2))
+       and
+       (body:find(SLASH_TARGET_MARKER1) or
+        body:find(SLASH_TARGET_MARKER2) or
+        body:find(SLASH_TARGET_MARKER3) or
+        body:find(SLASH_TARGET_MARKER4))
+    then
         return true
     else
         return false
@@ -63,11 +60,14 @@ end
 local function UpdateMacro(macroIndex, body, markIndex)
     local lines = {}
     for line in body:gmatch('([^\r\n]+)') do
-        line = line:gsub('^('..SLASH_TARGETMARKER1..'%s+.*)(%d)$', '%1'..markIndex)
-        line = line:gsub('^('..SLASH_TARGETMARKER2..'%s+.*)(%d)$', '%1'..markIndex)
+        line = line:gsub('^('..SLASH_TARGET_MARKER1..'%s+.*)(%d)$', '%1'..markIndex)
+        line = line:gsub('^('..SLASH_TARGET_MARKER2..'%s+.*)(%d)$', '%1'..markIndex)
+        line = line:gsub('^('..SLASH_TARGET_MARKER3..'%s+.*)(%d)$', '%1'..markIndex)
+        line = line:gsub('^('..SLASH_TARGET_MARKER4..'%s+.*)(%d)$', '%1'..markIndex)
         table.insert(lines, line)
     end
-    EditMacro(macroIndex, nil, nil, string.join('\n', lines))
+    local newBody = table.concat(lines, '\n')
+    EditMacro(macroIndex, nil, nil, newBody)
 end
 
 local function UpdateAllMacros(markIndex)
@@ -79,16 +79,34 @@ local function UpdateAllMacros(markIndex)
     end
 end
 
-local function OnEvent(_ownerID, event)
-    local markIndex, markText = GetMyMark()
-    local msg = 'Interrupting '..markText
-    if event == 'GROUP_ROSTER_UPDATE' then
-        addon.printf(C_ChatInfo.ReplaceIconAndGroupExpressions(msg))
-        UpdateAllMacros(markIndex)
-    elseif event == 'READY_CHECK' then
+local function NotifyMark()
+    if not IsInRaid() and IsInGroup(LE_PARTY_CATEGORY_HOME) then
+        local markIndex, markText = GetMyMark()
+        local msg = string.format('Interrupting %s', markText)
         SendChatMessage(msg, "PARTY")
     end
 end
 
-EventRegistry:RegisterFrameEventAndCallback('GROUP_ROSTER_UPDATE', OnEvent)
-EventRegistry:RegisterFrameEventAndCallback('READY_CHECK', OnEvent)
+local function UpdateMarkMacros()
+    local markIndex, markText = GetMyMark()
+    if currentMark ~= markIndex and not InCombatLockdown() then
+        markText = C_ChatInfo.ReplaceIconAndGroupExpressions(markText)
+        addon.printf("Changing interrupt marker to %s", markText)
+        UpdateAllMacros(markIndex)
+        currentMark = markIndex
+    end
+end
+
+local function Initialize()
+    EventRegistry:RegisterFrameEventAndCallback('GROUP_ROSTER_UPDATE', UpdateMarkMacros)
+    EventRegistry:RegisterFrameEventAndCallback('READY_CHECK', NotifyMark)
+end
+
+local moduleInfo = {
+    Initialize = Initialize,
+    SlashCommands = {
+        ['focus-interrupt'] = UpdateMarkMacros,
+    }
+}
+addon.RegisterModule(moduleInfo)
+
