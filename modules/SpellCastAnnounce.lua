@@ -9,6 +9,11 @@ local function SpellCastAnnounce(_ownerID, unit, _, spellID)
         return
     end
 
+    local ok, result = pcall(C_ChatInfo.InChatMessagingLockdown)
+    if ok and result then
+        return
+    end
+
     if spellID == 1231411 then  -- Recuperate
         C_ChatInfo.SendChatMessage('Re-cu-per-ate.', 'SAY')
     end
