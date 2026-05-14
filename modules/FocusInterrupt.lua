@@ -24,6 +24,17 @@ local _, addon = ...
 -- This is compatible with FocusKick. The marker used is your position in the
 -- name-sorted list of party members.
 
+local function HasInterrupt()
+    local spec = GetSpecialization()
+    if GetSpecializationRole(spec) ~= "HEALER" then
+        return true
+    elseif UnitClassBase('player') == 'SHAMAN' then
+        return true
+    else
+        return false
+    end
+end
+
 local currentMark
 
 local function GetMyMark()
@@ -80,7 +91,7 @@ local function UpdateAllMacros(markIndex)
 end
 
 local function NotifyMark()
-    if not IsInRaid() and IsInGroup(LE_PARTY_CATEGORY_HOME) then
+    if HasInterrupt() and not IsInRaid() and IsInGroup(LE_PARTY_CATEGORY_HOME) then
         local markIndex, markText = GetMyMark()
         local msg = string.format('Interrupting %s', markText)
         SendChatMessage(msg, "PARTY")
@@ -88,12 +99,14 @@ local function NotifyMark()
 end
 
 local function UpdateMarkMacros()
-    local markIndex, markText = GetMyMark()
-    if currentMark ~= markIndex and not InCombatLockdown() then
-        markText = C_ChatInfo.ReplaceIconAndGroupExpressions(markText)
-        addon.printf("Changing interrupt marker to %s", markText)
-        UpdateAllMacros(markIndex)
-        currentMark = markIndex
+    if HasInterrupt() then
+        local markIndex, markText = GetMyMark()
+        if currentMark ~= markIndex and not InCombatLockdown() then
+            markText = C_ChatInfo.ReplaceIconAndGroupExpressions(markText)
+            addon.printf("Changing interrupt marker to %s", markText)
+            UpdateAllMacros(markIndex)
+            currentMark = markIndex
+        end
     end
 end
 

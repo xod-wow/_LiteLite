@@ -15,6 +15,7 @@
     <Script file="modules\EquipsetIcons.lua" />
     <Script file="modules\FactionStanding.lua" />
     <Script file="modules\FleetingPotion.lua" />
+    <Script file="modules\FocusInterrupt.lua" />
     <Script file="modules\GuildNews.lua" />
     <Script file="modules\HearthstoneMacro.lua" />
     <Script file="modules\HideActionButtonEffects.lua" />
