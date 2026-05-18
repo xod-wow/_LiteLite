@@ -8,6 +8,7 @@
     <Script file="modules\ChatMsgAlerts.lua" />
     <Script file="modules\ClearTrackedPerksActivities.lua" />
     <Script file="modules\ColorNamePlates.lua" />
+    <Script file="modules\CombatLoggingIndicator.lua" />
     <Script file="modules\CVarSettings.lua" />
     <Script file="modules\Delves.lua" />
     <Script file="modules\DragonRidingBar.lua" />
