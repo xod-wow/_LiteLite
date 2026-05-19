@@ -211,15 +211,18 @@ function Scanner:IsWaypointOnCurrentMap(data)
 end
 
 function Scanner:ShouldClear(data)
+    -- The order here is important to that the autoclear treasures don't
+    -- disappear when someone else picks them, but do disappear if we
+    -- change zones.
     if not data.tomTomWaypoint then
         return false
     elseif data.autoClear == true then
         return true
+    elseif not self:IsWaypointOnCurrentMap(data) then
+        return true
     elseif type(data.autoClear) == 'number' then
         return GetTime() >= data.autoClear
     elseif self:IsCloseWaypoint(data) then
-        return true
-    elseif not self:IsWaypointOnCurrentMap(data) then
         return true
     else
         return false
@@ -342,3 +345,4 @@ local moduleInfo = {
     }
 }
 addon.RegisterModule(moduleInfo)
+addon.Scanner = Scanner
