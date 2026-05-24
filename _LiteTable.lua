@@ -175,21 +175,38 @@ function _LiteTableMixin:SetSortColumn(n)
     end
 end
 
+function _LiteTableMixin:GetSortComparator()
+    local sortColumnOrder = GetKeysArray(self.columnNames)
+    local col = math.abs(self.sortColumn)
+    tDeleteItem(sortColumnOrder, col)
+    table.insert(sortColumnOrder, col, 1)
+    local function colComp(a, b, n)
+        local aVal = tonumber(a[n]) or GetCellDisplayText(a[n])
+        local bVal = tonumber(b[n]) or GetCellDisplayText(b[n])
+        if aVal == bVal then
+            return nil
+        elseif self.sortColumn >= 0 then
+            return aVal < bVal
+        else
+            return aVal > bVal
+        end
+    end
+    return function (a, b)
+        for _, n in ipairs(sortColumnOrder) do
+            local comp = colComp(a, b, n)
+            if comp ~= nil then
+                return comp
+            end
+        end
+        return false
+    end
+end
+
 function _LiteTableMixin:UpdateCells()
     self:SetTitle(self.title)
     local dataProvider = CreateDataProvider(self.data)
     if self.enableSort and self.sortColumn then
-        local n = math.abs(self.sortColumn)
-        local function colComp(a, b)
-            local aVal = tonumber(a[n]) or GetCellDisplayText(a[n])
-            local bVal = tonumber(b[n]) or GetCellDisplayText(b[n])
-            if self.sortColumn >= 0 then
-                return aVal < bVal
-            else
-                return aVal > bVal
-            end
-        end
-        dataProvider:SetSortComparator(colComp)
+        dataProvider:SetSortComparator(self:GetSortComparator())
     end
     self.ScrollBox:SetDataProvider(dataProvider, ScrollBoxConstants.RetainScrollPosition)
     if self.footer then
