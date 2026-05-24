@@ -3,7 +3,7 @@ local _, addon = ...
 local icon = Minimap:CreateTexture()
 icon:SetSize(16, 16)
 icon:SetTexture(7467223)
-icon:SetPoint("BOTTOMRIGHT", Minimap, "BOTTOMRIGHT", -1, 1)
+icon:SetPoint("CENTER", Minimap, "BOTTOMLEFT", 0, 0)
 
 EventRegistry:RegisterFrameEventAndCallback('CHAT_LOGGING_CHANGED',
     function (_, whichLog, isEnabled)

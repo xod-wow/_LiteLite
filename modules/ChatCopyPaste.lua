@@ -8,8 +8,10 @@ local function CopyChat(sourceFrame)
     local lines = {}
     for i = 1, sourceFrame:GetNumMessages() do
         local msg = sourceFrame:GetMessageInfo(i)
-        msg = msg:gsub("|K(.-)|k", "<kstring>")
-        table.insert(lines, msg or "")
+        if not issecretvalue(msg) then
+            msg = msg:gsub("|K(.-)|k", "<kstring>")
+            table.insert(lines, msg or "")
+        end
     end
     _LiteLiteText.EditBox:SetText(table.concat(lines, "\n"))
     _LiteLiteText:Show()

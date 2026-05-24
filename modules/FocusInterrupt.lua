@@ -90,8 +90,12 @@ local function UpdateAllMacros(markIndex)
     end
 end
 
+local function IsActive()
+    return HasInterrupt() and not IsInRaid() and IsInGroup(LE_PARTY_CATEGORY_HOME)
+end
+
 local function NotifyMark()
-    if HasInterrupt() and not IsInRaid() and IsInGroup(LE_PARTY_CATEGORY_HOME) then
+    if IsActive() then
         local markIndex, markText = GetMyMark()
         local msg = string.format('Interrupting %s', markText)
         SendChatMessage(msg, "PARTY")
@@ -99,7 +103,7 @@ local function NotifyMark()
 end
 
 local function UpdateMarkMacros()
-    if HasInterrupt() then
+    if IsActive() then
         local markIndex, markText = GetMyMark()
         if currentMark ~= markIndex and not InCombatLockdown() then
             markText = C_ChatInfo.ReplaceIconAndGroupExpressions(markText)
