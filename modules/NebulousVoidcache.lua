@@ -1,30 +1,32 @@
 local _, addon = ...
 
-local VoidCacheItemIDs = {
+local VoidCacheItems = {
+--  [itemID] =  { itemContext, treasureContextLevel }
+
     -- Raid
-    268464, -- Chimaerus the Undreamt God
-    268460, -- Vorasius
-    268459, -- Imperator Averzian
-    268461, -- Fallen-King Salhadaar
-    268462, -- Vaelgor & Ezzorak
-    248463, -- Lightblinded Vanguard
-    267488, -- Crown of the Cosmos
-    268458, -- Belo'ren, Child of Al'ar
-    262658, -- Midnight Falls
+    [268459] =  { 16, 10 },     -- Imperator Averzian
+    [268460] =  { 16, 10 },     -- Vorasius
+    [268461] =  { 16, 10 },     -- Fallen-King Salhadaar
+    [268462] =  { 16, 10 },     -- Vaelgor & Ezzorak
+    [248463] =  { 16, 10 },     -- Lightblinded Vanguard
+    [267488] =  { 16, 10 },     -- Crown of the Cosmos
+    [268464] =  { 16, 10 },     -- Chimaerus the Undreamt God
+    [268458] =  { 16, 10 },     -- Belo'ren, Child of Al'ar
+    [262658] =  { 16, 10 },     -- Midnight Falls
 
     -- M+
-    268465, -- Algeth'ar Academy
-    268466, -- Magister's Terrace
-    268473, -- Maisara Caverns
-    268467, -- Nexus-Point Xenas
-    268468, -- Pit of Saron
-    268469, -- Seat of the Triumvirate
-    268470, -- Skyreach
-    268471, -- Windrunner Spire
+    [268465] =  { 16, 10 },     -- Algeth'ar Academy
+    [268466] =  { 16, 10 },     -- Magister's Terrace
+    [268473] =  { 16, 10 },     -- Maisara Caverns
+    [268467] =  { 16, 10 },     -- Nexus-Point Xenas
+    [268468] =  { 16, 10 },     -- Pit of Saron
+    [268469] =  { 16, 10 },     -- Seat of the Triumvirate
+    [268470] =  { 16, 10 },     -- Skyreach
+    [268471] =  { 16, 10 },     -- Windrunner Spire
 
     -- World
-    269768, -- Prey
-    268969, -- Delves
+    [269768] =  { 55, 0 },      -- Prey
+    [268969] =  { 108, 11 },    -- Delves
 }
 
 -- ttInfo = C_TooltipInfo.GetItemByID(itemID, nil, itemContext, treasureContextLevel)
@@ -59,6 +61,24 @@ local function GetTooltipItems(ttInfo)
     return function () i = i + 1 return items[i] end
 end
 
+local function GetNumTooltipItemLines(ttInfo)
+    local inItems = false
+    local itemLineCount = 0
+
+    if ttInfo and ttInfo.lines then
+        for _, line in ipairs(ttInfo.lines) do
+            if line.leftText == PUNCH_LIST_ITEM_CACHE_TOOLTIP then
+                inItems = true
+            elseif inItems then
+                itemLineCount = itemLineCount + 1
+            end
+        end
+    end
+    if inItems then
+        return itemLineCount
+    end
+end
+
 local function AddTooltipItems(name, ttInfo)
     for item in GetTooltipItems(ttInfo) do
         _LiteLiteTable:AddRow({ name, item })
@@ -67,24 +87,41 @@ end
 
 local pending = {}
 
-local function ProcessOneItem(item)
-    local ttInfo = C_TooltipInfo.GetItemByID(item:GetItemID(), nil, 16, 10)
+local function ProcessOneItem(item, ttInfo)
     local name = item:GetItemName():gsub('Nebulous Voidcache: ', '')
     AddTooltipItems(name, ttInfo)
 end
 
 local Scanner = CreateFrame('Frame')
 
-function Scanner:OnUpdate()
-    self.currentItem = self.currentItem or table.remove(pending)
-    if not self.currentItem then
+local currentItem, currentItemLines
+
+local elapsedWait = 0
+
+function Scanner:OnUpdate(elapsed)
+    elapsedWait = elapsedWait - elapsed
+    if elapsedWait > 0 then return else elapsedWait = 0.05 end
+
+    if not currentItem then
+        currentItem = table.remove(pending)
+        currentItemLines = nil
+    end
+
+    if not currentItem then
+        _LiteLiteTable:SetFooter()
         self:SetScript('OnUpdate', nil)
+        return
+    end
+
+    local item, context, treasureContext = unpack(currentItem)
+    _LiteLiteTable:SetFooter(item:GetItemName())
+    local ttInfo = C_TooltipInfo.GetItemByID(item:GetItemID(), nil, context, treasureContext)
+    local itemLines = GetNumTooltipItemLines(ttInfo)
+    if itemLines and itemLines == currentItemLines then
+        ProcessOneItem(item, ttInfo)
+        currentItem = nil
     else
-        local ttInfo = C_TooltipInfo.GetItemByID(self.currentItem:GetItemID(), nil, 16, 10)
-        if ttInfo and ttInfo.lines and #ttInfo.lines > 7 then
-            ProcessOneItem(self.currentItem)
-            self.currentItem = nil
-        end
+        currentItemLines = itemLines
     end
 end
 
@@ -93,13 +130,13 @@ function Scanner:ListRerolls()
     _LiteLiteTable:SetAutoWidth(true)
     _LiteLiteTable:Setup("Nebulous Voidcache", { "Reroll", "Item" })
 
-    self.currentItem = nil
+    currentItem, currentItemLines = nil, nil
 
-    for _, itemID in ipairs(VoidCacheItemIDs) do
+    for itemID, ctx in pairs(VoidCacheItems) do
         local item = Item:CreateFromItemID(itemID)
         item:ContinueOnItemLoad(
             function ()
-                table.insert(pending, item)
+                table.insert(pending, { item, unpack(ctx) })
                 self:SetScript('OnUpdate', self.OnUpdate)
             end)
     end
@@ -113,8 +150,8 @@ local moduleInfo = {
         "nebulous-void-cache",
     },
     SlashCommands = {
-        ['nebulous-void-cache'] = function () Scanner:ListRerolls() end
-        ['nvc'] = function () Scanner:ListRerolls() end
+        ['nebulous-void-cache'] = function () Scanner:ListRerolls() end,
+        ['nvc'] = function () Scanner:ListRerolls() end,
         ['rerolls'] = function () Scanner:ListRerolls() end
     }
 }
