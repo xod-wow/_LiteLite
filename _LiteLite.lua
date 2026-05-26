@@ -40,11 +40,16 @@ local function Initialize()
 
     SlashCmdList['CDM'] = function () CooldownViewerSettings:Show() end
     _G.SLASH_CDM1 = "/cdm"
-
-    _LiteLiteTable:SetAutoWidth(true)
 end
 
 EventUtil.ContinueOnPlayerLogin(Initialize)
+
+EventRegistry:RegisterFrameEventAndCallback('SPELL_CONFIRMATION_PROMPT',
+    function (_ownerID, ...)
+        addon.db.SCP = addon.db.SCP or {}
+        table.insert(addon.db.SCP, { ... })
+        print('SPELL_CONFIRMATION_PROMPT', ...)
+    end)
 
 --[[ Utilities ]]---------------------------------------------------------------
 

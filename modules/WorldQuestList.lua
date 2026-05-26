@@ -84,6 +84,8 @@ local function WorldQuestProcess(expansion)
                 if not HaveQuestRewardData(info.questID) then allKnown = false break end
             end
             if allKnown then
+                _LiteLiteTable:Reset()
+                _LiteLiteTable:SetAutoWidth(true)
                 _LiteLiteTable:Setup("World Quests", { "Zone", "Quest", "Reputation", "Reward", "Time left" })
                 for _, info in pairs(mapQuests) do
                     GetQuest(_LiteLiteTable, info)

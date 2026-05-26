@@ -29,6 +29,7 @@
     <Script file="modules\MoveKeystoneFrame.lua" />
     <Script file="modules\MuteDragonRidingMounts.lua" />
     <Script file="modules\NameplateSettings.lua" />
+    <Script file="modules\NebulousVoidcache.lua" />
     <Script file="modules\ObjectScan.lua" />
     <Script file="modules\OtherAddonProfiles.lua" />
     <Script file="modules\PlayerInteraction.lua" />

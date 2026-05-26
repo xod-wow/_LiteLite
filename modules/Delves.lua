@@ -86,6 +86,7 @@ local function ListDelves()
         end)
 
     _LiteLiteTable:Reset()
+    _LiteLiteTable:SetAutoWidth(true)
     _LiteLiteTable:Setup(DELVES_LABEL, { "Map", "Delve", "Story", "Bountiful?" })
 
     -- Seems to be no way to get a list of delve runs the way you can with M+

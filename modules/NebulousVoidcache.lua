@@ -1,24 +1,49 @@
 local _, addon = ...
 
 local VoidCacheItemIDs = {
-   268465, -- Algeth'ar Academy
-   268458, -- Belo'ren, Child of Al'ar
-   268464, -- Chimaerus the Undreamt God
-   267488, -- Crown of the Cosmos
-   268461, -- Fallen-King Salhadaar
-   268459, -- Imperator Averzian
-   248463, -- Lightblinded Vanguard
-   268466, -- Magister's Terrace
-   268473, -- Maisara Caverns
-   262658, -- Midnight Falls
-   268467, -- Nexus-Point Xenas
-   268468, -- Pit of Saron
-   268469, -- Seat of the Triumvirate
-   268470, -- Skyreach
-   268462, -- Vaelgor & Ezzorak
-   268460, -- Vorasius
-   268471, -- Windrunner Spire
+    -- Raid
+    268464, -- Chimaerus the Undreamt God
+    268460, -- Vorasius
+    268459, -- Imperator Averzian
+    268461, -- Fallen-King Salhadaar
+    268462, -- Vaelgor & Ezzorak
+    248463, -- Lightblinded Vanguard
+    267488, -- Crown of the Cosmos
+    268458, -- Belo'ren, Child of Al'ar
+    262658, -- Midnight Falls
+
+    -- M+
+    268465, -- Algeth'ar Academy
+    268466, -- Magister's Terrace
+    268473, -- Maisara Caverns
+    268467, -- Nexus-Point Xenas
+    268468, -- Pit of Saron
+    268469, -- Seat of the Triumvirate
+    268470, -- Skyreach
+    268471, -- Windrunner Spire
+
+    -- World
+    269768, -- Prey
+    268969, -- Delves
 }
+
+-- ttInfo = C_TooltipInfo.GetItemByID(itemID, nil, itemContext, treasureContextLevel)
+--
+-- M+
+--  itemContext = 16
+--  treasureContextLevel = keystone level
+--
+-- Raid
+--  itemContext
+--
+-- Prey
+--  itemContext = 55
+--  treasureContextLevel = 0
+--
+-- Delves
+--  itemContext = 108
+--  treasureContextLevel = delve level
+--
 
 local function GetTooltipItems(ttInfo)
     local inItems = false
@@ -65,6 +90,7 @@ end
 
 function Scanner:ListRerolls()
     _LiteLiteTable:Reset()
+    _LiteLiteTable:SetAutoWidth(true)
     _LiteLiteTable:Setup("Nebulous Voidcache", { "Reroll", "Item" })
 
     self.currentItem = nil
@@ -84,9 +110,11 @@ end
 
 local moduleInfo = {
     HelpLines = {
-        "rerolls",
+        "nebulous-void-cache",
     },
     SlashCommands = {
+        ['nebulous-void-cache'] = function () Scanner:ListRerolls() end
+        ['nvc'] = function () Scanner:ListRerolls() end
         ['rerolls'] = function () Scanner:ListRerolls() end
     }
 }
