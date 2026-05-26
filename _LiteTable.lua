@@ -133,14 +133,17 @@ end
 
 function _LiteTableMixin:SetAutoWidth(v)
     self.autoWidth = v and true or nil
+    self:MarkDirty()
 end
 
 function _LiteTableMixin:SetEnableSort(v)
     self.enableSort = v and true or nil
+    self:MarkDirty()
 end
 
 function _LiteTableMixin:SetFooter(text)
     self.footer = text
+    self:MarkDirty()
 end
 
 function _LiteTableMixin:SetupColumnHeaders()
@@ -170,9 +173,7 @@ end
 
 function _LiteTableMixin:SetSortColumn(n)
     self.sortColumn = n
-    if self:IsShown() then
-        self:UpdateCells()
-    end
+    self:MarkDirty()
 end
 
 function _LiteTableMixin:GetSortComparator()
