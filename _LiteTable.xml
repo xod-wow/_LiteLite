@@ -36,7 +36,7 @@
     </Layers>
   </Button>
 
-  <Frame name="_LiteTableRowTemplate" mixin="_LiteLiteTableRowMixin" virtual="true">
+  <Frame name="_LiteTableRowTemplate" mixin="_LiteTableRowMixin" virtual="true">
     <Size y="22" />
     <Scripts>
       <OnLoad method="OnLoad" />

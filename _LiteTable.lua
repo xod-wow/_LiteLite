@@ -55,13 +55,13 @@ end
 
 --[[------------------------------------------------------------------------]]--
 
-_LiteLiteTableRowMixin = {}
+_LiteTableRowMixin = {}
 
-function _LiteLiteTableRowMixin:OnLoad()
+function _LiteTableRowMixin:OnLoad()
     self.cells = CreateFramePool("Button", self, "_LiteTableCellTemplate")
 end
 
-function _LiteLiteTableRowMixin:Init(columnWidths, rowData)
+function _LiteTableRowMixin:Init(columnWidths, rowData)
     self.cells:ReleaseAll()
 
     local color = rowData.color or WHITE_FONT_COLOR
