@@ -13,6 +13,20 @@ local stats = {
         get = function () return GetLifesteal() end,
         format = "%.1f%%",
     },
+    {
+        text = ARMOR,
+        get =
+            function ()
+                local spec = GetSpecialization()
+                if GetSpecializationRole(spec) == "TANK" then
+                    local _, effectiveArmor = UnitArmor('player')
+                    -- local level = UnitLevel('player')
+                    -- return 100 * C_PaperDollInfo.GetArmorEffectiveness(effectiveArmor, level)
+                    return effectiveArmor
+                end
+            end,
+        format = "%d",
+    },
 --[[
     {
         text = "Versatility",
@@ -90,6 +104,9 @@ function LineMixin:UpdateFromInfo(info)
         local valueString = string.format(info.format, v)
         self.LeftText:SetText(text)
         self.RightText:SetText(valueString)
+        self:Show()
+    else
+        self:Hide()
     end
 end
 
@@ -119,12 +136,12 @@ end
 local StatBlock = CreateFrame("Frame", nil, UIParent, "VerticalLayoutFrame")
 StatBlock:SetPoint("BOTTOMLEFT", ChatFrame1Background, "BOTTOMRIGHT", 4, 0)
 StatBlock.childLayoutDirection = "bottomToTop"
-for i, info in pairs(stats) do
+for i, info in ipairs(stats) do
     StatBlock[i] = CreateLine(StatBlock, i, NumberFontNormal, info.color)
 end
 
 local function Update()
-    for i, info in pairs(stats) do
+    for i, info in ipairs(stats) do
         StatBlock[i]:UpdateFromInfo(info)
     end
     StatBlock:Layout()
