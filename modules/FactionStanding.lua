@@ -68,7 +68,7 @@ local function CHAT_MSG_COMBAT_FACTION_CHANGE(_ownerID, msg)
     local factionName, amount = msg:match('with (.-) increased by (%d+)')
     amount = tonumber(amount)
     if factionName and amount and amount >= 50 then
-        C_Timer.After(0.1, function () PrintFactionIncrease(factionName, amount) end)
+        C_Timer.After(0.5, function () PrintFactionIncrease(factionName, amount) end)
     end
 end
 
