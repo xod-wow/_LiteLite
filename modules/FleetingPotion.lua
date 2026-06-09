@@ -8,45 +8,76 @@
 
 local _, addon = ...
 
-local function CheckAndSwapAction(actionID)
+local function FindReplacements()
+    local replacements = {}
+    ItemUtil.IteratePlayerInventory(
+        function (itemLocation)
+            local itemLink = C_Item.GetItemLink(itemLocation)
+            local name, _, _, _, _, itemType, itemSubType = C_Item.GetItemInfo(itemLink)
+            if not (name and itemType == 'Consumable' and itemSubType == 'Potions') then
+                return
+            end
+            local normal = name:gsub("^Fleeting ", "")
+            local normalCount = C_Item.GetItemCount(normal)
+            local fleeting = "Fleeting " .. normal
+            local fleetingCount = C_Item.GetItemCount(fleeting)
+            if replacements[normal] then
+                return
+            elseif fleetingCount > 0 then
+                replacements[normal] = fleeting
+                replacements[fleeting] = nil
+            elseif normalCount > 0 then
+                replacements[fleeting] = normal
+            end
+    end)
+    return replacements
+end
+
+local function CheckAndSwapAction(actionID, replacements)
     local actionType, itemID = GetActionInfo(actionID)
-    if actionType ~= 'item' then
-        return
-    end
-
-    local name, _, _, _, _, itemType, itemSubType = C_Item.GetItemInfo(itemID)
-    if not (name and itemType == 'Consumable' and itemSubType == 'Potions') then
-        return
-    end
-
-    local normal = name:gsub("^Fleeting ", "")
-    local normalCount = C_Item.GetItemCount(normal)
-    local fleeting = "Fleeting " .. normal
-    local fleetingCount = C_Item.GetItemCount(fleeting)
-    if fleetingCount > 0 then
-        if name ~= fleeting then
-            addon.printf("Switching %d to %s", actionID, fleeting)
-            C_Item.PickupItem(fleeting)
+    if actionType == 'item' then
+        local name = C_Item.GetItemInfo(itemID)
+        if replacements[name] then
+            addon.printf("Switching %d to %s", actionID, replacements[name])
+            C_Item.PickupItem(replacements[name])
             C_ActionBar.PutActionInSlot(actionID)
             ClearCursor()
         end
-    elseif normalCount > 0 then
-        if name ~= normal then
-            addon.printf("Switching %d to %s", actionID, normal)
-            C_Item.PickupItem(normal)
-            C_ActionBar.PutActionInSlot(actionID)
-            ClearCursor()
+    elseif actionType == 'macro' then
+        local macroName = GetActionText(actionID)
+        local _, _, body = GetMacroInfo(macroName)
+        if body then
+            local newBody = body
+            for from, to in pairs(replacements) do
+                newBody = newBody:gsub("/use "..from, "/use "..to)
+            end
+            if newBody ~= body then
+                addon.printf("Switching macro %s", macroName)
+                EditMacro(macroName, nil, nil, newBody)
+            end
         end
     end
 end
 
 local dirty = false
 
+local function CanUpdateNow()
+    if InCombatLockdown() then
+        return false
+    elseif C_RestrictedActions.IsAddOnRestrictionActive(Enum.AddOnRestrictionType.ChallengeMode) then
+        return false
+    else
+        return true
+    end
+end
+
+
 local function OnUpdate()
     if dirty then
-        if not InCombatLockdown() then
+        if CanUpdateNow() then
+            local replacements = FindReplacements()
             for actionID = 1, 180 do
-                CheckAndSwapAction(actionID)
+                CheckAndSwapAction(actionID, replacements)
             end
         end
         dirty = false
