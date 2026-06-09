@@ -18,13 +18,13 @@ end
 local function CreateTabButtons()
     for i = 1, 4 do
         local b = CreateFrame('Button', nil, ProfessionsFrame)
-        b:SetSize(32, 32)
+        b:SetSize(24, 24)
         TabButtons[i] = b
         if i == 1 then
             b:ClearAllPoints()
-            b:SetPoint("TOPRIGHT", ProfessionsFrame, "TOPLEFT", -2, -48)
+            b:SetPoint("BOTTOMRIGHT", ProfessionsFrame, "TOPRIGHT", -48, 2)
         else
-            b:SetPoint("TOP", TabButtons[i-1], "BOTTOM", 0, -4)
+            b:SetPoint("RIGHT", TabButtons[i-1], "LEFT", -2, 0)
         end
     end
     ProfessionsFrame:HookScript('OnShow', Update)
