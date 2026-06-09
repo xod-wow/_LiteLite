@@ -19,7 +19,7 @@ globals = {
     '_LiteLiteDB',
     '_LiteLiteFullScreenFlash',
     '_LiteLiteTable',
-    '_LiteLiteTableRowMixin',
+    '_LiteTableRowMixin',
     '_LiteLiteText',
     '_LiteTableCellMixin',
     '_LiteTableHeaderMixin',
