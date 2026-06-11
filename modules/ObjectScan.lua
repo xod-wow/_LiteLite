@@ -24,11 +24,13 @@ end
 
 function Scanner:ObjectList()
     addon.printf("Scan for mobs:")
-    if next(addon.db.scanMobNames or {}) then
-        local names = GetKeysArray(addon.db.scanMobNames)
-        table.sort(names)
-        for i, name in ipairs(names) do
-            addon.printf("%d. %s", i, name)
+    if next(addon.db.objectScan or {}) then
+        for i, scan in ipairs(addon.db.objectScan) do
+            if scan.map then
+                addon.printf("%d. %s [%d]", i, scan.name, scan.map)
+            else
+                addon.printf("%d. %s", i, scan.name)
+            end
         end
     else
         addon.printf("   None.")
@@ -36,30 +38,34 @@ function Scanner:ObjectList()
 end
 
 function Scanner:ObjectWipe()
-    addon.db.scanMobNames = table.wipe(addon.db.scanMobNames or {})
+    addon.db.objectScan = table.wipe(addon.db.objectScan or {})
     self:UpdateScanning()
 end
 
-function Scanner:ObjectAdd(name)
-    addon.db.scanMobNames = addon.db.scanMobNames or {}
-    addon.db.scanMobNames[name:lower()] = {}
+function Scanner:ObjectAdd(text)
+    addon.db.objectScan = addon.db.objectScan or {}
+
+    local opt, name = text:match('^(-.+)%s+(.*)')
+    local scan = { name=(name or text):lower() }
+
+    if opt == '-map' then
+        scan.map = C_Map.GetBestMapForUnit('player')
+    end
+    table.insert(addon.db.objectScan, scan)
+    table.sort(addon.db.objectScan, function (a,b) return a.name < b.name end)
     self:UpdateScanning()
 end
 
-function Scanner:ObjectDel(name)
-    if addon.db.scanMobNames then
-        local n = tonumber(name)
-        if n then
-            local names = GetKeysArray(addon.db.scanMobNames)
-            name = names[n]
-        end
-        addon.db.scanMobNames[name] = nil
+function Scanner:ObjectDel(n)
+    n = tonumber(n)
+    if n and addon.db.objectScan then
+        table.remove(addon.db.objectScan, n)
         self:UpdateScanning()
     end
 end
 
 function Scanner:UpdateScanning()
-    if next(addon.db.scanMobNames or {}) then
+    if next(addon.db.objectScan or {}) then
         self.scannedGUID = self.scannedGUID or {}
         self:RegisterEvent("NAME_PLATE_UNIT_ADDED")
         self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -76,6 +82,22 @@ function Scanner:UpdateScanning()
     end
 end
 
+function Scanner:MatchesConditions(scan)
+    if scan.map then
+        local map = C_Map.GetBestMapForUnit('player')
+        while map and map > 0 do
+            if map == scan.map then
+                return true
+            else
+                local info = C_Map.GetMapInfo(map)
+                map = info and info.parentMapID or nil
+            end
+        end
+        return false
+    end
+    return true
+end
+
 function Scanner:ScanUnitNameplate(unit)
     if C_Secrets.ShouldUnitIdentityBeSecret(unit) then
         return
@@ -86,20 +108,15 @@ function Scanner:ScanUnitNameplate(unit)
 
     local npcID = select(6, strsplit('-', UnitGUID(unit)))
 
-    for n in pairs(addon.db.scanMobNames) do
-        if ( name and name:find(n, nil, true) ) or
-           ( npcID and tonumber(n) == tonumber(npcID) ) then
+    for _, scan in ipairs(addon.db.objectScan) do
+        if ( name and name:find(scan.name, nil, true) ) or
+           ( npcID and tonumber(scan.name) == tonumber(npcID) ) then
             if not self.scannedGUID[guid] then
                 self.scannedGUID[guid] = { name = name }
                 local msg = format("Nameplate %s found", name)
                 addon.printf(msg)
                 PlaySound(11466)
             end
-            --[[
-            if not GetRaidTargetIndex(unit) then
-                SetRaidTarget(unit, 6)
-            end
-            ]]
         end
     end
 end
@@ -117,20 +134,21 @@ local badObjectIDs = {
     ["617881"]              = true, -- Rookery Cache
 }
 
-function Scanner:VignetteMatches(scanMobName, info)
-    scanMobName = scanMobName:lower()
+function Scanner:VignetteMatches(scan, info)
     local guidType, _, _, _, _, id = strsplit('-', info.objectGUID)
-    if badObjectIDs[id] then
+    if not self:MatchesConditions(scan) then
         return false
-    elseif scanMobName:sub(1,1) == '^' and info.atlasName:lower():find(scanMobName) then
+    elseif badObjectIDs[id] then
+        return false
+    elseif scan.name:sub(1,1) == '^' and info.atlasName:lower():find(scan.name) then
         return true
-    elseif info.atlasName:lower():find(scanMobName, nil, true) then
+    elseif info.atlasName:lower():find(scan.name, nil, true) then
         return true
-    elseif scanMobName == 'vignette' then
+    elseif scan.name == 'vignette' then
         return not badAtlasNames[info.atlasName]
-    elseif guidType and guidType:lower() == scanMobName then
+    elseif guidType and guidType:lower() == scan.name then
         return not badAtlasNames[info.atlasName]
-    elseif info.name and info.name:lower():find(scanMobName, nil, true) then
+    elseif info.name and info.name:lower():find(scan.name, nil, true) then
         return true
     else
         return false
@@ -267,8 +285,8 @@ function Scanner:ScanVignetteByID(id)
     local uiMapID = C_Map.GetBestMapForUnit('player')
     if not uiMapID then return end
 
-    for n in pairs(addon.db.scanMobNames) do
-        if self:VignetteMatches(n, info) then
+    for _, scan in ipairs(addon.db.objectScan) do
+        if self:VignetteMatches(scan, info) then
             local pos = C_VignetteInfo.GetVignettePosition(info.vignetteGUID, uiMapID)
             if pos then
                 local data = CopyTable(info)
