@@ -7,6 +7,7 @@ local moduleInfo = {
     SlashCommands = {
         ['drive'] = function () TraitUtil.OpenTraitFrame(1056) end,
         ['loa'] = function () TraitUtil.OpenTraitFrame(1166) end,
+        ['void'] = function () TraitUtil.OpenTraitFrame(1180) end,
     }
 }
 addon.RegisterModule(moduleInfo)
