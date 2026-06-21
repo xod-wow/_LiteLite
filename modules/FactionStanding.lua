@@ -57,14 +57,12 @@ local function PrintFactionIncrease(factionName, amount)
     end
 end
 
-local function FACTION_STANDING_CHANGED(_ownerID, factionID, updatedStanding)
-    addon.printf("FACTION_STANDING_CHANGED %d %s", factionID, tostring(updatedStanding))
-end
-
 local function CHAT_MSG_COMBAT_FACTION_CHANGE(_ownerID, msg)
-    if C_ChatInfo.InChatMessagingLockdown and C_ChatInfo.InChatMessagingLockdown() then
+    if issecretvalue(msg) then
         return
     end
+    -- _G.FACTION_STANDING_INCREASED:gsub('%%.', '(.-)')
+    -- _G.FACTION_STANDING_INCREASED_ACCOUNT_WIDE:gsub('%%.', '(.-)')
     local factionName, amount = msg:match('with (.-) increased by (%d+)')
     amount = tonumber(amount)
     if factionName and amount and amount >= 50 then
@@ -72,5 +70,4 @@ local function CHAT_MSG_COMBAT_FACTION_CHANGE(_ownerID, msg)
     end
 end
 
--- EventRegistry:RegisterFrameEventAndCallback('FACTION_STANDING_CHANGED', FACTION_STANDING_CHANGED)
 EventRegistry:RegisterFrameEventAndCallback('CHAT_MSG_COMBAT_FACTION_CHANGE', CHAT_MSG_COMBAT_FACTION_CHANGE)
