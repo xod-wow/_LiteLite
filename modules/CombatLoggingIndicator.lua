@@ -1,9 +1,13 @@
 local _, addon = ...
 
-local icon = Minimap:CreateTexture()
+local icon = CreateFrame("Frame", nil, UIParent)
 icon:SetSize(16, 16)
-icon:SetTexture(7467223)
 icon:SetPoint("CENTER", Minimap, "BOTTOMLEFT", 0, 0)
+icon:SetFrameLevel(Minimap:GetFrameLevel())
+
+icon.Texture = icon:CreateTexture()
+icon.Texture:SetAllPoints(true)
+icon.Texture:SetTexture(7467223)
 
 EventRegistry:RegisterFrameEventAndCallback('CHAT_LOGGING_CHANGED',
     function (_, whichLog, isEnabled)

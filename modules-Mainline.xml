@@ -52,5 +52,6 @@
     <Script file="modules\TooltipIDs.lua" />
     <Script file="modules\TradeSkillSwitchTabs.lua" />
     <Script file="modules\WorldQuestList.lua" />
-    <Script file="modules\XPGainRestPrint.lua" />
+    <Script file="modules\WorldQuestList.lua" />
+    <Script file="modules\ZoneAbilityKeybind.lua" />
 </Ui>
