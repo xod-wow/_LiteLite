@@ -34,7 +34,7 @@ local function GetFactionNumbersByName(name)
             end
             return _G['FACTION_STANDING_LABEL'..data.reaction],
                    data.currentStanding - data.currentReactionThreshold,
-                   data.nextReactionThreshol - data.currentReactionThreshold
+                   data.nextReactionThreshold - data.currentReactionThreshold
         end
     end
     for _, factionID in ipairs(C_MajorFactions.GetMajorFactionIDs(LE_EXPANSION_LEVEL_CURRENT)) do
