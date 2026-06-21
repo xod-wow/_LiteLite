@@ -167,6 +167,8 @@ local function CreateOrUpdateGlobalMacro()
 end
 
 local function Initialize()
+    EventRegistry:RegisterFrameEventAndCallback('ACTIVE_TALENT_GROUP_CHANGED', UpdateMarkMacros)
+    EventRegistry:RegisterFrameEventAndCallback('PLAYER_SPECIALIZATION_CHANGED', UpdateMarkMacros)
     EventRegistry:RegisterFrameEventAndCallback('GROUP_ROSTER_UPDATE', UpdateMarkMacros)
     EventRegistry:RegisterFrameEventAndCallback('READY_CHECK', NotifyMark)
     CreateOrUpdateGlobalMacro()
