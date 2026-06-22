@@ -139,7 +139,7 @@ local function NotifyMark()
 end
 
 local function UpdateMarkMacros()
-    if IsActive() then
+    if HasInterrupt() then
         local markIndex, markText = GetMyMark()
         if currentMark ~= markIndex and not InCombatLockdown() then
             markText = C_ChatInfo.ReplaceIconAndGroupExpressions(markText)
