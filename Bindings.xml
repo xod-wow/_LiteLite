@@ -1,4 +1,12 @@
 <Bindings>
-    <Binding name="CLICK RotatingMarker:LeftButton" category="_LiteLite">
-    </Binding>
+    <Binding name="CLICK RotatingMarker:LeftButton" category="World Markers" />
+    <Binding name="CLICK RotatingMarker:0" category="World Markers" />
+    <Binding name="CLICK RotatingMarker:1" category="World Markers" />
+    <Binding name="CLICK RotatingMarker:2" category="World Markers" />
+    <Binding name="CLICK RotatingMarker:3" category="World Markers" />
+    <Binding name="CLICK RotatingMarker:4" category="World Markers" />
+    <Binding name="CLICK RotatingMarker:5" category="World Markers" />
+    <Binding name="CLICK RotatingMarker:6" category="World Markers" />
+    <Binding name="CLICK RotatingMarker:7" category="World Markers" />
+    <Binding name="CLICK RotatingMarker:8" category="World Markers" />
 </Bindings>

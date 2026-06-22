@@ -5,7 +5,7 @@
 
 local _, addon = ...
 
-
+-- function (self, button, down)
 local function Initialize()
     local b = CreateFrame('Button', 'RotatingMarker', nil, 'SecureActionButtonTemplate')
     -- https://github.com/Stanzilla/WoWUIBugs/issues/317#issuecomment-1510847497
@@ -15,7 +15,11 @@ local function Initialize()
 
     SecureHandlerWrapScript(b, 'PreClick', b,
         [[
-            if IsShiftKeyDown() then
+            if button == "0" then
+                self:SetAttribute("macrotext", "/cwm all")
+            elseif tonumber(button) then
+                self:SetAttribute("macrotext", "/wm [@cursor] "..button)
+            elseif IsShiftKeyDown() then
                 self:SetAttribute("macrotext", "/ping [@mouseover,help] warning; [@mouseover] attack")
             elseif IsControlKeyDown() then
                 self:SetAttribute("n", 0)
