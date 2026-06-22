@@ -1,4 +1,5 @@
 <Ui>
+    <Script file="modules\AhuneAutoLootOff.lua" />
     <Script file="modules\AutoInviteMyself.lua" />
     <Script file="modules\AutoRepairAll.lua" />
     <Script file="modules\BiggerFrames.lua" />
