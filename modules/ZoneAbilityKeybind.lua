@@ -16,11 +16,12 @@ function EventFrame:UpdateBindings()
             if CurrentBindings[i] ~= info.spellID then
                 CurrentBindings[i] = info.spellID
                 local name = C_Spell.GetSpellName(info.spellID)
-                print('name', name)
+                addon.printf('Binding %s to %s', BindingOrder[i], name)
                 SetOverrideBindingSpell(self, false, BindingOrder[i], name)
             end
         elseif CurrentBindings[i] then
             SetOverrideBinding(self, false, BindingOrder[i], nil)
+            CurrentBindings[i] = nil
         end
     end
 end
