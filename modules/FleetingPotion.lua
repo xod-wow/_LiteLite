@@ -72,7 +72,7 @@ local function CanUpdateNow()
 end
 
 
-local function OnUpdate()
+local function OnUpdate(self)
     if dirty then
         if CanUpdateNow() then
             local replacements = FindReplacements()
@@ -81,11 +81,13 @@ local function OnUpdate()
             end
         end
         dirty = false
+        self:SetScript('OnUpdate', nil)
     end
 end
 
-local function MarkDirty()
+local function MarkDirty(self)
     dirty = true
+    self:SetScript('OnUpdate', OnUpdate)
 end
 
 local events = {
@@ -101,7 +103,6 @@ local PotionScanner = CreateFrame("Frame")
 FrameUtil.RegisterFrameForEvents(PotionScanner, events)
 
 PotionScanner:SetScript('OnEvent', MarkDirty)
-PotionScanner:SetScript('OnUpdate', OnUpdate)
 
 local addonInfo = {
     SlashCommands = {
