@@ -2,33 +2,20 @@ local _, addon = ...
 
 --[[
 
-    This is expecting you have a macro like this
+    Create and maintain a global 'Kick' macro that handles setting a
+    target marker and focus.
 
-        /focus [@unit]
-        /tm [@focus] 1
-
-    Or maybe an all in one kick macro like this
-
-        #showtooltip Spear Hand Strike
-        /focus [mod:alt,@mouseover]
-        /tm [@focus,mod:alt] 1
-        /stopmacro [mod:alt]
-        /cast [@focus,harm] Spear Hand Strike; Spear Hand Strike
-
-    If it finds a macro with both "/focus" and "/tm" or "/targetmarker" it
-    will replace the number with an appropriate number based on the players
-    in your party.
+    This is compatible with FocusKick. The marker used is your position in the
+    name-sorted list of party members.
 
 ]]
 
--- This is compatible with FocusKick. The marker used is your position in the
--- name-sorted list of party members.
 
 local GlobalMacroName = "Kick"
 
 local GlobalMacroBody = [[#showtooltip
 /focus [mod,@mouseover,harm,nodead][mod,harm,nodead]
-/tm [@focus,mod] {markIndex}
+/tm [@focus,mod] ~{markIndex}
 /stopmacro [mod]
 /cast [@focus,harm] {spellName}; {spellName}]]
 
@@ -52,28 +39,19 @@ local Interrupts = {
     [351338] = true,                -- Quell (Evoker)
 }
 
-local function GetInterruptSpellName()
+local Updater = CreateFrame('Frame')
+
+function Updater:UpdateSpellName()
+    self.spellName = nil
     for spellID in pairs(Interrupts) do
         if C_SpellBook.IsSpellKnown(spellID) then
-            return C_Spell.GetSpellName(spellID)
+            self.spellName = C_Spell.GetSpellName(spellID)
         end
     end
 end
 
-local function HasInterrupt()
-    local spec = GetSpecialization()
-    if GetSpecializationRole(spec) ~= "HEALER" then
-        return true
-    elseif UnitClassBase('player') == 'SHAMAN' then
-        return true
-    else
-        return false
-    end
-end
-
-local currentMark
-
-local function GetMyMark()
+function Updater:UpdateMarkIndex()
+    local oldIndex = self.markIndex
     local playerName = UnitName('player')
     local names = { playerName }
     for i = 1, 4 do
@@ -84,77 +62,23 @@ local function GetMyMark()
         end
     end
     table.sort(names)
-    local markIndex = tIndexOf(names, playerName)
-    return markIndex, string.format('{rt%d}', markIndex)
-end
-
-local function IsFocusTargetMarkerMacro(body)
-    if body
-       and
-       (body:find(SLASH_FOCUS1) or body:find(SLASH_FOCUS2))
-       and
-       (body:find(SLASH_TARGET_MARKER1) or
-        body:find(SLASH_TARGET_MARKER2) or
-        body:find(SLASH_TARGET_MARKER3) or
-        body:find(SLASH_TARGET_MARKER4))
-    then
-        return true
-    else
-        return false
+    local newIndex = tIndexOf(names, playerName)
+    if newIndex ~= oldIndex then
+        self.markIndex = newIndex
+        self.markText = string.format('{rt%d}', newIndex)
+        local markText = C_ChatInfo.ReplaceIconAndGroupExpressions(self.markText)
+        addon.printf("Changing interrupt marker to %s", markText)
     end
 end
 
-local function UpdateMacro(macroIndex, body, markIndex)
-    local lines = {}
-    for line in body:gmatch('([^\r\n]+)') do
-        line = line:gsub('^('..SLASH_TARGET_MARKER1..'%s+.*)(%d)$', '%1'..markIndex)
-        line = line:gsub('^('..SLASH_TARGET_MARKER2..'%s+.*)(%d)$', '%1'..markIndex)
-        line = line:gsub('^('..SLASH_TARGET_MARKER3..'%s+.*)(%d)$', '%1'..markIndex)
-        line = line:gsub('^('..SLASH_TARGET_MARKER4..'%s+.*)(%d)$', '%1'..markIndex)
-        table.insert(lines, line)
-    end
-    local newBody = table.concat(lines, '\n')
-    EditMacro(macroIndex, nil, nil, newBody)
-end
-
-local function UpdateAllMacros(markIndex)
-    for macroIndex = 1, MAX_ACCOUNT_MACROS+MAX_CHARACTER_MACROS do
-        local _, _, body = GetMacroInfo(macroIndex)
-        if IsFocusTargetMarkerMacro(body) then
-            UpdateMacro(macroIndex, body, markIndex)
-        end
-    end
-end
-
-local function IsActive()
-    return HasInterrupt() and not IsInRaid() and IsInGroup(LE_PARTY_CATEGORY_HOME)
-end
-
-local function NotifyMark()
-    if IsActive() then
-        local markIndex, markText = GetMyMark()
-        local msg = string.format('Interrupting %s', markText)
-        SendChatMessage(msg, "PARTY")
-    end
-end
-
-local function UpdateMarkMacros()
-    if HasInterrupt() then
-        local markIndex, markText = GetMyMark()
-        if currentMark ~= markIndex and not InCombatLockdown() then
-            markText = C_ChatInfo.ReplaceIconAndGroupExpressions(markText)
-            addon.printf("Changing interrupt marker to %s", markText)
-            UpdateAllMacros(markIndex)
-            currentMark = markIndex
-        end
-    end
-end
-
-local function CreateOrUpdateGlobalMacro()
-    if HasInterrupt() then
+function Updater:CreateOrUpdateGlobalMacro()
+    -- In theory this should check if we are in M+ but ignore it for now since
+    -- the only triggers are group change and spec/talent change, none of which
+    -- can happen then.
+    if self.spellName and not InCombatLockdown() then
         local replacements = {
-            spellName = GetInterruptSpellName(),
-            markIndex = GetMyMark(),
+            spellName = self.spellName,
+            markIndex = self.markIndex,
         }
         local body = string.gsub(GlobalMacroBody, '{(.-)}', replacements)
         local macroIndex = GetMacroIndexByName(GlobalMacroName)
@@ -166,18 +90,44 @@ local function CreateOrUpdateGlobalMacro()
     end
 end
 
+function Updater:FullUpdate()
+    self:UpdateSpellName()
+    self:UpdateMarkIndex()
+    self:CreateOrUpdateGlobalMacro()
+end
+
+function Updater:NotifyMark()
+    if self.interruptSpell and not IsInRaid() and IsInGroup(LE_PARTY_CATEGORY_HOME) then
+        local msg = string.format('Interrupting %s', self.markText)
+        SendChatMessage(msg, "PARTY")
+    end
+end
+
+function Updater:OnEvent(event)
+    if event == 'ACTIVE_TALENT_GROUP_CHANGED' or event == 'PLAYER_SPECIALIZATION_CHANGED' then
+        self:UpdateSpellName()
+        self:CreateOrUpdateGlobalMacro()
+    elseif event == 'GROUP_ROSTER_UPDATE' then
+        self:UpdateMarkIndex()
+        self:CreateOrUpdateGlobalMacro()
+    elseif event == 'READY_CHECK' then
+        self:NotifyMark()
+    end
+end
+
 local function Initialize()
-    EventRegistry:RegisterFrameEventAndCallback('ACTIVE_TALENT_GROUP_CHANGED', UpdateMarkMacros)
-    EventRegistry:RegisterFrameEventAndCallback('PLAYER_SPECIALIZATION_CHANGED', UpdateMarkMacros)
-    EventRegistry:RegisterFrameEventAndCallback('GROUP_ROSTER_UPDATE', UpdateMarkMacros)
-    EventRegistry:RegisterFrameEventAndCallback('READY_CHECK', NotifyMark)
-    CreateOrUpdateGlobalMacro()
+    Updater:RegisterEvent('ACTIVE_TALENT_GROUP_CHANGED')
+    Updater:RegisterEvent('PLAYER_SPECIALIZATION_CHANGED')
+    Updater:RegisterEvent('GROUP_ROSTER_UPDATE')
+    Updater:RegisterEvent('READY_CHECK')
+    Updater:SetScript('OnEvent', Updater.OnEvent)
+    Updater:FullUpdate()
 end
 
 local moduleInfo = {
     Initialize = Initialize,
     SlashCommands = {
-        ['focus-interrupt'] = UpdateMarkMacros,
+        ['focus-interrupt'] = function () Updater:FullUpdate() end,
     }
 }
 addon.RegisterModule(moduleInfo)
