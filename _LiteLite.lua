@@ -44,13 +44,6 @@ end
 
 EventUtil.ContinueOnPlayerLogin(Initialize)
 
-EventRegistry:RegisterFrameEventAndCallback('SPELL_CONFIRMATION_PROMPT',
-    function (_ownerID, ...)
-        addon.db.SCP = addon.db.SCP or {}
-        table.insert(addon.db.SCP, { ... })
-        print('SPELL_CONFIRMATION_PROMPT', ...)
-    end)
-
 --[[ Utilities ]]---------------------------------------------------------------
 
 local printTag = ORANGE_FONT_COLOR:WrapTextInColorCode("LiteLite: ")
