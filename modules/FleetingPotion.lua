@@ -49,7 +49,8 @@ local function CheckAndSwapAction(actionID, replacements)
         if body then
             local newBody = body
             for from, to in pairs(replacements) do
-                newBody = newBody:gsub("/use "..from, "/use "..to)
+                newBody = newBody:gsub("(/use%s+)"..from, "%1"..to)
+                newBody = newBody:gsub("(/use%s+%[.+%]%s+)"..from, "%1"..to)
             end
             if newBody ~= body then
                 addon.printf("Switching macro %s", macroName)
