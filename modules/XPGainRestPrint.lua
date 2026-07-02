@@ -2,7 +2,9 @@
 
 local _, addon = ...
 
-local function CHAT_MSG_COMBAT_XP_GAIN()
+-- GetMessageTypeColor doesn't work on init, even after PLAYER_LOGIN
+
+local function DisplayRest()
     local rest = GetXPExhaustion()
     if not rest or rest == 0 then return end
     local r, g, b = GetMessageTypeColor('COMBAT_XP_GAIN')
@@ -16,12 +18,16 @@ local function CHAT_MSG_COMBAT_XP_GAIN()
     end
 end
 
-EventRegistry:RegisterFrameEventAndCallback('CHAT_MSG_COMBAT_XP_GAIN', CHAT_MSG_COMBAT_XP_GAIN)
+local function Initialize()
+    EventRegistry:RegisterFrameEventAndCallback('CHAT_MSG_COMBAT_XP_GAIN', DisplayRest)
+end
+
 
 local moduleInfo = {
-    Initialize = CHAT_MSG_COMBAT_XP_GAIN,
+    Initialize = Initialize,
     SlashCommands = {
-        ['xp'] = CHAT_MSG_COMBAT_XP_GAIN,
+        ['xp'] = DisplayRest,
     }
 }
+
 addon.RegisterModule(moduleInfo)
