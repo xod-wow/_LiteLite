@@ -7,7 +7,7 @@ local TabButtons = { }
 
 local function Update()
     local p1, p2, _, fishing, cooking = GetProfessions()
-    for i, index in ipairs({ p1, p2, fishing, cooking }) do
+    for i, index in ipairs({ p2, p1, fishing, cooking }) do
         local _, icon, _, _, _, _, skillLine = GetProfessionInfo(index)
         TabButtons[i]:SetNormalTexture(icon)
         TabButtons[i]:Show()
@@ -23,8 +23,10 @@ local function CreateTabButtons()
         if i == 1 then
             b:ClearAllPoints()
             b:SetPoint("BOTTOMRIGHT", ProfessionsFrame, "TOPRIGHT", -48, 2)
+        elseif i == 3 then
+            b:SetPoint("RIGHT", TabButtons[i-1], "LEFT", -16, 0)
         else
-            b:SetPoint("RIGHT", TabButtons[i-1], "LEFT", -2, 0)
+            b:SetPoint("RIGHT", TabButtons[i-1], "LEFT", -4, 0)
         end
     end
     ProfessionsFrame:HookScript('OnShow', Update)
