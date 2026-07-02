@@ -4,6 +4,10 @@
 
 local _, addon = ...
 
+local MAX_ACCOUNT_MACROS = MAX_ACCOUNT_MACROS or Constants.MacroConsts.MAX_ACCOUNT_MACROS
+local MAX_CHARACTER_MACROS = MAX_CHARACTER_MACROS or Constants.MacroConsts.MAX_CHARACTER_MACROS
+local MAX_TOTAL_MACROS = MAX_ACCOUNT_MACROS + MAX_CHARACTER_MACROS
+
 local HearthstoneToyButton = CreateFrame('Button', '_LLHS', nil, 'SecureActionButtonTemplate')
 HearthstoneToyButton:RegisterForClicks('AnyDown', 'AnyUp')
 
@@ -26,7 +30,7 @@ function HearthstoneToyButton:FindMacroIndex()
     if index and IsMyMacro(index) then
         return index
     else
-        for i = 1, MAX_ACCOUNT_MACROS+MAX_CHARACTER_MACROS do
+        for i = 1, MAX_TOTAL_MACROS do
             if IsMyMacro(i) then
                 return i
             end
