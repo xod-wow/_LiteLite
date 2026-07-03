@@ -97,7 +97,7 @@ function Updater:FullUpdate()
 end
 
 function Updater:NotifyMark()
-    if self.interruptSpell and not IsInRaid() and IsInGroup(LE_PARTY_CATEGORY_HOME) then
+    if self.spellName and not IsInRaid() and IsInGroup(LE_PARTY_CATEGORY_HOME) then
         local msg = string.format('Interrupting %s', self.markText)
         SendChatMessage(msg, "PARTY")
     end
