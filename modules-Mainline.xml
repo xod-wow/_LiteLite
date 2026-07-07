@@ -12,6 +12,7 @@
     <Script file="modules\CVarSettings.lua" />
     <Script file="modules\Delves.lua" />
     <Script file="modules\DragonRidingBar.lua" />
+    <Script file="modules\DungeonCarryDetect.lua" />
     <Script file="modules\DynamicCDMBars.lua" />
     <Script file="modules\EquipsetIcons.lua" />
     <Script file="modules\FactionStanding.lua" />
