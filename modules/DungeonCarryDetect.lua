@@ -5,6 +5,7 @@ local MAX_PARTY_MEMBERS, MAX_RAID_MEMBERS = MAX_PARTY_MEMBERS, MAX_RAID_MEMBERS
 local UnitItemLevelByGUID = {}
 local PendingInspect = {}
 local LastInspectTime = 0
+local ticker
 
 local function IterateGroupMembers()
     local i = 0
@@ -48,13 +49,14 @@ local function INSPECT_READY(_owner, guid)
     LastInspectTime = 0
 end
 
-local function Tick(timerCB)
+local function Tick()
     -- addon.printf('Tick %d', #PendingInspect)
 
     if InCombatLockdown() or UnitIsDead('player') then
         -- addon.printf('Cancelling due to combat or dead')
         PendingInspect = {}
-        timerCB:Cancel()
+        ticker:Cancel()
+        ticker = nil
         return
     end
 
@@ -69,7 +71,7 @@ local function Tick(timerCB)
 
     while PendingInspect[1] do
         unitToken = GroupTokenFromGUID(PendingInspect[1])
-        -- addon.printf('Looping %s=%s', PendingInspect[1], tostring(unitToken))
+        -- addon.printf('Clean pending %s=%s', PendingInspect[1], tostring(unitToken))
         if unitToken then
             break
         else
@@ -79,7 +81,8 @@ local function Tick(timerCB)
 
     if not PendingInspect[1] then
         -- addon.printf('Cancelling due to nothing left to do')
-        timerCB:Cancel()
+        ticker:Cancel()
+        ticker = nil
         return
     end
 
@@ -104,11 +107,13 @@ local function ScanParty()
     PendingInspect = {}
     for unitToken in IterateGroupMembers() do
         local guid = UnitGUID(unitToken)
-        if guid then
+        if guid and not UnitItemLevelByGUID[gid] then
             table.insert(PendingInspect, UnitGUID(unitToken))
         end
     end
-    C_Timer.NewTicker(0.1, Tick)
+    if next(PendingInspect) then
+        ticker = ticker or C_Timer.NewTicker(0.1, Tick)
+    end
 end
 
 local function PrintParty()
