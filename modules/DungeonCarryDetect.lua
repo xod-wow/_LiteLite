@@ -7,33 +7,11 @@ local PendingInspect = {}
 local LastInspectTime = 0
 local ticker
 
-local function IterateGroupMembers()
-    local i = 0
-    local n, prefix
-    if IsInRaid() then
-        prefix, n = 'raid', MAX_RAID_MEMBERS
-    else
-        prefix, n = 'party', MAX_PARTY_MEMBERS
-    end
-    return function ()
-        while true do
-            i = i + 1
-            if i > n then
-                return nil
-            end
-            local unitToken = prefix..i
-            if UnitExists(unitToken) then
-                return unitToken
-            end
-        end
-    end
-end
-
 -- UnitTokenFromGUID doesn't work in instances?
 
 local function GroupTokenFromGUID(guid)
     -- No need for UnitExists, UnitGUID will just be nil
-    for unitToken in IterateGroupMembers() do
+    for unitToken in addon.IterateGroupMembers() do
         if UnitGUID(unitToken) == guid then
             return unitToken
         end
@@ -41,46 +19,52 @@ local function GroupTokenFromGUID(guid)
 end
 
 local function INSPECT_READY(_owner, guid)
+    if InCombatLockdown() or UnitIsDead('player') then
+        return
+    end
     local unitToken = GroupTokenFromGUID(guid)
-    -- addon.printf('Event %s %s', guid, unitToken)
     if unitToken then
+        addon.debugf('Event %s %s', guid, unitToken)
         UnitItemLevelByGUID[guid] = C_PaperDollInfo.GetInspectItemLevel(unitToken)
     end
     LastInspectTime = 0
 end
 
-local function Tick()
-    -- addon.printf('Tick %d', #PendingInspect)
+local function NotAlreadyInspected(guid)
+    return UnitItemLevelByGUID[guid] == nil
+end
 
+local function Tick()
     if InCombatLockdown() or UnitIsDead('player') then
-        -- addon.printf('Cancelling due to combat or dead')
+        addon.debugf('Cancelling due to combat or dead')
         PendingInspect = {}
         ticker:Cancel()
         ticker = nil
         return
     end
 
-    while PendingInspect[1] and UnitItemLevelByGUID[PendingInspect[1]] do
-        local guid = table.remove(PendingInspect, 1)
-        local ilevel = UnitItemLevelByGUID[guid]
-        local name = UnitNameFromGUID(guid)
-        addon.printf("%s ilevel %s", name, ilevel)
-    end
+    -- addon.debugf('Tick A %d %s', #PendingInspect, tostring(PendingInspect[1]))
+
+    PendingInspect = tFilter(PendingInspect, NotAlreadyInspected, true)
+
+    -- addon.debugf('Tick B %d %s', #PendingInspect, tostring(PendingInspect[1]))
 
     local unitToken
 
     while PendingInspect[1] do
         unitToken = GroupTokenFromGUID(PendingInspect[1])
-        -- addon.printf('Clean pending %s=%s', PendingInspect[1], tostring(unitToken))
         if unitToken then
             break
         else
+            -- addon.debugf('Clean pending %s', PendingInspect[1])
             table.remove(PendingInspect, 1)
         end
     end
 
+    -- addon.debugf('Tick C %d %s', #PendingInspect, tostring(PendingInspect[1]))
+
     if not PendingInspect[1] then
-        -- addon.printf('Cancelling due to nothing left to do')
+        addon.debugf('Cancelling due to nothing left to do')
         ticker:Cancel()
         ticker = nil
         return
@@ -94,21 +78,25 @@ local function Tick()
     -- will be lost.
     local sinceLastInspect = GetTime() - LastInspectTime
     if sinceLastInspect > 2 then
-        -- addon.printf('Scheduling %s %d', unitToken, sinceLastInspect)
+        addon.debugf('Scheduling %s %d', unitToken, sinceLastInspect)
         LastInspectTime = GetTime()
         NotifyInspect(unitToken)
     end
 end
 
 local function ScanParty()
+    if InCombatLockdown() then
+        return
+    end
+
     local playerGUID = GetPlayerGuid()
     local _, playerItemLevel = GetAverageItemLevel()
-    UnitItemLevelByGUID[playerGUID] = playerItemLevel
+    UnitItemLevelByGUID[playerGUID] = math.floor(playerItemLevel+0.5)
     PendingInspect = {}
-    for unitToken in IterateGroupMembers() do
+    for unitToken in addon.IterateGroupMembers() do
         local guid = UnitGUID(unitToken)
-        if guid and not UnitItemLevelByGUID[gid] then
-            table.insert(PendingInspect, UnitGUID(unitToken))
+        if guid and not UnitItemLevelByGUID[guid] then
+            table.insert(PendingInspect, guid)
         end
     end
     if next(PendingInspect) then
@@ -116,14 +104,59 @@ local function ScanParty()
     end
 end
 
-local function PrintParty()
-    for unitToken in IterateGroupMembers() do
+local function GUIDILevelSort(a, b)
+    return UnitItemLevelByGUID[a] > UnitItemLevelByGUID[b]
+end
+
+local function PrintLow()
+    local guidList = {}
+    local total = 0
+
+    for unitToken in addon.IterateGroupMembers() do
         local guid = UnitGUID(unitToken)
         if guid and UnitItemLevelByGUID[guid] then
-            local ilevel = UnitItemLevelByGUID[guid]
+            total = total + UnitItemLevelByGUID[guid]
+            table.insert(guidList, guid)
+        end
+    end
+
+    if #guidList == 0 then return end
+
+    local mean = total / #guidList
+
+    table.sort(guidList, GUIDILevelSort)
+
+    for _, guid in ipairs(guidList) do
+        local ilevel = UnitItemLevelByGUID[guid]
+        if ilevel < mean - 5 then
             local name = UnitNameFromGUID(guid)
             addon.printf("%s ilevel %s", name, ilevel)
         end
+    end
+end
+
+local function PrintAll()
+    local guidList = {}
+
+    for unitToken in addon.IterateGroupMembers() do
+        local guid = UnitGUID(unitToken)
+        if guid and UnitItemLevelByGUID[guid] then
+            table.insert(guidList, guid)
+        end
+    end
+
+    table.sort(guidList, GUIDILevelSort)
+
+    for _, guid in ipairs(guidList) do
+        local ilevel = UnitItemLevelByGUID[guid]
+        local name = UnitNameFromGUID(guid)
+        addon.printf("%s ilevel %s", name, ilevel)
+    end
+end
+
+local function Dump()
+    for guid, ilevel in pairs(UnitItemLevelByGUID) do
+        addon.printf("%s = %s", guid, ilevel)
     end
 end
 
@@ -133,14 +166,19 @@ local function Initialize()
     EventRegistry:RegisterFrameEventAndCallback("GROUP_JOINED", ScanParty)
     EventRegistry:RegisterFrameEventAndCallback("GROUP_LEFT", ScanParty)
     EventRegistry:RegisterFrameEventAndCallback("GROUP_ROSTER_UPDATE", ScanParty)
-    EventRegistry:RegisterFrameEventAndCallback("READY_CHECK", PrintParty)
+    EventRegistry:RegisterFrameEventAndCallback("READY_CHECK", PrintLow)
+    if IsInGroup() then
+        ScanParty()
+    end
 end
 
 local moduleInfo = {
     Initialize = Initialize,
     SlashCommands = {
-        ["party-scan"] = ScanParty,
-        ["party-ilevel"] = PrintParty,
+        ["i-scan"] = ScanParty,
+        ["i-low"] = PrintLow,
+        ["i-print"] = PrintAll,
+        ["i-dump"] = Dump,
     }
 }
 

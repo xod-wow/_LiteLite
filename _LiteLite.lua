@@ -65,6 +65,10 @@ function addon.printf(fmt, ...)
     SELECTED_CHAT_FRAME:AddMessage(addon.format(fmt, ...))
 end
 
+function addon.debugf(fmt, ...)
+    DEFAULT_CHAT_FRAME:AddMessage(addon.format(fmt, ...))
+end
+
 function addon.formatc(fmt, color, ...)
     local msg = string.format(fmt, ...)
     return printTag .. color:WrapTextInColorCode(msg)
@@ -128,6 +132,47 @@ function addon.FindChildZoneMaps(expansion)
     end
     table.sort(wanted)
     return wanted
+end
+
+local PartyTokenList = { 'player', 'party1', 'party2', 'party3', 'party4' }
+
+local function IterateGroupMembersParty()
+    local i = 0
+    return function ()
+        while true do
+            i = i + 1
+            local unitToken = PartyTokenList[i]
+            if not unitToken then
+                return nil
+            elseif UnitExists(unitToken) then
+                return unitToken
+            end
+        end
+    end
+end
+
+local function IterateGroupMembersRaid()
+    local i = 0
+    return function ()
+        while true do
+            i = i + 1
+            if i > MAX_RAID_MEMBERS then
+                return nil
+            end
+            local unitToken = 'raid'..i
+            if UnitExists(unitToken) then
+                return unitToken
+            end
+        end
+    end
+end
+
+function addon.IterateGroupMembers()
+    if IsInRaid() then
+        return IterateGroupMembersRaid()
+    else
+        return IterateGroupMembersParty()
+    end
 end
 
 --[[------------------------------------------------------------------------]]--

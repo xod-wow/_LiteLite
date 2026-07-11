@@ -269,6 +269,7 @@ read_globals =  {
     'tAppendAll',
     'tContains',
     'tDeleteItem',
+    'tFilter',
     'tIndexOf',
     'ToggleCharacter',
     'ToggleFrame',
