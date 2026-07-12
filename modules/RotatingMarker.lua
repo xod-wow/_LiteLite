@@ -18,7 +18,7 @@ local function Initialize()
             if button == "0" then
                 self:SetAttribute("macrotext", "/cwm all")
             elseif tonumber(button) then
-                self:SetAttribute("macrotext", "/wm [@cursor] "..button)
+                self:SetAttribute("macrotext", "/wm "..button)
             elseif IsShiftKeyDown() then
                 self:SetAttribute("macrotext", "/ping [@mouseover,help] warning; [@mouseover] attack")
             elseif IsControlKeyDown() then
