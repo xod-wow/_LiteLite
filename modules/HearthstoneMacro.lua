@@ -55,7 +55,7 @@ function HearthstoneToyButton:Advance()
 
     for i = 1, #self.toys do
         local offset = ( (self.n or 0) + i - 1) % #self.toys + 1
-        if PlayerHasToy(self.toys[offset]) then
+        if self:IsUsable(self.toys[offset]) then
             self.n = offset
             break
         end
@@ -69,7 +69,7 @@ function HearthstoneToyButton:Advance()
     item:ContinueOnItemLoad(
         function ()
             self:SetAttribute('toy', self.toys[self.n])
-            self:SetScript('PreClick', function (self) addon.printf(item:GetItemName()) end)
+            self:SetScript('PreClick', function () addon.printf(item:GetItemName()) end)
             -- Editing a macro while it's running is bad juju
             local macroIndex = self:FindMacroIndex()
             if macroIndex then
@@ -80,10 +80,16 @@ end
 
 local HearthstoneItemOverride = {
     [54452] = true,         -- Ethereal Portal
+    [64488] = true,         -- The Innkeeper's Daughter
+    [93672] = true,         -- Dark Portal
+    [142542] = true,        -- Tome of Town Portal
+    [183716] = true,        -- Venthyr Sinstone
     [190237] = true,        -- Broker Translocation Matrix
     [206195] = true,        -- Path of the Naaru
     [210455] = true,        -- Draenic Hologem
+    [212337] = true,        -- Stone of the Hearth
     [235016] = true,        -- Redeployment Module
+    [263489] = true,        -- Naaru's Enfold
     [264367] = true,        -- Mycomancer's Hearthspore
 
     [110560] = false,       -- Garrison Hearthstone
@@ -97,17 +103,24 @@ local HearthstoneItemOverride = {
 function HearthstoneToyButton:IsHearthstone(item)
     local name = item:GetItemName()
     local id = item:GetItemID()
-
-    if id == 210455 then
-        -- Draenic Hologem requires Draenei or Lightforged Draenei
-        local _, _, race = UnitRace('player')
-        return (race == 11 or race == 30)
-    elseif HearthstoneItemOverride[id] ~= nil then
+    if HearthstoneItemOverride[id] ~= nil then
         return HearthstoneItemOverride[id]
     elseif name:find('Hearthstone') then
         return true
     else
         return false
+    end
+end
+
+function HearthstoneToyButton:IsUsable(id)
+    if not PlayerHasToy(id) then
+        return false
+    elseif id == 210455 then
+        -- Draenic Hologem requires Draenei or Lightforged Draenei
+        local _, _, race = UnitRace('player')
+        return (race == 11 or race == 30)
+    else
+        return true
     end
 end
 
@@ -147,6 +160,7 @@ function HearthstoneToyButton:ScanToys()
     C_ToyBox.SetAllSourceTypeFilters(true)
     C_ToyBox.SetAllExpansionTypeFilters(true)
     C_ToyBox.SetUncollectedShown(true)
+    C_ToyBox.SetUnusableShown(true)
     C_ToyBox.SetFilterString('')
     local numFilteredToys = C_ToyBox.GetNumFilteredToys()
 
@@ -166,6 +180,8 @@ function HearthstoneToyButton:ScanToys()
             table.insert(itemList, item)
         end
     end
+
+    C_ToyBoxInfo.SetDefaultFilters()
 
     -- addon.printf('initial item count: %d', #itemList)
 
