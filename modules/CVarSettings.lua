@@ -4,7 +4,6 @@ local _, addon = ...
 
 local function ApplySettings()
     SetCVar("cooldownViewerEnabled", true)
-    SetCVar("damageMeterEnabled", true)
 
     SetCVar("autoLootDefault", true)
     SetCVar("AutoPushSpellToActionBar", 0)
