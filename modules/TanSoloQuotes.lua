@@ -14,7 +14,7 @@ local StartQuotes = {
 }
 
 local function StartQuote()
-    if UnitName('player') == "Tansolo" and math.random() <= 0.2 then
+    if not C_ChatInfo.InChatMessagingLockdown() and math.random() <= 0.2 then
         local n = math.random(#StartQuotes)
         SendChatMessage(StartQuotes[n], 'SAY')
     end
@@ -32,11 +32,13 @@ local EndQuotes = {
 }
 
 local function EndQuote()
-    if UnitName('player') == "Tansolo" and math.random() <= 0.2 then
+    if not C_ChatInfo.InChatMessagingLockdown() and math.random() <= 0.2 then
         local n = math.random(#EndQuotes)
         SendChatMessage(EndQuotes[n], 'SAY')
     end
 end
 
-EventRegistry:RegisterFrameEventAndCallback("ENCOUNTER_START", StartQuote)
-EventRegistry:RegisterFrameEventAndCallback("ENCOUNTER_END", EndQuote)
+if UnitName('player') == "Tansolo" then
+    EventRegistry:RegisterFrameEventAndCallback("ENCOUNTER_START", StartQuote)
+    EventRegistry:RegisterFrameEventAndCallback("ENCOUNTER_END", EndQuote)
+end
