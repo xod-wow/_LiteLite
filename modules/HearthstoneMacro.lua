@@ -78,6 +78,8 @@ function HearthstoneToyButton:Advance()
         end)
 end
 
+-- https://www.wowhead.com/items?filter=216:107;1:0;0:Hearthstone+Location#0-1+20
+
 local HearthstoneItemOverride = {
     [54452] = true,         -- Ethereal Portal
     [64488] = true,         -- The Innkeeper's Daughter
@@ -164,7 +166,7 @@ function HearthstoneToyButton:ScanToys()
     C_ToyBox.SetFilterString('')
     local numFilteredToys = C_ToyBox.GetNumFilteredToys()
 
-    -- addon.printf('HearthstoneToyButton:Update: #%d', numFilteredToys)
+    -- addon.printf('HearthstoneToyButton:ScanToys: #%d', numFilteredToys)
 
     -- I think C_ToyBox.GetToyFromIndex relies on a client cache, which
     -- could just be the item cache. Calling C_ToyBox.GetToyFromIndex seems
