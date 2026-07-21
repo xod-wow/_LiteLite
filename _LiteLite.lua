@@ -37,9 +37,6 @@ local function Initialize()
     SlashCmdList['_LiteLite'] = SlashCommand
     _G.SLASH__LiteLite1 = "/litelite"
     _G.SLASH__LiteLite2 = "/ll"
-
-    SlashCmdList['CDM'] = function () CooldownViewerSettings:Show() end
-    _G.SLASH_CDM1 = "/cdm"
 end
 
 EventUtil.ContinueOnPlayerLogin(Initialize)
