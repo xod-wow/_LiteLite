@@ -43,7 +43,10 @@ local function UpdateQuestRewards(tableWidget, rowData, info)
                 local itemName, itemTexture, numItems, quality, _, itemID, itemLevel = GetQuestLogRewardInfo(i, info.questID)
                 ScanTooltip:SetQuestLogItem("reward", i, info.questID, true)
                 local _, link = ScanTooltip:GetItem()
-                rowData[4] = format("%s x%d", link, numItems)
+                rowData[4] = link:gsub('%]', format(" (%d)]", itemLevel))
+                if numItems > 1 then
+                    rowData[4] = rowData[4] .. format("x%d", numItems)
+                end
             end
             tableWidget:MarkDirty()
         end)
