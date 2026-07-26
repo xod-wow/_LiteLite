@@ -2,6 +2,57 @@
 
 local _, addon = ...
 
+local MAX_LEVEL = GetMaxLevelForExpansionLevel(LE_EXPANSION_LEVEL_CURRENT)
+
+local playerFullName
+
+local function SaveRest()
+    local level = UnitLevel('player')
+    if level < 20 or level == MAX_LEVEL then
+        addon.db.characterRest[playerFullName] = nil
+    else
+        addon.db.characterRest[playerFullName] = {
+            class = select(2, UnitClass('player')),
+            amount = GetXPExhaustion() or 0,
+            isResting = IsResting(),
+            level = UnitLevel('player'),
+            levelXP = UnitXPMax('player'),
+            multiplier = IsPlayerSpell(107074) and 2 or 1,
+            time = time(),
+        }
+    end
+end
+
+local function CurrentRest(rest)
+    local n = rest.amount + (time() - rest.time) * rest.multiplier * rest.levelXP / (3600*16)
+    return math.min(n, rest.levelXP * 1.5 * rest.multiplier)
+end
+
+local function ShowRest()
+    SaveRest()
+    local rows = {}
+    for name, rest in pairs(addon.db.characterRest) do
+        local color = C_ClassColor.GetClassColor(rest.class or "") or WHITE_FONT_COLOR
+        local r = CurrentRest(rest)
+        table.insert(rows,
+            {
+                color = color,
+                name,
+                rest.level or "",
+                math.floor(r),
+                string.format("%.1f", r == 0 and 0 or 100 * r/rest.levelXP),
+                string.format("%.1f", 150 * rest.multiplier),
+            })
+    end
+    _LiteLiteTable:Reset()
+    _LiteLiteTable:SetAutoWidth(true)
+    _LiteLiteTable:Setup("Character Rest", { "Name", "Level", "Rest", "Rest%", "RestMax" })
+    _LiteLiteTable:SetRows(rows)
+    _LiteLiteTable:SetEnableSort(true)
+    _LiteLiteTable:SetSortColumn(-4)
+    _LiteLiteTable:Show()
+end
+
 -- GetMessageTypeColor doesn't work on init, even after PLAYER_LOGIN
 
 local function DisplayRest()
@@ -19,7 +70,13 @@ local function DisplayRest()
 end
 
 local function Initialize()
+    playerFullName = string.join('-', UnitFullName('player'))
+    addon.db.characterRest = addon.db.characterRest or {}
     EventRegistry:RegisterFrameEventAndCallback('CHAT_MSG_COMBAT_XP_GAIN', DisplayRest)
+    -- For some reason GetXPExhuastion() doesn't work at either PLAYER_LOGOUT or
+    -- PLAYER_LEAVING_WORLD
+    EventRegistry:RegisterFrameEventAndCallback('PLAYER_LOGIN',  SaveRest)
+    EventRegistry:RegisterFrameEventAndCallback('UPDATE_EXHAUSTION',  SaveRest)
 end
 
 
@@ -27,6 +84,7 @@ local moduleInfo = {
     Initialize = Initialize,
     SlashCommands = {
         ['xp'] = DisplayRest,
+        ['xpp'] = ShowRest,
     }
 }
 
