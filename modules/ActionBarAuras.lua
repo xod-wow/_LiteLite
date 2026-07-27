@@ -1,5 +1,7 @@
 local _, addon = ...
 
+if not C_AuraContainerUtil then return end
+
 --[[--------------------------------------------------------------------------]]--
 
 -- These are per-spec but there's no point clearing them out I don't think.
@@ -117,7 +119,7 @@ local function GetActionFilters(actionID)
         filters.includeSpellIDs[baseSpellID] = true
     elseif actionType == "item" then
         local _, spellID = C_Item.GetItemSpell(id)
-        filters.includeSpellIDs[spellID] = true
+        filters.includeSpellIDs[id] = true
     elseif actionType == "macro" and actionSubType == "item" then
         local actionName = GetActionText(actionID)
         local _, link = GetMacroItem(actionName)
