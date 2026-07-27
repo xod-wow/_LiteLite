@@ -75,6 +75,10 @@ function addon.printfc(fmt, color, ...)
     SELECTED_CHAT_FRAME:AddMessage(addon.formatc(fmt, color, ...))
 end
 
+function addon.printj(t)
+    addon.printf("%s", C_EncodingUtil.SerializeJSON(t))
+end
+
 function addon.FlashScreen(seconds)
     local f = _LiteLiteFullScreenFlash
     f:Show()
