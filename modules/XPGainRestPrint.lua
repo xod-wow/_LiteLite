@@ -24,7 +24,9 @@ local function SaveRest()
 end
 
 local function CurrentRest(rest)
-    local n = rest.amount + (time() - rest.time) * rest.multiplier * rest.levelXP / (3600*16)
+    -- Earn 10% of current level per 16 hours
+    local mult = rest.multiplier * (rest.isResting and 1 or 0.25)
+    local n = rest.amount + (time() - rest.time) * mult * rest.levelXP / (10*3600*16)
     return math.min(n, rest.levelXP * 1.5 * rest.multiplier)
 end
 
