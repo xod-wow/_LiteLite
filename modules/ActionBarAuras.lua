@@ -5,8 +5,11 @@ if not C_AuraContainerUtil then return end
 --[[--------------------------------------------------------------------------]]--
 
 -- These are per-spec but there's no point clearing them out I don't think.
+-- [BarSpellID] = { [AuraSpellID] = true, ... }
 
-local LinkedSpellIDs = {}
+local LinkedSpellIDs = {
+     [100784] = { [202090] = true, }
+}
 
 -- TODO equipped items without spellID?
 local function ScanLinkedSpells()
@@ -34,24 +37,45 @@ local ContainerFilters = {
 
 local AuraContainers = {}
 
+local AuraDurationFormatter = C_StringUtil.CreateSecondsFormatter()
+AuraDurationFormatter:SetDefaultAbbreviation(Enum.SecondsFormatterAbbreviation.OneLetter)
+AuraDurationFormatter:SetMinInterval(Enum.SecondsFormatterInterval.Seconds)
+AuraDurationFormatter:SetDesiredUnitCount(1)
+AuraDurationFormatter:SetMillisecondsThreshold(3)
+AuraDurationFormatter:SetStripIntervalWhitespace(Enum.SecondsFormatterIntervalWhitespace.Strip)
+
+local AuraColorCurve = C_CurveUtil.CreateColorCurve()
+AuraColorCurve:SetType(Enum.LuaCurveType.Cosine)
+AuraColorCurve:AddPoint(0.0, CreateColor(1, 0.5, 0.5))
+AuraColorCurve:AddPoint(3.0, CreateColor(1, 1, 0.5))
+AuraColorCurve:AddPoint(10.0, CreateColor(1, 1, 1))
+
 local function InitializeFrame(f, color)
     -- AuraButton is not managing the border, it's fixed, since we don't need
     -- the color to change depending on auraData.dispelName.
     f.auraBorder = f:CreateTexture(nil, "ARTWORK")
+    f.auraBorder:SetBlendMode("ADD")
     f.auraBorder:SetTexture([[Interface\Addons\_LiteLite\textures\Overlay]])
     f.auraBorder:SetVertexColor(color:GetRGBA())
     f.auraBorder:SetAllPoints(true)
 
     f.durationText = f:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
     f.durationText:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 3, 3)
-    f:SetDurationText(f.durationText)
 
-    -- local formatter = C_StringUtil.CreateSecondsFormatter()
-    -- formatter:SetDefaultAbbreviation(Enum.SecondsFormatterAbbreviation.Truncate)
-    -- formatter:SetMillisecondsThreshold(2)
-    -- local binding = C_DurationUtil.CreateDurationTextBinding()
-    -- binding:SetFormatter(formatter)
-    -- f:SetDurationText(f.durationText, { binding = binding })
+    local durationTextOptions = {
+        textFormatter = AuraDurationFormatter,
+        textColor = {
+            curve = AuraColorCurve,
+            property = Enum.DurationTextBindingProperty.RemainingDuration
+        }
+    }
+    f:SetDurationText(f.durationText, durationTextOptions)
+
+    f.stacksText = f:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+    f.stacksText:SetPoint("TOPLEFT", f, "TOPLEFT", 3, -3)
+    f:SetApplicationCount(f.stacksText)
+
+    f:EnableMouse(false)
 end
 
 -- This creates an insane amount of AuraContainers, two per ActionButton. It
@@ -65,7 +89,8 @@ end
 local function CreateButtonAuraContainers(button)
     local ButtonAuraContainers = { }
     for _, cf in ipairs(ContainerFilters) do
-        local container = CreateFrame('AuraContainer', nil, button, 'CustomAuraContainerTemplate')
+        local name = button:GetName() .. cf.filter
+        local container = CreateFrame('AuraContainer', name, button, 'CustomAuraContainerTemplate')
         container:SetUnit(cf.unit)
         container:SetPoint("TOPLEFT", button, "TOPLEFT")
         container:SetSize(1, 1)
@@ -144,6 +169,7 @@ local function UpdateOverlayFilters()
             local filters = GetActionFilters(b.action, slotName)
             if slotName == 'HARMFUL' then
                 filters.isHarmful = true
+                filters.canApplyAura = true
             elseif slotName == 'HELPFUL' then
                 filters.isHelpful = true
             end
