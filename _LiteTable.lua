@@ -168,32 +168,32 @@ function _LiteTableMixin:Layout()
 end
 
 function _LiteTableMixin:GetSortColumn()
-    return self.sortColumn
+    return self.sortColumns and self.sortColumns[1] or 1
 end
 
 function _LiteTableMixin:SetSortColumn(n)
-    self.sortColumn = n
+    self.sortColumns = self.sortColumns or GetKeysArray(self.columnNames)
+    tDeleteItem(self.sortColumns, n)
+    tDeleteItem(self.sortColumns, -n)
+    table.insert(self.sortColumns, 1, n)
     self:MarkDirty()
 end
 
 function _LiteTableMixin:GetSortComparator()
-    local sortColumnOrder = GetKeysArray(self.columnNames)
-    local col = math.abs(self.sortColumn)
-    tDeleteItem(sortColumnOrder, col)
-    table.insert(sortColumnOrder, 1, col)
     local function colComp(a, b, n)
-        local aVal = tonumber(a[n]) or GetCellDisplayText(a[n])
-        local bVal = tonumber(b[n]) or GetCellDisplayText(b[n])
+        local i = math.abs(n)
+        local aVal = tonumber(a[i]) or GetCellDisplayText(a[i])
+        local bVal = tonumber(b[i]) or GetCellDisplayText(b[i])
         if aVal == bVal then
             return nil
-        elseif self.sortColumn >= 0 then
+        elseif n >= 0 then
             return aVal < bVal
         else
             return aVal > bVal
         end
     end
     return function (a, b)
-        for _, n in ipairs(sortColumnOrder) do
+        for _, n in ipairs(self.sortColumns) do
             local comp = colComp(a, b, n)
             if comp ~= nil then
                 return comp
@@ -206,7 +206,7 @@ end
 function _LiteTableMixin:UpdateCells()
     self:SetTitle(self.title)
     local dataProvider = CreateDataProvider(self.data)
-    if self.enableSort and self.sortColumn then
+    if self.enableSort then
         dataProvider:SetSortComparator(self:GetSortComparator())
     end
     self.ScrollBox:SetDataProvider(dataProvider, ScrollBoxConstants.RetainScrollPosition)
@@ -261,6 +261,7 @@ function _LiteTableMixin:Reset()
     self.autoWidth = nil
     self.enableSort = nil
     self.isDirty = nil
+    self.sortColumns = nil
     self:SetScript('OnUpdate', nil)
     if self.cells then
         self.cells:ReleaseAll()

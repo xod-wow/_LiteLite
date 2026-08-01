@@ -15,7 +15,7 @@ local function SaveRest()
             class = select(2, UnitClass('player')),
             amount = GetXPExhaustion() or 0,
             isResting = IsResting(),
-            level = UnitLevel('player'),
+            level = level,
             levelXP = UnitXPMax('player'),
             multiplier = IsPlayerSpell(107074) and 2 or 1,
             time = time(),
@@ -40,7 +40,7 @@ local function ShowRest()
             {
                 color = color,
                 name,
-                rest.level or "",
+                rest.level or 0,
                 math.floor(r),
                 string.format("%.1f", r == 0 and 0 or 100 * r/rest.levelXP),
                 string.format("%.1f", 150 * rest.multiplier),
