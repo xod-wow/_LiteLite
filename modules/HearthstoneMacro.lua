@@ -70,10 +70,14 @@ function HearthstoneToyButton:Advance()
         function ()
             self:SetAttribute('toy', self.toys[self.n])
             self:SetScript('PreClick', function () addon.printf(item:GetItemName()) end)
-            -- Editing a macro while it's running is bad juju
             local macroIndex = self:FindMacroIndex()
             if macroIndex then
-                C_Timer.After(0, function () self:UpdateMacro(macroIndex, item) end)
+                -- Editing a macro while it's running is bad juju
+                if GetRunningMacro() == macroIndex then
+                    C_Timer.After(0, function () self:UpdateMacro(macroIndex, item) end)
+                else
+                    self:UpdateMacro(macroIndex, item)
+                end
             end
         end)
 end
