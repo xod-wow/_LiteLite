@@ -100,7 +100,9 @@ local function CreateButtonAuraContainers(button)
             sortDirection = AuraContainerSortDirection.Reverse,
             initializeFrame = function (f) InitializeFrame(f, cf.color) end
         }
-        local as = container:AddAuraSlot(cf.filter, cf.filter, options)
+        local auraSlotName = cf.filter
+        local auraSlotFilter = cf.filter .. '|PLAYER'
+        local as = container:AddAuraSlot(auraSlotName, auraSlotFilter, options)
         as:SetPoint("CENTER", button)
         PixelUtil.SetSize(as, button:GetSize())
         as:SetFrameLevel(button.cooldown:GetFrameLevel()+1)
