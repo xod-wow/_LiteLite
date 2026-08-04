@@ -126,6 +126,16 @@ local function EnumerateActionButtons()
     end
 end
 
+local function OnTargetChanged()
+    for _, cf in ipairs(ContainerFilters) do
+        if cf.unit == 'target' then
+            for _, ButtonAuraContainers in pairs(AuraContainers) do
+                ButtonAuraContainers[cf.filter]:UpdateAllAuras()
+            end
+        end
+    end
+end
+
 local function CreateAuraContainers()
     for b in EnumerateActionButtons() do
         CreateButtonAuraContainers(b)
@@ -197,7 +207,11 @@ local ScanLinkedSpellsEvents = {
     ['TRAIT_CONFIG_UPDATED'] = true,
 }
 
-local AllEvents = CreateFromMixins(UpdateFiltersEvents, ScanLinkedSpellsEvents)
+local UpdateAllAurasEvents = {
+    ['PLAYER_TARGET_CHANGED'] = true,
+}
+
+local AllEvents = CreateFromMixins(UpdateFiltersEvents, ScanLinkedSpellsEvents, UpdateAllAurasEvents)
 
 local function OnEvent(_, event)
     -- if InCombatLockdown() then return end
@@ -205,6 +219,8 @@ local function OnEvent(_, event)
         UpdateOverlayFilters()
     elseif ScanLinkedSpellsEvents[event] then
         ScanLinkedSpells()
+    elseif UpdateAllAurasEvents[event] then
+        OnTargetChanged()
     end
 end
 
