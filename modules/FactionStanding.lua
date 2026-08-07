@@ -49,11 +49,44 @@ local function GetFactionNumbersByName(name)
     end
 end
 
+local queue = {}
+local ticker
+
 local function PrintFactionIncrease(factionName, amount)
     local name, cur, max = GetFactionNumbersByName(factionName)
+print(factionName, amount, name, cur, max)
     if name then
         local txt = string.format('%s +%d -> %s: %d/%d', factionName, amount, name, cur, max)
         addon.printf(BLUE_FONT_COLOR:WrapTextInColorCode(txt))
+    end
+end
+
+local function OnTick()
+    local keys = GetKeysArray(queue)
+    table.sort(keys)
+    for _, factionName in ipairs(keys) do
+        local info = queue[factionName]
+        local elapsed = GetTime() - info.time
+        if (info.amount >= 500 and elapsed > 0.5) or elapsed > 5 then
+            PrintFactionIncrease(factionName, info.amount)
+            queue[factionName] = nil
+        end
+    end
+    if next(queue) == nil then
+        ticker:Cancel()
+        ticker = nil
+    end
+end
+
+local function AccumulateFactionIncrease(factionName, amount)
+    if queue[factionName] then
+        queue[factionName].amount = queue[factionName].amount + amount
+        queue[factionName].time = GetTime()
+    else
+        queue[factionName] = { time=GetTime(), amount=amount }
+    end
+    if ticker == nil then
+        ticker = C_Timer.NewTicker(0.1, OnTick)
     end
 end
 
@@ -65,8 +98,8 @@ local function CHAT_MSG_COMBAT_FACTION_CHANGE(_ownerID, msg)
     -- _G.FACTION_STANDING_INCREASED_ACCOUNT_WIDE:gsub('%%.', '(.-)')
     local factionName, amount = msg:match('with (.-) increased by (%d+)')
     amount = tonumber(amount)
-    if factionName and amount and amount >= 50 then
-        C_Timer.After(0.5, function () PrintFactionIncrease(factionName, amount) end)
+    if factionName and amount then
+        AccumulateFactionIncrease(factionName, amount)
     end
 end
 
