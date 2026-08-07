@@ -84,6 +84,12 @@ local function Tick()
     end
 end
 
+local function StartTicker()
+    if next(PendingInspect) then
+        ticker = ticker or C_Timer.NewTicker(0.1, Tick)
+    end
+end
+
 local function ScanParty()
     if InCombatLockdown() then
         return
@@ -99,9 +105,7 @@ local function ScanParty()
             table.insert(PendingInspect, guid)
         end
     end
-    if next(PendingInspect) then
-        ticker = ticker or C_Timer.NewTicker(0.1, Tick)
-    end
+    StartTicker()
 end
 
 local function GUIDILevelSort(a, b)
@@ -167,6 +171,7 @@ local function Initialize()
     EventRegistry:RegisterFrameEventAndCallback("GROUP_LEFT", ScanParty)
     EventRegistry:RegisterFrameEventAndCallback("GROUP_ROSTER_UPDATE", ScanParty)
     EventRegistry:RegisterFrameEventAndCallback("READY_CHECK", PrintLow)
+    EventRegistry:RegisterFrameEventAndCallback("PLAYER_REGEN_ENABLED", StartTicker)
     if IsInGroup() then
         ScanParty()
     end
