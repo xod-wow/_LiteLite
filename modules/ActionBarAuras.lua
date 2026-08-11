@@ -119,6 +119,28 @@ local function EnumerateActionButtons()
             table.insert(buttons, btn)
         end
     end
+
+    -- Dominos
+    if Dominos then
+        for btn in pairs(Dominos.ActionButtons.buttons) do
+            table.insert(buttons, btn)
+        end
+    end
+
+    -- LibActionButton variants
+    -- The %- here is a literal "-"
+    for name, lib in LibStub:IterateLibraries() do
+        if name:match('^LibActionButton%-1.0') then
+            for btn in pairs(lib:GetAllButtons()) do
+                local actionType, _action = btn:GetAction()
+                if actionType == "action" then
+                    table.insert(buttons, btn)
+                end
+            end
+        end
+    end
+
+
     local i = 0
     return function ()
         i = i + 1

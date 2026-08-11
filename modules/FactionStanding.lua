@@ -54,7 +54,6 @@ local ticker
 
 local function PrintFactionIncrease(factionName, amount)
     local name, cur, max = GetFactionNumbersByName(factionName)
-print(factionName, amount, name, cur, max)
     if name then
         local txt = string.format('%s +%d -> %s: %d/%d', factionName, amount, name, cur, max)
         addon.printf(BLUE_FONT_COLOR:WrapTextInColorCode(txt))
