@@ -79,12 +79,15 @@ local function InitializeFrame(f, color)
 end
 
 -- This creates an insane amount of AuraContainers, two per ActionButton. It
--- would be much more efficient to create to only two, one to handle all
--- the 'target'+'HARMFUL' and one to handle all the 'player'+'HELPFUL'. Problem
--- is that you can't reparent the AuraButtons, so they don't get their scale.
+-- would be much more efficient to create two, one to per unit (player/target).
 --
--- The advantage of this approach though is that hidden action buttons have their
--- AuraContainers hidden so they don't do anything.
+-- Problem is the scaling/size.
+--
+-- You can't reparent the AuraSlots, so they can't individually scale
+-- themselves. You can SetAllPoints on the button which works but it doesn't
+-- scale the child elements.
+--
+-- In 12.1.5 we are promised SetUnit per slot which halves the number.
 
 local function CreateButtonAuraContainers(button)
     local ButtonAuraContainers = { }
