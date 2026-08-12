@@ -8,7 +8,8 @@ if not C_AuraContainerUtil then return end
 -- [BarSpellID] = { [AuraSpellID] = true, ... }
 
 local LinkedSpellIDs = {
-     [100784] = { [202090] = true, }
+    [100784]    = { [202090] = true },
+    [30455]     = { [1221389] = true },
 }
 
 -- TODO equipped items without spellID?
@@ -206,7 +207,7 @@ local function UpdateOverlayFilters()
             local filters = GetActionFilters(b.action, slotName)
             if slotName == 'HARMFUL' then
                 filters.isHarmful = true
-                filters.canApplyAura = true
+                -- filters.canApplyAura = true
             elseif slotName == 'HELPFUL' then
                 filters.isHelpful = true
             end
