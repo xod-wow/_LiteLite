@@ -101,7 +101,7 @@ local function ScanParty()
     PendingInspect = {}
     for unitToken in addon.IterateGroupMembers() do
         local guid = UnitGUID(unitToken)
-        if guid and not UnitItemLevelByGUID[guid] then
+        if UnitIsHumanPlayer(unitToken) and guid and not UnitItemLevelByGUID[guid] then
             table.insert(PendingInspect, guid)
         end
     end
