@@ -43,6 +43,7 @@ function Scanner:ObjectWipe()
 end
 
 function Scanner:ObjectAdd(text)
+    if not text then return end
     addon.db.objectScan = addon.db.objectScan or {}
 
     local opt, name = text:match('^(-.+)%s+(.*)')
