@@ -91,6 +91,7 @@ _LiteTableMixin = {}
 function _LiteTableMixin:Setup(title, columnNames)
     self.title = title
     self.columnNames = columnNames
+    self.sortColumns = GetKeysArray(columnNames)
     self.data = {}
 end
 
