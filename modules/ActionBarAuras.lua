@@ -18,10 +18,11 @@ local function ScanLinkedSpells()
         for _, cooldownID in ipairs(C_CooldownViewer.GetCooldownViewerCategorySet(c, true)) do
             local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
             if info.spellID then
-                LinkedSpellIDs[info.spellID] = LinkedSpellIDs[info.spellID] or {}
-                LinkedSpellIDs[info.spellID][info.spellID] = true
+                local name = C_Spell.GetSpellName(info.spellID)
+                LinkedSpellIDs[name] = LinkedSpellIDs[info.spellID] or {}
+                LinkedSpellIDs[name][info.spellID] = true
                 for _, spellID in ipairs(info.linkedSpellIDs) do
-                    LinkedSpellIDs[info.spellID][spellID] = true
+                    LinkedSpellIDs[name][spellID] = true
                 end
             end
         end
@@ -152,7 +153,7 @@ local function EnumerateActionButtons()
     end
 end
 
-local function OnTargetChanged()
+local function UpdateAllAuras()
     for _, cf in ipairs(ContainerFilters) do
         if cf.unit == 'target' then
             for _, ButtonAuraContainers in pairs(AuraContainers) do
@@ -194,8 +195,9 @@ local function GetActionFilters(actionID)
         end
     end
     for spellID in pairs(filters.includeSpellIDs) do
-        if LinkedSpellIDs[spellID] then
-            Mixin(filters.includeSpellIDs, LinkedSpellIDs[spellID])
+        local name = C_Spell.GetSpellName(spellID)
+        if LinkedSpellIDs[name] then
+            Mixin(filters.includeSpellIDs, LinkedSpellIDs[name])
         end
     end
     return filters
@@ -206,9 +208,16 @@ local function UpdateOverlayFilters()
         for slotName, container in pairs(AuraContainers[b:GetName()]) do
             local filters = GetActionFilters(b.action, slotName)
             if slotName == 'HARMFUL' then
+                if UnitCanAssist('player', 'target') then
+                    -- Hacky disable when spell filters are prohibited
+                    filters.maxDuration = 0
+                end
                 filters.isHarmful = true
                 -- filters.canApplyAura = true
             elseif slotName == 'HELPFUL' then
+                if not UnitCanAssist('player', 'player') then
+                    filters.maxDuration = 0
+                end
                 filters.isHelpful = true
             end
             container:SetAuraSlotCandidateFilters(slotName, filters)
@@ -226,27 +235,42 @@ local UpdateFiltersEvents = {
     ['UPDATE_VEHICLE_ACTIONBAR'] = true,
 }
 
+-- From CooldownViewerSettingsDataProvider.lua
 local ScanLinkedSpellsEvents = {
     ['ACTIVE_COMBAT_CONFIG_CHANGED'] = true,
     ['ACTIVE_PLAYER_SPECIALIZATION_CHANGED'] = true,
     ['ACTIVE_TALENT_GROUP_CHANGED'] = true,
+    ['COOLDOWN_VIEWER_TRABLE_HOTFIXED'] = true,
+    ['PLAYER_EQUIMENT_CHANGED'] = true,
+    ['PLAYER_PVP_TALENT_UPDATE'] = true,
+    ['SPELLS_CHANGED'] = true,
     ['TRAIT_CONFIG_UPDATED'] = true,
 }
 
 local UpdateAllAurasEvents = {
     ['PLAYER_TARGET_CHANGED'] = true,
+    ['UNIT_ENTERED_VEHICLE'] = true,
+    ['UNIT_EXITED_VEHICLE'] = true,
 }
 
 local AllEvents = CreateFromMixins(UpdateFiltersEvents, ScanLinkedSpellsEvents, UpdateAllAurasEvents)
 
-local function OnEvent(_, event)
-    -- if InCombatLockdown() then return end
+local function OnEvent(_, event, ...)
     if UpdateFiltersEvents[event] then
         UpdateOverlayFilters()
     elseif ScanLinkedSpellsEvents[event] then
         ScanLinkedSpells()
-    elseif UpdateAllAurasEvents[event] then
-        OnTargetChanged()
+        UpdateOverlayFilters()
+    elseif event == 'UNIT_ENTERED_VEHICLE' or event == 'UNIT_EXITED_VEHICLE' then
+        -- Necessary to do the disabling so we don't get all auras showing
+        -- when UnitCanAssist('player', 'player') is false. If Blizzard add
+        -- something to show nothing if filters can't be applied this can go.
+        local unit = ...
+        if unit == 'player' then
+            UpdateAllAuras()
+        end
+    elseif event == 'PLAYER_TARGET_CHANGED' then
+        UpdateAllAuras()
     end
 end
 
