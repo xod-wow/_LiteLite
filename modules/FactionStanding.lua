@@ -50,6 +50,7 @@ local function GetFactionNumbersByName(name)
 end
 
 local queue = {}
+local lastPrint = 0
 local ticker
 
 local function PrintFactionIncrease(factionName, amount)
@@ -61,12 +62,15 @@ local function PrintFactionIncrease(factionName, amount)
 end
 
 local function OnTick()
+    local now = GetTime()
     local keys = GetKeysArray(queue)
     table.sort(keys)
     for _, factionName in ipairs(keys) do
         local info = queue[factionName]
-        local elapsed = GetTime() - info.time
-        if (info.amount >= 500 and elapsed > 0.5) or elapsed > 5 then
+        local sinceLastPrint = now - lastPrint
+        local elapsed = now - info.time
+        if sinceLastPrint > 5 or (info.amount >= 500 and elapsed > 0.5) or elapsed > 5 then
+            lastPrint = GetTime()
             PrintFactionIncrease(factionName, info.amount)
             queue[factionName] = nil
         end
