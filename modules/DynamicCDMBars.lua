@@ -10,8 +10,39 @@
 
 local _, addon = ...
 
+local SpellIDColors = {
+    DEFAULT     = { 1.00, 0.50, 0.25 },
+    [132578]    = { 0.75, 0.75, 0.75 },     -- Invoke Niuzao, the Black Ox
+    [184361]    = { 1.00, 0.25, 0.25 },     -- Enrage
+    [12950]     = { 0.25, 0.25, 1.00 },     -- Improved Whirlwind
+    [115203]    = { 0.25, 0.25, 1.00 },     -- Fortifying Brew
+    [1249625]   = { 0.25, 1.00, 0.25 },     -- Zenith
+    [322118]    = { 0.25, 0.75, 0.50 },     -- Invoke Yu'lon, the Jade Serpent
+    [325192]    = { 1.00, 0.75, 0.25 },     -- Invoke Chi-Ji, the Red Crane
+    [449582]    = { 0.25, 0.75, 1.00 },     -- Lighter than Air
+}
+
+local CooldownIDColors = { }
+
+local function GetCooldownIDColor(id)
+    if not CooldownIDColors[id] then
+        local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(id)
+        if info and info.spellID then
+            CooldownIDColors[id] = SpellIDColors[info.spellID] or SpellIDColors.DEFAULT
+        end
+    end
+    return CooldownIDColors[id]
+end
+
 local function DynamicCDMBuffBars()
     local BuffBarCooldownViewer = BuffBarCooldownViewer
+
+    local function Recolor()
+        for _, itemFrame in ipairs(BuffBarCooldownViewer:GetItemFrames()) do
+            local c = GetCooldownIDColor(itemFrame.cooldownID)
+            itemFrame.Bar:SetStatusBarColor(unpack(c))
+        end
+    end
 
     local function Layout()
         BuffBarCooldownViewer:GetItemContainerFrame():Layout()
@@ -23,9 +54,10 @@ local function DynamicCDMBuffBars()
         isDirty = true
     end
 
-    local function LayoutIfDirty()
+    local function UpdateIfDirty()
         if isDirty then
             Layout()
+            Recolor()
             isDirty = nil
         end
     end
@@ -35,7 +67,6 @@ local function DynamicCDMBuffBars()
     local function HookItemFrame(itemFrame)
         if not hookedFrames[itemFrame] then
             itemFrame.includeAsLayoutChildWhenHidden = nil      -- Magic here
-            -- hooksecurefunc(itemFrame, 'SetShown', Layout)
             hooksecurefunc(itemFrame, 'SetShown', MarkDirty)
             MarkDirty()
             hookedFrames[itemFrame] = true
@@ -43,7 +74,7 @@ local function DynamicCDMBuffBars()
     end
 
     local cdmUpdater = CreateFrame('Frame')
-    cdmUpdater:SetScript('OnUpdate', LayoutIfDirty)
+    cdmUpdater:SetScript('OnUpdate', UpdateIfDirty)
 
     -- Hook them immediately
     for _, itemFrame in ipairs(BuffBarCooldownViewer:GetItemFrames()) do
