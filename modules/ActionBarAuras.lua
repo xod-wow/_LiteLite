@@ -208,16 +208,9 @@ local function UpdateOverlayFilters()
         for slotName, container in pairs(AuraContainers[b:GetName()]) do
             local filters = GetActionFilters(b.action, slotName)
             if slotName == 'HARMFUL' then
-                if UnitCanAssist('player', 'target') then
-                    -- Hacky disable when spell filters are prohibited
-                    filters.maxDuration = 0
-                end
                 filters.isHarmful = true
                 -- filters.canApplyAura = true
             elseif slotName == 'HELPFUL' then
-                if not UnitCanAssist('player', 'player') then
-                    filters.maxDuration = 0
-                end
                 filters.isHelpful = true
             end
             container:SetAuraSlotCandidateFilters(slotName, filters)
@@ -249,8 +242,6 @@ local ScanLinkedSpellsEvents = {
 
 local UpdateAllAurasEvents = {
     ['PLAYER_TARGET_CHANGED'] = true,
-    ['UNIT_ENTERED_VEHICLE'] = true,
-    ['UNIT_EXITED_VEHICLE'] = true,
 }
 
 local AllEvents = CreateFromMixins(UpdateFiltersEvents, ScanLinkedSpellsEvents, UpdateAllAurasEvents)
@@ -261,14 +252,6 @@ local function OnEvent(_, event, ...)
     elseif ScanLinkedSpellsEvents[event] then
         ScanLinkedSpells()
         UpdateOverlayFilters()
-    elseif event == 'UNIT_ENTERED_VEHICLE' or event == 'UNIT_EXITED_VEHICLE' then
-        -- Necessary to do the disabling so we don't get all auras showing
-        -- when UnitCanAssist('player', 'player') is false. If Blizzard add
-        -- something to show nothing if filters can't be applied this can go.
-        local unit = ...
-        if unit == 'player' then
-            UpdateAllAuras()
-        end
     elseif event == 'PLAYER_TARGET_CHANGED' then
         UpdateAllAuras()
     end
