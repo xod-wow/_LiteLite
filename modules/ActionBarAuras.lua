@@ -242,6 +242,7 @@ local ScanLinkedSpellsEvents = {
 
 local UpdateAllAurasEvents = {
     ['PLAYER_TARGET_CHANGED'] = true,
+    ['UNIT_FACTION'] = true,
 }
 
 local AllEvents = CreateFromMixins(UpdateFiltersEvents, ScanLinkedSpellsEvents, UpdateAllAurasEvents)
@@ -254,6 +255,13 @@ local function OnEvent(_, event, ...)
         UpdateOverlayFilters()
     elseif event == 'PLAYER_TARGET_CHANGED' then
         UpdateAllAuras()
+    elseif event == 'UNIT_FACTION' then
+        -- Maybe what's fired when you get MC and previously attackable target
+        -- becomes friendly?
+        local unitToken = ...
+        if unitToken == 'target' then
+            UpdateAllAuras()
+        end
     end
 end
 
