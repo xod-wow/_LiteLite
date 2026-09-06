@@ -338,8 +338,12 @@ local function SlashCommand(arg)
     local arg1, arg2 = string.split(' ', arg or '', 2)
     if arg1 == 'add' then
         Scanner:ObjectAdd(arg2)
+        Scanner:ScanAllVignettes()
     elseif arg1 == 'del' then
         Scanner:ObjectDel(arg2)
+        Scanner:ScanAllVignettes()
+    elseif arg1 == 'wipe' then
+        Scanner:ObjectWipe()
     elseif arg1 == 'wipe' then
         Scanner:ObjectWipe()
     elseif arg1 == 'way' then
@@ -349,6 +353,10 @@ local function SlashCommand(arg)
         end
     elseif arg1 == 'clear' then
         Scanner:RemoveAllWaypoints()
+    elseif arg1 == 'scan' then
+        Scanner:ScanAllVignettes()
+    elseif arg1 == 'prune' then
+        Scanner:PruneWaypoints()
     end
     Scanner:ObjectList()
 end
@@ -358,9 +366,6 @@ local moduleInfo = {
     SlashCommands = {
         ['find-mob'] = SlashCommand,
         ['fm'] = SlashCommand,
-        ['scan-vignettes'] = function () Scanner:ScanAllVignettes() end,
-        ['sv'] = function () Scanner:ScanAllVignettes() end,
-        ['prune'] = function () Scanner:PruneWaypoints() end,
     }
 }
 addon.RegisterModule(moduleInfo)
