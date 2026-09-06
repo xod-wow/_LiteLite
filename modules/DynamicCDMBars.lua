@@ -25,13 +25,13 @@ local SpellIDColors = {
 local CooldownIDColors = { }
 
 local function GetCooldownIDColor(id)
-    if not CooldownIDColors[id] then
+    if id and not CooldownIDColors[id] then
         local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(id)
         if info and info.spellID then
-            CooldownIDColors[id] = SpellIDColors[info.spellID] or SpellIDColors.DEFAULT
+            CooldownIDColors[id] = SpellIDColors[info.spellID]
         end
     end
-    return CooldownIDColors[id]
+    return CooldownIDColors[id] or SpellIDColors.DEFAULT
 end
 
 local function DynamicCDMBuffBars()
