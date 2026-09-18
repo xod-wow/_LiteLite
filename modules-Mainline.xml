@@ -1,9 +1,9 @@
 <Ui>
-    <Script file="modules\ActionBarAuras.lua" />
     <Script file="modules\AutoInviteMyself.lua" />
     <Script file="modules\AutoRepairAll.lua" />
     <Script file="modules\BiggerFrames.lua" />
     <Script file="modules\BindMacro.lua" />
+    <Script file="modules\BonusRollNeedsShift.lua" />
     <Script file="modules\CageTriplicatePets.lua" />
     <Script file="modules\ChatCopyPaste.lua" />
     <Script file="modules\ChatMsgAlerts.lua" />
