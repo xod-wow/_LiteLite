@@ -74,4 +74,6 @@ local function Initialize()
     frame:Initialize()
 end
 
-addon.RegisterModule({ Initialize=Initialize })
+if EXPANSION_LEVEL > 0 then
+    addon.RegisterModule({ Initialize=Initialize })
+end

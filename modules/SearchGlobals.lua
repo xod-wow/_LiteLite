@@ -13,8 +13,12 @@ local function SearchGlobalKeys(text)
     for k, v in pairs(_G) do
         if type(k) == 'string' then
             local allowPattern = text:sub(1,1) == '^' or text:sub(-1) == '$'
-            if k:lower():find(text, nil, not allowPattern) then
-                table.insert(lines, string.format("%s = %s", k, tostring(v)))
+            if not issecretvalue(k) and k:lower():find(text, nil, not allowPattern) then
+                if issecretvalue(v) then
+                    table.insert(lines, string.format("%s = <SECRET>", k))
+                else
+                    table.insert(lines, string.format("%s = %s", k, tostring(v)))
+                end
             end
         end
     end

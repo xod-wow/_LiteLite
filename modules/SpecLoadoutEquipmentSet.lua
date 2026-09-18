@@ -28,7 +28,7 @@ local function UpdateEquipmentSetForLoadout()
         return
     end
 
-    local specIndex = GetSpecialization()
+    local specIndex = C_SpecializationInfo.GetSpecialization()
     if not specIndex then return end
 
     local specSetID = C_EquipmentSet.GetEquipmentSetForSpec(specIndex)

@@ -165,4 +165,6 @@ local function Initialize()
     MuteSoundFile(1563055)
 end
 
-addon.RegisterModule({ Initialize = Initialize })
+if EXPANSION_LEVEL > 0 then
+    addon.RegisterModule({ Initialize = Initialize })
+end

@@ -17,8 +17,8 @@ local stats = {
         text = ARMOR,
         get =
             function ()
-                local spec = GetSpecialization()
-                if GetSpecializationRole(spec) == "TANK" then
+                local spec = PlayerUtil.GetCurrentSpecID()
+                if GetSpecializationRoleByID(spec) == "TANK" then
                     local _, effectiveArmor = UnitArmor('player')
                     -- local level = UnitLevel('player')
                     -- return 100 * C_PaperDollInfo.GetArmorEffectiveness(effectiveArmor, level)

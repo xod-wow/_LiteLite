@@ -49,4 +49,7 @@ local addonInfo = {
         ['lure'] = MidnightSkinningLure
     }
 }
-addon.RegisterModule(addonInfo)
+
+if EXPANSION_LEVEL == LE_EXPANSION_MIDNIGHT then
+    addon.RegisterModule(addonInfo)
+end

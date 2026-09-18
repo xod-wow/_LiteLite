@@ -131,4 +131,6 @@ local moduleInfo = {
         ['delves'] = ListDelves
     }
 }
-addon.RegisterModule(moduleInfo)
+if EXPANSION_LEVEL > 0 then
+    addon.RegisterModule(moduleInfo)
+end
