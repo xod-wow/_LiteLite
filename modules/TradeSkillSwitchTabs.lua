@@ -40,4 +40,6 @@ local function Initialize()
     end
 end
 
-addon.RegisterModule({ Initialize = Initialize })
+if EXPANSION_LEVEL > 0 then
+    addon.RegisterModule({ Initialize = Initialize })
+end
