@@ -12,6 +12,12 @@ local function SetEditModeLayout(layout)
     if layout == nil then
         local w, h = GetPhysicalScreenSize()
         layout = tostring(w) .. 'x' .. tostring(h)
+    elseif layout:lower() == 'modern' then
+        C_EditMode.SetActiveLayout(1)
+        return
+    elseif layout:lower() == 'classic' then
+        C_EditMode.SetActiveLayout(2)
+        return
     end
 
     local layoutData = C_EditMode.GetLayouts()
