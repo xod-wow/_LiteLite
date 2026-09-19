@@ -118,7 +118,7 @@ function addon.FindChildZoneMaps(expansion)
         local mapID = table.remove(todo, 1)
         local mapInfo = C_Map.GetMapInfo(mapID)
         maps[mapID] = C_Map.GetMapInfo(mapID)
-        for _, info in ipairs(C_Map.GetMapChildrenInfo(mapID)) do
+        for _, info in ipairs(C_Map.GetMapChildrenInfo(mapID) or {}) do
             if maps[info.mapID] == nil then
                 table.insert(todo, info.mapID)
             end
