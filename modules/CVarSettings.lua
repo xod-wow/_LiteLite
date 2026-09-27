@@ -6,7 +6,10 @@ local function ApplySettings()
     SetCVar("cooldownViewerEnabled", true)
 
     SetCVar("autoLootDefault", true)
-    SetCVar("AutoPushSpellToActionBar", 0)
+
+    if EXPANSION_LEVEL > 0 then
+        SetCVar("AutoPushSpellToActionBar", 0)
+    end
 
     SetCVar("raidFramesDisplayClassColor", true)
     SetCVar("raidFramesDisplayPowerBars", true)
