@@ -176,6 +176,21 @@ function addon.IterateGroupMembers()
     end
 end
 
+function addon.IterateGroupFrames()
+    local frames = {}
+    for i = 1, 5 do
+        table.insert(frames, _G["CompactPartyFrameMember"..i])
+    end
+    for i = 1, 40 do
+        table.insert(frames, _G["CompactRaidFrame"..i])
+    end
+    local i = 0
+    return function ()
+        i = i + 1
+        return frames[i]
+    end
+end
+
 --[[------------------------------------------------------------------------]]--
 
 --[[

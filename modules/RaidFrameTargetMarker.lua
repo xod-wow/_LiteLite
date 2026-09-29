@@ -2,7 +2,7 @@ local _, addon = ...
 
 local iconTextures = {}
 
-local function GetIconTexture(f)
+local function GetFrameIconTexture(f)
     local name = f:GetName()
     if not iconTextures[name] then
         local t = f:CreateTexture()
@@ -16,9 +16,9 @@ local function GetIconTexture(f)
     return iconTextures[name]
 end
 
-local function UpdateRaidIcon(f)
+local function UpdateFrameRaidIcon(f)
     if f and f:IsVisible() then
-        local iconTexture = GetIconTexture(f)
+        local iconTexture = GetFrameIconTexture(f)
         local index = GetRaidTargetIndex(f.unit) -- secret
         if index then
             SetRaidTargetIconTexture(iconTexture, index)
@@ -30,13 +30,8 @@ local function UpdateRaidIcon(f)
 end
 
 local function Update()
-    for i = 1, 40 do
-        local f = _G["CompactRaidFrame"..i]
-        UpdateRaidIcon(f)
-    end
-    for i = 1, 5 do
-        local f = _G["CompactPartyFrameMember"..i]
-        UpdateRaidIcon(f)
+    for f in addon.IterateGroupFrames() do
+        UpdateFrameRaidIcon(f)
     end
 end
 
@@ -46,8 +41,8 @@ end
 
 local function Initialize()
     EventRegistry:RegisterFrameEventAndCallback('GROUP_ROSTER_UPDATE', ScheduleUpdate)
-    EventRegistry:RegisterFrameEventAndCallback('RAID_TARGET_UPDATE', ScheduleUpdate)
     EventRegistry:RegisterFrameEventAndCallback('PLAYER_ENTERING_WORLD', ScheduleUpdate)
+    EventRegistry:RegisterFrameEventAndCallback('RAID_TARGET_UPDATE', ScheduleUpdate)
 end
 
 addon.RegisterModule({ Initialize = Initialize })
