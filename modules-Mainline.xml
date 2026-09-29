@@ -47,6 +47,7 @@
     <Script file="modules\ShowActionBars.lua" />
     <Script file="modules\ShowGenericTrait.lua" />
     <Script file="modules\ShowGreatVault.lua" />
+    <Script file="modules\SlotILevels.lua" />
     <Script file="modules\SmallerPetHitText.lua" />
     <Script file="modules\SpecImportExport.lua" />
     <Script file="modules\SpellCastAnnounce.lua" />

@@ -293,6 +293,7 @@ read_globals =  {
     'tContains',
     'tDeleteItem',
     'tFilter',
+    'tInvert',
     'time',
     'tIndexOf',
     'ToggleCharacter',
