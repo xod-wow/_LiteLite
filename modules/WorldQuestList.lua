@@ -74,7 +74,7 @@ local function WorldQuestProcess(expansion)
     for _, mapID in ipairs(addon.FindChildZoneMaps(expansion)) do
         for _, questInfo in ipairs(C_TaskQuest.GetQuestsOnMap(mapID)) do
             if C_QuestLog.IsWorldQuest(questInfo.questID) and questInfo.mapID == mapID then
-                table.insert(mapQuests, questInfo)
+                mapQuests[questInfo.questID] = questInfo
                 C_TaskQuest.RequestPreloadRewardData(questInfo.questID)
             end
         end
