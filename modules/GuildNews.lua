@@ -24,8 +24,8 @@ local function UpdateGuildNews(minItemLevel)
     for i = 1, GetNumGuildNews() do
         local info = C_GuildInfo.GetGuildNewsInfo(i)
         if info and info.newsType == NEWS_ITEM_LOOTED and info.whatText then
-            local level = GetDetailedItemLevelInfo(info.whatText)
-            local invType, subType, _, equipSlot = select(6, GetItemInfo(info.whatText))
+            local level = C_Item.GetDetailedItemLevelInfo(info.whatText)
+            local invType, subType, _, equipSlot = select(6, C_Item.GetItemInfo(info.whatText))
             if equipSlot ~= '' and level and level >= ( minItemLevel or 0 ) then
                 local date = format(DATE_FMT, CALENDAR_WEEKDAY_NAMES[info.weekday + 1], info.day + 1, info.month + 1)
                 local entry = {

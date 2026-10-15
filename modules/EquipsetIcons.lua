@@ -11,7 +11,7 @@ local function GetGameTooltipIcon()
     end
     _,  id = GameTooltip:GetItem()
     if id then
-        return select(10, GetItemInfo(id))
+        return select(10, C_Item.GetItemInfo(id))
     end
 end
 

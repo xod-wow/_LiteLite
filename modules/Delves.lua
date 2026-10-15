@@ -51,6 +51,16 @@ local function GetDelveStory(poiInfo)
     end
 end
 
+local function IsBountifulDelve(poiInfo)
+    if poiInfo.atlasName == 'delves-bountiful' then
+        return true
+    elseif poiInfo.description:lower():contains("bountiful delve") then
+        return true
+    else
+        return false
+    end
+end
+
 local function ListDelves()
     local delveDataByName = {}
     for _, mapID in ipairs(addon.FindChildZoneMaps('midnight')) do
@@ -58,7 +68,7 @@ local function ListDelves()
         local delveList = C_AreaPoiInfo.GetDelvesForMap(mapID)
         for _, poiID in ipairs(delveList) do
             local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
-            local isBountiful = ( poiInfo.atlasName == 'delves-bountiful' )
+            local isBountiful = IsBountifulDelve(poiInfo)
             local data = {
                 mapInfo.name,
                 poiInfo.name,
