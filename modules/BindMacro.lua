@@ -15,10 +15,17 @@ local function SetBindMacro()
 end
 
 local function SlashCommand(arg)
+    if not arg or arg == '' then
+        addon.printf('BindMacro key=%s', tostring(addon.db.bindKey))
+        addon.printf(addon.db.bindMacro)
+        return true
+    end
     local arg1, arg2 = string.split(' ', arg, 2)
-    addon.db.bindKey = arg1
-    addon.db.bindMacro = arg2:gsub("\\n", "\n")
-    SetBindMacro()
+    if arg1 and arg1 ~= '' and arg2 and arg2 ~= '' then
+        addon.db.bindKey = arg1
+        addon.db.bindMacro = arg2:gsub("%|", "\n")
+        SetBindMacro()
+    end
 end
 
 local moduleInfo = {
