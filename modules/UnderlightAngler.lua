@@ -74,6 +74,6 @@ local function Initialize()
     frame:Initialize()
 end
 
-if EXPANSION_LEVEL > 0 then
+if WOW_PROJECT_ID == 1 then
     addon.RegisterModule({ Initialize=Initialize })
 end

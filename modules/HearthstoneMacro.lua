@@ -210,7 +210,7 @@ local function Initialize()
     HearthstoneToyButton:ScanToys()
 end
 
-if EXPANSION_LEVEL > 0 then
+if WOW_PROJECT_ID == 1 then
     -- Could work if there were any but the 900 toy count check would need
     -- fixing
     addon.RegisterModule({ Initialize = Initialize })

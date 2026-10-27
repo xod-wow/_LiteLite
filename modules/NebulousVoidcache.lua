@@ -4,29 +4,30 @@ local VoidCacheItems = {
 --  [itemID] =  { itemContext, treasureContextLevel }
 
     -- Raid
-    [268459] =  { 16, 10 },     -- Imperator Averzian
-    [268460] =  { 16, 10 },     -- Vorasius
-    [268461] =  { 16, 10 },     -- Fallen-King Salhadaar
-    [268462] =  { 16, 10 },     -- Vaelgor & Ezzorak
-    [248463] =  { 16, 10 },     -- Lightblinded Vanguard
-    [267488] =  { 16, 10 },     -- Crown of the Cosmos
-    [268464] =  { 16, 10 },     -- Chimaerus the Undreamt God
-    [268458] =  { 16, 10 },     -- Belo'ren, Child of Al'ar
-    [262658] =  { 16, 10 },     -- Midnight Falls
+    [278283] =  { 6 },     -- Entombed Sentinels
+    [286019] =  { 6 },     -- Kith'ix
+    [274708] =  { 6 },     -- Nymrissa Wavecaller
+    [278285] =  { 6 },     -- Soulcoiler Nek'zali
+    [278288] =  { 6 },     -- Sszorak
+    [278290] =  { 6 },     -- The Coiled Altar
+    [278289] =  { 6 },     -- The Twin Fangs
+    [278286] =  { 6 },     -- Tortollan Explorers
+    [278284] =  { 6 },     -- Ula'tek
+    [278287] =  { 6 },     -- Vashnik
 
     -- M+
-    [268465] =  { 16, 10 },     -- Algeth'ar Academy
-    [268466] =  { 16, 10 },     -- Magister's Terrace
-    [268473] =  { 16, 10 },     -- Maisara Caverns
-    [268467] =  { 16, 10 },     -- Nexus-Point Xenas
-    [268468] =  { 16, 10 },     -- Pit of Saron
-    [268469] =  { 16, 10 },     -- Seat of the Triumvirate
-    [268470] =  { 16, 10 },     -- Skyreach
-    [268471] =  { 16, 10 },     -- Windrunner Spire
+    [279618] =  { 16, 10 },     -- Altar of Fangs
+    [279620] =  { 16, 10 },     -- Den of Nalorakk
+    [279621] =  { 16, 10 },     -- Kings' Rest
+    [279623] =  { 16, 10 },     -- Murder Row
+    [279622] =  { 16, 10 },     -- Ruby Life Pools
+    [279624] =  { 16, 10 },     -- Temple of Sethraliss
+    [279619] =  { 16, 10 },     -- The Blinding Vale
+    [279625] =  { 16, 10 },     -- Voidscar Arena
 
     -- World
-    [269768] =  { 55, 0 },      -- Prey
-    [268969] =  { 108, 11 },    -- Delves
+    -- [280131] =  { 55, 0 },      -- Prey
+    -- [279284] =  { 108, 11 },    -- Delves
 }
 
 -- ttInfo = C_TooltipInfo.GetItemByID(itemID, nil, itemContext, treasureContextLevel)
@@ -147,11 +148,11 @@ end
 
 local moduleInfo = {
     HelpLines = {
-        "nebulous-void-cache",
+        "void-cache",
     },
     SlashCommands = {
-        ['nebulous-void-cache'] = function () Scanner:ListRerolls() end,
-        ['nvc'] = function () Scanner:ListRerolls() end,
+        ['void-cache'] = function () Scanner:ListRerolls() end,
+        ['vc'] = function () Scanner:ListRerolls() end,
         ['rerolls'] = function () Scanner:ListRerolls() end
     }
 }

@@ -50,6 +50,6 @@ local addonInfo = {
     }
 }
 
-if EXPANSION_LEVEL == LE_EXPANSION_MIDNIGHT then
+if WOW_PROJECT_ID == 1 then
     addon.RegisterModule(addonInfo)
 end

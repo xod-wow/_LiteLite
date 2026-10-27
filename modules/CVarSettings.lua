@@ -7,7 +7,7 @@ local function ApplySettings()
 
     SetCVar("autoLootDefault", true)
 
-    if EXPANSION_LEVEL > 0 then
+    if WOW_PROJECT_ID == 1 then
         SetCVar("AutoPushSpellToActionBar", 0)
     end
 

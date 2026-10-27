@@ -36,7 +36,7 @@ local function Restore()
     local specID = PlayerUtil.GetCurrentSpecID()
     local traits = addon.db.omniumFolioTraitsBySpecID[specID]
     if traits then
-        -- addon.printf('Restore omnium folio traits')
+        addon.printf('Restore omnium folio traits %d', specID)
         ApplyTraits(traits)
     else
         Save()
@@ -68,6 +68,6 @@ local function Initialize()
     end
 end
 
-if EXPANSION_LEVEL > 0 then
+if WOW_PROJECT_ID == 1 then
     addon.RegisterModule({ Initialize = Initialize })
 end

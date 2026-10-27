@@ -43,9 +43,37 @@ EventUtil.ContinueOnPlayerLogin(Initialize)
 
 EventRegistry:RegisterFrameEventAndCallback('SPELL_CONFIRMATION_PROMPT',
     function (_ownerID, ...)
-        addon.db.SCP = addon.db.SCP or {}
-        table.insert(addon.db.SCP, { ... })
-        print('SPELL_CONFIRMATION_PROMPT', ...)
+        addon.db.SpellConfirmationPrompt = addon.db.SpellConfirmationPrompt or {}
+        local spellID, confirmType, message, duration, currencyTypesID, currencyCost, currentDifficulty, displayItemID, itemContext, treasureContextLevel = ...
+        if confirmType == Enum.ConfirmationPromptUIType.BonusRoll then
+            local name, instanceType, difficultyID, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceID, instanceGroupSize, lfgDungeonID, hasWorldTier = GetInstanceInfo()
+            table.insert(addon.db.SpellConfirmationPrompt,
+                {
+                    instance = {
+                        name = name,
+                        instanceType = instanceType,
+                        difficultyID = difficultyID,
+                        difficultyName = difficultyName,
+                        maxPlayers = maxPlayers,
+                        dynamicDifficulty = dynamicDifficulty,
+                        isDynamic = isDynamic,
+                        instanceID = instanceID,
+                        instanceGroupSize = instanceGroupSize,
+                        lfgDungeonID = lfgDungeonID,
+                        hasWorldTier = hasWorldTier
+                    },
+                    spellID = spellID,
+                    confirmType = confirmType,
+                    message = message,
+                    duration = duration,
+                    currencyTypesID = currencyTypesID,
+                    currencyCost = currencyCost,
+                    currentDifficulty = currentDifficulty,
+                    displayItemID = displayItemID,
+                    itemContext = itemContext,
+                    treasureContextLevel = treasureContextLevel,
+                })
+        end
     end)
 
 --[[ Utilities ]]---------------------------------------------------------------
