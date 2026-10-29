@@ -3,8 +3,6 @@
 local _, addon = ...
 
 local function ApplySettings()
-    SetCVar("cooldownViewerEnabled", true)
-
     SetCVar("autoLootDefault", true)
 
     if WOW_PROJECT_ID == 1 then
