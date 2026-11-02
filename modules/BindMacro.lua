@@ -23,7 +23,7 @@ local function SlashCommand(arg)
     local arg1, arg2 = string.split(' ', arg, 2)
     if arg1 and arg1 ~= '' and arg2 and arg2 ~= '' then
         addon.db.bindKey = arg1
-        addon.db.bindMacro = arg2:gsub("%|", "\n")
+        addon.db.bindMacro = arg2:gsub("(.)/", "%1\n/")
         SetBindMacro()
     end
 end
