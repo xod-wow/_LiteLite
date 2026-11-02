@@ -48,17 +48,22 @@ local function PrintVenom()
     end
 end
 
+local FishingSpells = {
+    [131476] = true,        -- Base
+    [1224771] = true,       -- Void Hole Fishing
+}
+
 local function OnEvent(self, event, ...)
     if event == "UNIT_SPELLCAST_CHANNEL_START" then
         local unitToken, _, spellID = ...
-        if unitToken == "player" and spellID == 131476 then
+        if unitToken == "player" and FishingSpells[spellID] then
             -- print('fish')
             SaveCVars()
             EnhanceSounds()
         end
     elseif event == "UNIT_SPELLCAST_CHANNEL_STOP" then
         local unitToken, _, spellID = ...
-        if unitToken == "player" and spellID == 131476 then
+        if unitToken == "player" and FishingSpells[spellID] then
             -- print('unfish')
             RestoreCVars()
             C_Timer.After(1, PrintVenom)
