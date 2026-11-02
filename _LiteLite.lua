@@ -216,8 +216,13 @@ function addon.IterateGroupFrames()
     for i = 1, 5 do
         table.insert(frames, _G["CompactPartyFrameMember"..i])
     end
-    for i = 1, 40 do
+    for i = 1, MAX_RAID_MEMBERS do
         table.insert(frames, _G["CompactRaidFrame"..i])
+    end
+    for g = 1, MAX_RAID_GROUPS do
+        for m = 1, MEMBERS_PER_RAID_GROUP do
+            table.insert(frames, _G["CompactRaidGroup"..g.."Member"..m])
+        end
     end
     local i = 0
     return function ()
