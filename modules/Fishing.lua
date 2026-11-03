@@ -49,9 +49,18 @@ local function PrintVenom()
 end
 
 local FishingSpells = {
-    [131476] = true,        -- Base
-    [1224771] = true,       -- Void Hole Fishing
+    [131476] = "SPELL Fishing",     -- Base
+    [1224771] = "INTERACTTARGET",   -- Void Hole Fishing
 }
+
+local isFishing = false
+
+-- This works a bit weirdly, because the bindings are run on both keydown and
+-- keyup. And you can change them in between. So after the first trigger,
+-- space does INTERRACTTARGET on keydown and SPELL Fishing on keyup: if you
+-- press slowly you get the interract and the recast in one push. If you are
+-- too quick you will get the recast before the interact has time to finish
+-- looting.
 
 local function OnEvent(self, event, ...)
     if event == "UNIT_SPELLCAST_CHANNEL_START" then
@@ -60,12 +69,17 @@ local function OnEvent(self, event, ...)
             -- print('fish')
             SaveCVars()
             EnhanceSounds()
+            SetOverrideBinding(self, true, "SPACE", "INTERACTTARGET")
+            isFishing = true
         end
     elseif event == "UNIT_SPELLCAST_CHANNEL_STOP" then
         local unitToken, _, spellID = ...
         if unitToken == "player" and FishingSpells[spellID] then
             -- print('unfish')
             RestoreCVars()
+            SetOverrideBinding(self, true, "SPACE", FishingSpells[spellID])
+            C_Timer.After(2, function () if not isFishing then ClearOverrideBindings(self) end end)
+            isFishing = false
             C_Timer.After(1, PrintVenom)
         end
     end
