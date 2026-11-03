@@ -78,10 +78,17 @@ local function OnEvent(self, event, ...)
             -- print('unfish')
             RestoreCVars()
             SetOverrideBinding(self, true, "SPACE", FishingSpells[spellID])
-            C_Timer.After(2, function () if not isFishing then ClearOverrideBindings(self) end end)
+            C_Timer.After(2,
+                function ()
+                    if not isFishing and not InCombatLockdown() then
+                        ClearOverrideBindings(self)
+                    end
+                end)
             isFishing = false
             C_Timer.After(1, PrintVenom)
         end
+    elseif event == "PLAYER_REGEN_DISABLED" then
+        ClearOverrideBindings(self)
     end
 end
 
@@ -89,6 +96,7 @@ local function Initialize()
     local eventFrame = CreateFrame("Frame")
     eventFrame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
     eventFrame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
+    eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
     eventFrame:SetScript("OnEvent", OnEvent)
 end
 
