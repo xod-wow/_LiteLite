@@ -103,13 +103,22 @@ function Updater:NotifyMark()
     end
 end
 
+function Updater:QueueGroupRosterUpdate()
+    self:SetScript('OnUpdate', self.RunGroupRosterUpdate)
+end
+
+function Updater:RunGroupRosterUpdate()
+    self:UpdateMarkIndex()
+    self:CreateOrUpdateGlobalMacro()
+    self:SetScript('OnUpdate', nil)
+end
+
 function Updater:OnEvent(event)
     if event == 'ACTIVE_TALENT_GROUP_CHANGED' or event == 'PLAYER_SPECIALIZATION_CHANGED' then
         self:UpdateSpellName()
         self:CreateOrUpdateGlobalMacro()
     elseif event == 'GROUP_ROSTER_UPDATE' then
-        self:UpdateMarkIndex()
-        self:CreateOrUpdateGlobalMacro()
+        self:QueueGroupRosterUpdate()
     elseif event == 'READY_CHECK' then
         self:NotifyMark()
     end

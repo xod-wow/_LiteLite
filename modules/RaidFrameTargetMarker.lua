@@ -35,8 +35,14 @@ local function Update()
     end
 end
 
+local eventFrame = CreateFrame("Frame")
+
 local function ScheduleUpdate()
-    C_Timer.After(0, Update)
+    eventFrame:SetScript('OnUpdate',
+        function ()
+            Update()
+            eventFrame:SetScript('OnUpdate', nil)
+        end)
 end
 
 local function Initialize()
