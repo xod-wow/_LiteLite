@@ -155,4 +155,6 @@ local function Initialize()
     hooksecurefunc('CompactUnitFrame_UpdateHealthBorder', UpdateHook)
 end
 
-addon.RegisterModule({ Initialize = Initialize })
+if WOW_PROJECT_ID == 1 then
+    addon.RegisterModule({ Initialize = Initialize })
+end
